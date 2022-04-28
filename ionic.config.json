@@ -1,0 +1,7 @@
+{
+  "name": "iftar-ramdhan",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular"
+}
