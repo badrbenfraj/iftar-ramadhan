@@ -8,29 +8,51 @@ const routes: Routes = [
     component: TabsPage,
     children: [
       {
-        path: 'tab1',
-        loadChildren: () => import('../tab1/tab1.module').then(m => m.Tab1PageModule)
+        path: 'list',
+        loadChildren: () =>
+          import('../tab1/tab1.module').then((m) => m.Tab1PageModule),
       },
       {
         path: 'tab2',
-        loadChildren: () => import('../tab2/tab2.module').then(m => m.Tab2PageModule)
+        loadChildren: () =>
+          import('../tab2/tab2.module').then((m) => m.Tab2PageModule),
       },
       {
         path: 'tab3',
-        loadChildren: () => import('../tab3/tab3.module').then(m => m.Tab3PageModule)
+        loadChildren: () =>
+          import('../tab3/tab3.module').then((m) => m.Tab3PageModule),
+      },
+      {
+        path: 'tab-profile',
+        loadChildren: () =>
+          import('../tab-profile/tab-profile.module').then(
+            (m) => m.TabProfilePageModule
+          ),
+      },
+      {
+        path: 'person',
+        loadChildren: () =>
+          import('../tab1/person-details/person-details.module').then(
+            (m) => m.PersonDetailsModule
+          ),
       },
       {
         path: '',
-        redirectTo: '/tabs/tab1',
-        pathMatch: 'full'
-      }
-    ]
+        redirectTo: '/tabs/list',
+        pathMatch: 'full',
+      },
+    ],
   },
   {
     path: '',
-    redirectTo: '/tabs/tab1',
-    pathMatch: 'full'
-  }
+    redirectTo: '/tabs/list',
+    pathMatch: 'full',
+  },
+  {
+    path: 'scan',
+    loadChildren: () =>
+      import('../scan/scan.module').then((m) => m.ScanPageModule),
+  },
 ];
 
 @NgModule({

@@ -1,12 +1,12 @@
 import { IonicModule } from '@ionic/angular';
+import { RouterModule } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Tab1Page } from './tab1.page';
+import { TabProfilePage } from './tab-profile.page';
 import { ExploreContainerComponentModule } from '../explore-container/explore-container.module';
 
-import { Tab1PageRoutingModule } from './tab1-routing.module';
-import { Ng2SearchPipeModule } from 'ng2-search-filter';
+import { TabProfilePageRoutingModule } from './tab-profile-routing.module';
 
 @NgModule({
   imports: [
@@ -14,9 +14,10 @@ import { Ng2SearchPipeModule } from 'ng2-search-filter';
     CommonModule,
     FormsModule,
     ExploreContainerComponentModule,
-    Tab1PageRoutingModule,
-    Ng2SearchPipeModule,
+    RouterModule.forChild([{ path: '', component: TabProfilePage }]),
+    CommonModule,
+    TabProfilePageRoutingModule
   ],
-  declarations: [Tab1Page]
+  declarations: [TabProfilePage]
 })
-export class Tab1PageModule {}
+export class TabProfilePageModule {}

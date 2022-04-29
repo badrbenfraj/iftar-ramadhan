@@ -1,22 +1,22 @@
 import { IonicModule } from '@ionic/angular';
+import { RouterModule } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Tab1Page } from './tab1.page';
+import { ScanPage } from './scan.page';
 import { ExploreContainerComponentModule } from '../explore-container/explore-container.module';
 
-import { Tab1PageRoutingModule } from './tab1-routing.module';
-import { Ng2SearchPipeModule } from 'ng2-search-filter';
+import { ScanPageRoutingModule } from './scan-routing.module';
 
 @NgModule({
   imports: [
+    RouterModule,
     IonicModule,
     CommonModule,
     FormsModule,
     ExploreContainerComponentModule,
-    Tab1PageRoutingModule,
-    Ng2SearchPipeModule,
+    ScanPageRoutingModule
   ],
-  declarations: [Tab1Page]
+  declarations: [ScanPage]
 })
-export class Tab1PageModule {}
+export class ScanPageModule {}

@@ -1,0 +1,13 @@
+<ion-content [fullscreen]="true"  [style.--background]="scanActive ? '#00000000' : '#fff'">
+ 
+  <p *ngIf="result && !scanActive">
+    {{result.content}}
+  </p>
+
+  <ion-row>
+    <ion-col>
+      <ion-button (click)="stopScan()">back</ion-button>
+    </ion-col>
+  </ion-row>
+
+</ion-content>
