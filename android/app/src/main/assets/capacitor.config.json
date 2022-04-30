@@ -1,0 +1,6 @@
+{
+	"appId": "io.ionic.starter",
+	"appName": "iftar-ramdhan",
+	"webDir": "www",
+	"bundledWebRuntime": false
+}
