@@ -30,13 +30,6 @@ const routes: Routes = [
           ),
       },
       {
-        path: 'person',
-        loadChildren: () =>
-          import('../tab1/person-details/person-details.module').then(
-            (m) => m.PersonDetailsModule
-          ),
-      },
-      {
         path: '',
         redirectTo: '/tabs/list',
         pathMatch: 'full',
@@ -52,6 +45,13 @@ const routes: Routes = [
     path: 'scan',
     loadChildren: () =>
       import('../scan/scan.module').then((m) => m.ScanPageModule),
+  },
+  {
+    path: 'person',
+    loadChildren: () =>
+      import('../tab1/person-details/person-details.module').then(
+        (m) => m.PersonDetailsModule
+      ),
   },
 ];
 

@@ -1,11 +1,15 @@
-<ion-content [fullscreen]="true">
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>Person Details</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-
-</ion-content>
 <ion-content scroll-y="false">
   <h1 class="ion-text-center">Details</h1>
   <ion-refresher slot="fixed">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
-
 </ion-content>

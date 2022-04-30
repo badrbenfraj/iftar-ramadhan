@@ -3,7 +3,8 @@
 // The list of file replacements can be found in `angular.json`.
 
 export const environment = {
-  production: false
+  production: false,
+  basePath: 'https://fr.openfoodfacts.org/api/v0/produit/',
 };
 
 /*

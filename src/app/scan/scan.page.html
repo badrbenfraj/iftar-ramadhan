@@ -1,13 +1,25 @@
-<ion-content [fullscreen]="true"  [style.--background]="scanActive ? '#00000000' : '#fff'">
- 
-  <p *ngIf="result && !scanActive">
-    {{result.content}}
-  </p>
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>Person Details</ion-title>
+  </ion-toolbar>
+</ion-header>
 
-  <ion-row>
-    <ion-col>
-      <ion-button (click)="stopScan()">back</ion-button>
-    </ion-col>
-  </ion-row>
-
+<ion-content>
+  <ion-grid>
+    <ion-row>
+      <ion-col class="justify-align-center" *ngIf="data">
+        <ion-text>{{data.product.product_name}} </ion-text>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+  <ion-button
+    color="success"
+    expand="full"
+    (click)="openBarCodeScanner()"
+    *ngIf="data"
+    >Scan code</ion-button
+  >
 </ion-content>

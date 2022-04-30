@@ -1,83 +1,76 @@
-import { AfterViewInit, Component, OnDestroy, OnInit } from '@angular/core';
-import {
-  SupportedFormat,
-  BarcodeScanner,
-} from '@capacitor-community/barcode-scanner';
+import { Component, OnInit } from '@angular/core';
+import { Http } from '@capacitor-community/http';
+import { BarcodeScanner } from '@ionic-native/barcode-scanner/ngx';
 import { AlertController, NavController } from '@ionic/angular';
+import { environment } from 'src/environments/environment';
+
+const BASE_PATH = environment.basePath;
 
 @Component({
   selector: 'app-scan',
   templateUrl: 'scan.page.html',
   styleUrls: ['scan.page.scss'],
 })
-export class ScanPage implements OnInit, AfterViewInit, OnDestroy {
-  result = null;
-  scanActive = false;
+export class ScanPage implements OnInit {
+  data = null;
 
   constructor(
-    private alertController: AlertController,
-    private navCtl: NavController
+    private barcodeScanner: BarcodeScanner,
+    private navCtl: NavController,
+    private alertController: AlertController
   ) {}
 
   ngOnInit(): void {
-    this.startScan();
+    this.openBarCodeScanner();
   }
 
-  async startScan() {
-    const allowed = await this.checkPermissions();
-    if (allowed) {
-      this.scanActive = true;
-      const result = await BarcodeScanner.startScan({
-        targetedFormats: [SupportedFormat.QR_CODE],
+  openBarCodeScanner() {
+    this.barcodeScanner
+      .scan({
+        disableSuccessBeep: true,
+        resultDisplayDuration: 0,
+        formats: 'QR_CODE',
+      })
+      .then((barcodeData) => {
+        //   Barcode data {"cancelled":0,"text":"8413384010008","format":"EAN_13"}
+        if (barcodeData) {
+          const scanCode = barcodeData.text;
+          if (scanCode) {
+            this.getProductWithBarCode(scanCode);
+          }
+        } else {
+          this.presentAlert();
+        }
+      })
+      .catch((err) => {
+        this.presentAlert();
       });
-      if (result.hasContent) {
-        this.result = result.content;
-        this.scanActive = false;
-      }
-    }
   }
 
   stopScan() {
-    BarcodeScanner.stopScan();
-    this.scanActive = false;
     this.navCtl.back();
   }
 
-  async checkPermissions() {
-    return new Promise(async (resolve, reject) => {
-      const status = await BarcodeScanner.checkPermission({ force: true });
-      if (status.granted) {
-        resolve(true);
-      } else if (status.denied) {
-        const alert = this.alertController.create({
-          header: 'No permission',
-          message: '',
-          buttons: [
-            {
-              text: 'No',
-              role: 'Cancel',
-            },
-            {
-              text: 'Open settings',
-              handler: () => {
-                BarcodeScanner.openAppSettings();
-                resolve(false);
-              },
-            },
-          ],
-        });
-        (await alert).present();
-      } else {
-        resolve(false);
-      }
+  async getProductWithBarCode(barcode) {
+    const url = BASE_PATH + barcode + '.json';
+    const result = await Http.request({
+      method: 'GET',
+      url,
+      headers: {
+        'content-type': 'application/json',
+      },
     });
+    if (result.data) {
+      this.data = result.data;
+    }
   }
 
-  ngAfterViewInit(): void {
-    BarcodeScanner.prepare();
-  }
-
-  ngOnDestroy(): void {
-    BarcodeScanner.stopScan();
+  async presentAlert() {
+    const alert = await this.alertController.create({
+      header: 'Warning',
+      message: 'Please enter a valid qr code.',
+      buttons: ['OK'],
+    });
+    await alert.present();
   }
 }

@@ -27,103 +27,103 @@ export class Tab1Page {
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '5',
+      name: 'emilia',
+    },
+    {
+      id: '6',
+      name: 'john',
+    },
+    {
+      id: '7',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '8',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '9',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '10',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '11',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '12',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '13',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '14',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '15',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '16',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '17',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '49',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '445',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '47',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '48',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '43',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '41',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '44',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '99',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '90',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '88',
       name: 'emilio',
     },
     {
-      id: '4',
+      id: '80',
       name: 'emilio',
     },
     {
-      id: '4',
-      name: 'emilio',
-    },
-    {
-      id: '4',
-      name: 'emilio',
-    },
-    {
-      id: '4',
+      id: '100',
       name: 'emilio',
     },
   ];
@@ -131,7 +131,7 @@ export class Tab1Page {
   constructor(private router: Router) {}
 
   personDetails(person) {
-    this.router.navigate(['/tabs/person/details', person.id]);
+    this.router.navigate(['/person/details', person.id]);
   }
 
   refreshFastingPeople(event) {
