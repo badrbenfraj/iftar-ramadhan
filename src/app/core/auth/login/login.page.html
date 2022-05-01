@@ -1,0 +1,93 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>Sign in User</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content>
+  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+    <ion-item
+      lines="full"
+      [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
+    >
+      <ion-label position="floating">Email</ion-label>
+      <ion-input formControlName="email" type="email"></ion-input>
+    </ion-item>
+    <div *ngIf="isSubmitted && form.email.errors">
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isSubmitted && form.email.errors?.required"
+      >
+        Email is <strong>required</strong>.
+      </span>
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isSubmitted && form.email.errors?.email"
+      >
+        Should be a valid email.
+      </span>
+    </div>
+
+    <ion-item
+      lines="full"
+      [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
+    >
+      <ion-label position="floating">Password</ion-label>
+      <ion-input
+        [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
+        type="password"
+        formControlName="password"
+      ></ion-input>
+    </ion-item>
+    <div *ngIf="isSubmitted && form.password.errors">
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isSubmitted && form.password.errors?.required"
+      >
+        Password is <strong>required</strong>.
+      </span>
+      <span
+        class="ion-invalid ion-padding"
+        *ngIf="isSubmitted && form.password.errors?.minLength"
+      >
+        Min length 8 characters.
+      </span>
+    </div>
+
+    <ion-row>
+      <ion-col>
+        <ion-button type="submit" expand="block" [disabled]="loading"
+          >Login <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+        </ion-button>
+      </ion-col>
+    </ion-row>
+
+    <ion-row>
+      <ion-col>
+        <ion-button
+          expand="block"
+          color="warning"
+          [routerLink]="['/password-reset']"
+        >
+          Password Reset
+        </ion-button>
+      </ion-col>
+    </ion-row>
+
+    <ion-row>
+      <ion-col>
+        <ion-button
+          type="submit"
+          color="danger"
+          (click)="authService.googleAuth()"
+          expand="block"
+        >
+          Login with Google
+        </ion-button>
+      </ion-col>
+    </ion-row>
+  </form>
+</ion-content>
