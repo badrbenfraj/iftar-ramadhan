@@ -131,7 +131,7 @@ export class Tab1Page {
   constructor(private router: Router) {}
 
   personDetails(person) {
-    this.router.navigate(['/person/details', person.id]);
+    this.router.navigate(['/tabs/person/details', person.id]);
   }
 
   refreshFastingPeople(event) {

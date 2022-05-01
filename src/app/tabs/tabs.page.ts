@@ -10,6 +10,6 @@ export class TabsPage {
   constructor(private router: Router) {}
 
   goStartScan() {
-    this.router.navigate(['/scan']);
+    this.router.navigate(['/tabs/scan']);
   }
 }

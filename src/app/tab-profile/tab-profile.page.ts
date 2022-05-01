@@ -1,12 +1,11 @@
 import { Component } from '@angular/core';
+import { AuthenticationService } from '../core/auth/authentication.service';
 
 @Component({
   selector: 'app-tab-profile',
   templateUrl: 'tab-profile.page.html',
-  styleUrls: ['tab-profile.page.scss']
+  styleUrls: ['tab-profile.page.scss'],
 })
 export class TabProfilePage {
-
-  constructor() {}
-
+  constructor(public authService: AuthenticationService) {}
 }
