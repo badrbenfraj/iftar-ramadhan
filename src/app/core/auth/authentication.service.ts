@@ -20,18 +20,7 @@ export class AuthenticationService {
     public router: Router,
     public ngZone: NgZone,
     private alertController: AlertController
-  ) {
-    this.ngFireAuth.authState.subscribe((user) => {
-      if (user) {
-        this.userData = user;
-        localStorage.setItem('user', JSON.stringify(this.userData));
-        JSON.parse(localStorage.getItem('user'));
-      } else {
-        localStorage.setItem('user', null);
-        JSON.parse(localStorage.getItem('user'));
-      }
-    });
-  }
+  ) {}
 
   // Returns true when user is looged in
   get isLoggedIn(): boolean {
@@ -42,6 +31,10 @@ export class AuthenticationService {
   get isEmailVerified(): boolean {
     const user = JSON.parse(localStorage.getItem('user'));
     return user.emailVerified !== false ? true : false;
+  }
+
+  getAuthState() {
+    return this.ngFireAuth.authState;
   }
 
   // Login in with email/password

@@ -1,23 +1,28 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../authentication.service';
-import { AlertController } from '@ionic/angular';
+import { AlertController, LoadingController } from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-login',
   templateUrl: './login.page.html',
   styleUrls: ['./login.page.scss'],
 })
-export class LoginPage implements OnInit {
+export class LoginPage implements OnInit, OnDestroy {
   loginForm: FormGroup;
+
   isSubmitted = false;
-  loading = false;
+
+  private destroy$ = new Subject();
 
   constructor(
     public authService: AuthenticationService,
     public router: Router,
     private alertController: AlertController,
+    private loadingController: LoadingController,
     private formBuilder: FormBuilder
   ) {}
 
@@ -32,37 +37,59 @@ export class LoginPage implements OnInit {
     });
   }
 
-  onSubmit() {
+  async onSubmit() {
     this.isSubmitted = true;
+    const loading = await this.loadingController.create();
+    await loading.present();
 
     // stop here if form is invalid
     if (this.loginForm.invalid) {
+      await loading.dismiss();
+
       return;
     }
-    this.loading = true;
+
     this.authService
       .signIn(this.form.email.value, this.form.password.value)
       .then((res) => {
-        this.loading = false;
-        if (this.authService.isEmailVerified) {
-          this.router.navigate(['tabs']);
-        } else {
-          this.presentAlert('Email is not verified');
-          return false;
-        }
+        this.authService
+          .getAuthState()
+          .pipe(takeUntil(this.destroy$))
+          .subscribe((user) => {
+            if (user) {
+              localStorage.setItem('user', JSON.stringify(user));
+              JSON.parse(localStorage.getItem('user'));
+            } else {
+              localStorage.setItem('user', null);
+              JSON.parse(localStorage.getItem('user'));
+            }
+
+            if (this.authService.isEmailVerified) {
+              this.router.navigate(['tabs']);
+            } else {
+              this.showAlert('Email is not verified');
+              return false;
+            }
+            this.isSubmitted = false;
+          });
       })
       .catch((error) => {
-        this.loading = false;
-        this.presentAlert(error.message);
+        this.showAlert(error.message);
       });
+    await loading.dismiss();
   }
 
-  async presentAlert(message) {
+  async showAlert(message) {
     const alert = await this.alertController.create({
       header: 'Warning',
       message,
       buttons: ['OK'],
     });
     await alert.present();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(true);
+    this.destroy$.complete();
   }
 }

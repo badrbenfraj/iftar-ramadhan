@@ -10,16 +10,25 @@
 <ion-content>
   <ion-grid>
     <ion-row>
-      <ion-col class="justify-align-center" *ngIf="data">
-        <ion-text>{{data.product.product_name}} </ion-text>
+      <ion-col class="justify-align-center" *ngIf="fastingPerson">
+        <ion-label
+          ><strong>First Name:</strong> {{fastingPerson.firstName}}
+        </ion-label>
+        <br />
+        <ion-label
+          ><strong>Last Name:</strong> {{fastingPerson.lastName}}</ion-label
+        >
+        <br />
+        <ion-label
+          ><strong>Number of people: </strong
+          >{{fastingPerson.fasting}}</ion-label
+        >
       </ion-col>
     </ion-row>
   </ion-grid>
-  <ion-button
-    color="success"
-    expand="full"
-    (click)="openBarCodeScanner()"
-    *ngIf="data"
-    >Scan code</ion-button
+  <ion-button color="success" expand="full" (click)="openBarCodeScanner()"
+    >Scan
+    <span *ngIf="fastingPerson" style="padding: 5px"> another </span>
+    code</ion-button
   >
 </ion-content>

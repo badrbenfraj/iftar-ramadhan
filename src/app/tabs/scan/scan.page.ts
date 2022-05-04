@@ -1,10 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { Http } from '@capacitor-community/http';
 import { BarcodeScanner } from '@ionic-native/barcode-scanner/ngx';
 import { AlertController, NavController } from '@ionic/angular';
-import { environment } from 'src/environments/environment';
-
-const BASE_PATH = environment.basePath;
+import { first } from 'rxjs/operators';
+import { FastingPerson } from 'src/app/core/model/fasting-person.model';
+import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 
 @Component({
   selector: 'app-scan',
@@ -12,12 +11,13 @@ const BASE_PATH = environment.basePath;
   styleUrls: ['scan.page.scss'],
 })
 export class ScanPage implements OnInit {
-  data = null;
+  fastingPerson: FastingPerson;
 
   constructor(
     private barcodeScanner: BarcodeScanner,
     private navCtl: NavController,
-    private alertController: AlertController
+    private alertController: AlertController,
+    private fastingPersonService: FastingPersonService
   ) {}
 
   ngOnInit(): void {
@@ -36,7 +36,7 @@ export class ScanPage implements OnInit {
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
-            this.getProductWithBarCode(scanCode);
+            this.getFastingPerson(scanCode);
           }
         } else {
           this.presentAlert();
@@ -51,18 +51,11 @@ export class ScanPage implements OnInit {
     this.navCtl.back();
   }
 
-  async getProductWithBarCode(barcode) {
-    const url = BASE_PATH + barcode + '.json';
-    const result = await Http.request({
-      method: 'GET',
-      url,
-      headers: {
-        'content-type': 'application/json',
-      },
-    });
-    if (result.data) {
-      this.data = result.data;
-    }
+  async getFastingPerson(id) {
+    this.fastingPersonService
+      .getFastingPersonById(id)
+      .pipe(first())
+      .subscribe((person: FastingPerson) => (this.fastingPerson = person));
   }
 
   async presentAlert() {

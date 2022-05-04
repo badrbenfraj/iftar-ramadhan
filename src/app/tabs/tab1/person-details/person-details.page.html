@@ -8,8 +8,14 @@
 </ion-header>
 
 <ion-content scroll-y="false">
-  <h1 class="ion-text-center">Details</h1>
-  <ion-refresher slot="fixed">
+  <ion-refresher slot="fixed" (ionRefresh)="refreshFastingPeople($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
+  <div *ngIf="fastingPerson">
+    <ion-label><strong>First Name:</strong> {{fastingPerson.firstName}} </ion-label>
+    <br>
+    <ion-label><strong>Last Name:</strong> {{fastingPerson.lastName}}</ion-label>
+    <br>
+    <ion-label><strong>Number of people: </strong>{{fastingPerson.fasting}}</ion-label>
+  </div>
 </ion-content>

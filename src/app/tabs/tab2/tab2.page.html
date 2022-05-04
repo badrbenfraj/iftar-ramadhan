@@ -7,19 +7,45 @@
   </ion-toolbar>
 </ion-header>
 <ion-content>
-  <form>
+  <form [formGroup]="fastingPersonForm" (ngSubmit)="onSubmit()" novalidate>
     <ion-item lines="full">
       <ion-label position="floating">First Name</ion-label>
-      <ion-input type="text" required></ion-input>
+      <ion-input type="text" formControlName="firstName"></ion-input>
     </ion-item>
+    <div *ngIf="form.firstName.errors">
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isSubmitted && form.firstName.errors?.required"
+      >
+        First name is <strong>required</strong>.
+      </span>
+    </div>
     <ion-item lines="full">
       <ion-label position="floating">Last Name</ion-label>
-      <ion-input type="text" required></ion-input>
+      <ion-input type="text" formControlName="lastName"></ion-input>
     </ion-item>
+    <div *ngIf="form.lastName.errors">
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isSubmitted && form.lastName.errors?.required"
+      >
+        Last name is <strong>required</strong>.
+      </span>
+    </div>
+
     <ion-item lines="full">
       <ion-label position="floating">Fasting People</ion-label>
-      <ion-input type="number" required></ion-input>
+      <ion-input type="number" formControlName="fasting"></ion-input>
     </ion-item>
+    <div *ngIf="form.fasting.errors">
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isSubmitted && form.fasting.errors?.required"
+      >
+        Fasting is <strong>required</strong>.
+      </span>
+    </div>
+
     <ion-row>
       <ion-col>
         <ion-button type="submit" expand="block">Add</ion-button>
