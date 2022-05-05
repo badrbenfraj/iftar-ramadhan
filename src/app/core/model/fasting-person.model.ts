@@ -3,4 +3,5 @@ export interface FastingPerson {
   firstName: string;
   lastName: string;
   fasting: number;
+  lastTakenMeal: string;
 }

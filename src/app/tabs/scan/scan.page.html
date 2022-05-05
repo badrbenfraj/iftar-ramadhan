@@ -23,11 +23,24 @@
           ><strong>Number of people: </strong
           >{{fastingPerson.fasting}}</ion-label
         >
+        <ion-label><strong>Meal taken: </strong></ion-label>
+        <ion-checkbox
+          disabled
+          [checked]="isMealTaken"
+          color="success"
+        ></ion-checkbox>
       </ion-col>
     </ion-row>
   </ion-grid>
-  <ion-button color="success" expand="full" (click)="openBarCodeScanner()"
-    >Scan
+  <ion-button
+    color="success"
+    expand="full"
+    (click)="confirmAndOpenBarCodeScanner()"
+  >
+    <span *ngIf="fastingPerson && !isMealTaken" style="padding: 5px">
+      Confirm and
+    </span>
+    Scan
     <span *ngIf="fastingPerson" style="padding: 5px"> another </span>
     code</ion-button
   >

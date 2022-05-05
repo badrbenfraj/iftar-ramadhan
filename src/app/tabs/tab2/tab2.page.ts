@@ -27,6 +27,7 @@ export class Tab2Page implements OnInit {
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       fasting: ['', [Validators.required]],
+      lastTakenMeal: ['', []],
     });
   }
 
@@ -40,12 +41,14 @@ export class Tab2Page implements OnInit {
     const firstName = this.form.firstName.value;
     const lastName = this.form.lastName.value;
     const fasting = this.form.fasting.value;
+    const lastTakenMeal = this.form.lastTakenMeal.value;
 
     this.fastingPersonService
       .addFastingPerson({
         firstName,
         lastName,
         fasting,
+        lastTakenMeal
       })
       .then(() => {
         this.isSubmitted = false;

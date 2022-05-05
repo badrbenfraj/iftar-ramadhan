@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { first } from 'rxjs/operators';
+import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 
 @Component({
@@ -9,7 +10,8 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
   styleUrls: ['person-details.page.scss'],
 })
 export class PersonDetailsPage implements OnInit {
-  fastingPerson: any;
+  fastingPerson: FastingPerson;
+  isMealTaken = false;
   constructor(
     private activeRoute: ActivatedRoute,
     private fastingPersonService: FastingPersonService
@@ -29,7 +31,18 @@ export class PersonDetailsPage implements OnInit {
       this.fastingPersonService
         .getFastingPersonById(params.id)
         .pipe(first())
-        .subscribe((person) => (this.fastingPerson = person));
+        .subscribe((person) => {
+          this.fastingPerson = person as FastingPerson;
+          this.isMealTaken =
+            new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
+            new Date().setHours(0, 0, 0, 0);
+        });
     });
+  }
+
+  confirmMealTaken() {
+    this.fastingPerson.lastTakenMeal = new Date().toISOString();
+    this.fastingPersonService.updateFastingPerson(this.fastingPerson);
+    this.getFastingPerson();
   }
 }

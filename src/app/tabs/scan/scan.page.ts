@@ -12,6 +12,7 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
 })
 export class ScanPage implements OnInit {
   fastingPerson: FastingPerson;
+  isMealTaken = false;
 
   constructor(
     private barcodeScanner: BarcodeScanner,
@@ -24,7 +25,7 @@ export class ScanPage implements OnInit {
     this.openBarCodeScanner();
   }
 
-  openBarCodeScanner() {
+  openBarCodeScanner(confirm?) {
     this.barcodeScanner
       .scan({
         disableSuccessBeep: true,
@@ -32,7 +33,7 @@ export class ScanPage implements OnInit {
         formats: 'QR_CODE',
       })
       .then((barcodeData) => {
-        //   Barcode data {"cancelled":0,"text":"8413384010008","format":"EAN_13"}
+        // Barcode data {"cancelled":0,"text":"8413384010008","format":"EAN_13"}
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
@@ -46,6 +47,30 @@ export class ScanPage implements OnInit {
         this.presentAlert();
       });
   }
+  confirmAndOpenBarCodeScanner() {
+    this.confirmMealTaken().then(() => {
+      this.barcodeScanner
+        .scan({
+          disableSuccessBeep: true,
+          resultDisplayDuration: 0,
+          formats: 'QR_CODE',
+        })
+        .then((barcodeData) => {
+          // Barcode data {"cancelled":0,"text":"8413384010008","format":"EAN_13"}
+          if (barcodeData) {
+            const scanCode = barcodeData.text;
+            if (scanCode) {
+              this.getFastingPerson(scanCode);
+            }
+          } else {
+            this.presentAlert();
+          }
+        })
+        .catch((err) => {
+          this.presentAlert();
+        });
+    });
+  }
 
   stopScan() {
     this.navCtl.back();
@@ -55,7 +80,21 @@ export class ScanPage implements OnInit {
     this.fastingPersonService
       .getFastingPersonById(id)
       .pipe(first())
-      .subscribe((person: FastingPerson) => (this.fastingPerson = person));
+      .subscribe((person) => {
+        this.fastingPerson = person as FastingPerson;
+        this.isMealTaken =
+          new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
+          new Date().setHours(0, 0, 0, 0);
+      });
+  }
+
+  async confirmMealTaken() {
+    if (this.fastingPerson) {
+      this.fastingPerson.lastTakenMeal = new Date().toISOString();
+      return await this.fastingPersonService.updateFastingPerson(
+        this.fastingPerson
+      );
+    }
   }
 
   async presentAlert() {

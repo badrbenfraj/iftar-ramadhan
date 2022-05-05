@@ -27,7 +27,10 @@ export class FastingPersonService {
     // return docData(fastingPersonDocRef, {
     //   idField: 'id',
     // }) as Observable<FastingPerson>;
-    return this.ngFirestore.collection(COLLECTION_NAME).doc(id).valueChanges();
+    return this.ngFirestore
+      .collection(COLLECTION_NAME)
+      .doc(id)
+      .valueChanges({ idField: 'id' });
   }
 
   addFastingPerson(fastingPerson: FastingPerson) {

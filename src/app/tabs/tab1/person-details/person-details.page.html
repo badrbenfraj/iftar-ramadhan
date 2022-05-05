@@ -12,10 +12,31 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <div *ngIf="fastingPerson">
-    <ion-label><strong>First Name:</strong> {{fastingPerson.firstName}} </ion-label>
-    <br>
-    <ion-label><strong>Last Name:</strong> {{fastingPerson.lastName}}</ion-label>
-    <br>
-    <ion-label><strong>Number of people: </strong>{{fastingPerson.fasting}}</ion-label>
+    <ion-label
+      ><strong>First Name:</strong> {{fastingPerson.firstName}}
+    </ion-label>
+    <br />
+    <ion-label
+      ><strong>Last Name:</strong> {{fastingPerson.lastName}}</ion-label
+    >
+    <br />
+    <ion-label
+      ><strong>Number of people: </strong>{{fastingPerson.fasting}}</ion-label
+    >
+    <br />
+    <ion-label><strong>Meal taken: </strong></ion-label>
+    <ion-checkbox
+      disabled
+      [checked]="isMealTaken"
+      color="success"
+    ></ion-checkbox>
+    <ion-row>
+      <ion-button
+        [disabled]="isMealTaken"
+        color="success"
+        (click)="confirmMealTaken()"
+        >Confirm Meal</ion-button
+      >
+    </ion-row>
   </div>
 </ion-content>
