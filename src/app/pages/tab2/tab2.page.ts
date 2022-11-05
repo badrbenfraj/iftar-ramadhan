@@ -68,7 +68,7 @@ export class Tab2Page implements OnInit {
       .then(() => {
         this.isSubmitted = false;
         this.fastingPersonForm.reset();
-        this.router.navigate(['tabs']);
+        this.router.navigate(['pages']);
         this.fastingPersonService.updateFastingPersonCount({
           'fasting-person-count': code,
         });

@@ -14,6 +14,7 @@ import { environment } from 'src/environments/environment';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { APP_BASE_HREF } from '@angular/common';
 
 const FIREBASE_CONFIG = environment.firebaseConfig;
 
@@ -34,6 +35,7 @@ const FIREBASE_CONFIG = environment.firebaseConfig;
   ],
   providers: [
     { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    { provide: APP_BASE_HREF, useValue: '/home' },
     BarcodeScanner,
   ],
   bootstrap: [AppComponent],

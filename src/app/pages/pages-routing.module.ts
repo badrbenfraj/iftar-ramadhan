@@ -1,11 +1,11 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { TabsPage } from './tabs.page';
+import { PagesPage } from './pages.page';
 
 const routes: Routes = [
   {
     path: '',
-    component: TabsPage,
+    component: PagesPage,
     children: [
       {
         path: 'list',
@@ -31,14 +31,14 @@ const routes: Routes = [
       },
       {
         path: '',
-        redirectTo: '/tabs/list',
+        redirectTo: '/pages/list',
         pathMatch: 'full',
       },
     ],
   },
   {
     path: '',
-    redirectTo: '/tabs/list',
+    redirectTo: '/pages/list',
     pathMatch: 'full',
   },
   {
@@ -58,4 +58,4 @@ const routes: Routes = [
 @NgModule({
   imports: [RouterModule.forChild(routes)],
 })
-export class TabsPageRoutingModule {}
+export class PagesPageRoutingModule {}
