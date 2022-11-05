@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
+import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 
@@ -29,6 +29,19 @@ export class Tab2Page implements OnInit {
       fasting: ['', [Validators.required]],
       lastTakenMeal: ['', []],
     });
+    this.fastingPersonService.getFastingPersonsCount().subscribe((settings) => {
+      const formControlField = {
+        name: 'code',
+        control: new FormControl(settings['fasting-person-count'] + 1, [
+          Validators.required,
+        ]),
+      };
+
+      this.fastingPersonForm.addControl(
+        formControlField.name,
+        formControlField.control
+      );
+    });
   }
 
   onSubmit() {
@@ -42,18 +55,23 @@ export class Tab2Page implements OnInit {
     const lastName = this.form.lastName.value;
     const fasting = this.form.fasting.value;
     const lastTakenMeal = this.form.lastTakenMeal.value;
+    const code = this.form.code.value;
 
     this.fastingPersonService
       .addFastingPerson({
+        code,
         firstName,
         lastName,
         fasting,
-        lastTakenMeal
+        lastTakenMeal,
       })
       .then(() => {
         this.isSubmitted = false;
         this.fastingPersonForm.reset();
         this.router.navigate(['tabs']);
+        this.fastingPersonService.updateFastingPersonCount({
+          'fasting-person-count': code,
+        });
       });
   }
 }

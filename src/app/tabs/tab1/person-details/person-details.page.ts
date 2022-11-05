@@ -29,10 +29,12 @@ export class PersonDetailsPage implements OnInit {
   async getFastingPerson() {
     this.activeRoute.params.pipe(first()).subscribe((params) => {
       this.fastingPersonService
-        .getFastingPersonById(params.id)
+        .getFastingPersonById(params.code)
         .pipe(first())
         .subscribe((person) => {
-          this.fastingPerson = person as FastingPerson;
+          this.fastingPerson = person.length
+            ? (person[0] as FastingPerson)
+            : undefined;
           this.isMealTaken =
             new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
             new Date().setHours(0, 0, 0, 0);

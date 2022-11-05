@@ -11,7 +11,7 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
   styleUrls: ['scan.page.scss'],
 })
 export class ScanPage implements OnInit {
-  fastingPerson: FastingPerson;
+  fastingPerson;
   isMealTaken = false;
 
   constructor(
@@ -56,7 +56,6 @@ export class ScanPage implements OnInit {
           formats: 'QR_CODE',
         })
         .then((barcodeData) => {
-          // Barcode data {"cancelled":0,"text":"8413384010008","format":"EAN_13"}
           if (barcodeData) {
             const scanCode = barcodeData.text;
             if (scanCode) {
@@ -76,12 +75,14 @@ export class ScanPage implements OnInit {
     this.navCtl.back();
   }
 
-  async getFastingPerson(id) {
+  async getFastingPerson(code) {
     this.fastingPersonService
-      .getFastingPersonById(id)
+      .getFastingPersonById(code)
       .pipe(first())
       .subscribe((person) => {
-        this.fastingPerson = person as FastingPerson;
+        this.fastingPerson = person.length
+          ? (person[0] as FastingPerson)
+          : undefined;
         this.isMealTaken =
           new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
           new Date().setHours(0, 0, 0, 0);

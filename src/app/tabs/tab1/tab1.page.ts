@@ -23,7 +23,7 @@ export class Tab1Page implements OnInit {
   }
 
   personDetails(person) {
-    this.router.navigate(['/tabs/person/details', person.id]);
+    this.router.navigate(['/tabs/person/details', person.code]);
   }
 
   refreshFastingPeople(event) {
