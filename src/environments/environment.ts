@@ -4,7 +4,6 @@
 
 export const environment = {
   production: false,
-  basePath: 'https://fr.openfoodfacts.org/api/v0/produit/',
   firebaseConfig: {
     apiKey: 'AIzaSyCQxeUSUi92eMpMUdPx-0m8iIs-GvQzwJg',
     authDomain: 'iftar-ramadan-eec3d.firebaseapp.com',
