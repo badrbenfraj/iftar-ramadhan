@@ -12,31 +12,31 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <div *ngIf="fastingPerson">
-    <ion-label
-      ><strong>First Name:</strong> {{fastingPerson.firstName}}
-    </ion-label>
-    <br />
-    <ion-label
-      ><strong>Last Name:</strong> {{fastingPerson.lastName}}</ion-label
+    <ion-item>
+      <ion-label>First Name:</ion-label>
+      <ion-label>{{ fastingPerson.firstName }} </ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-label>Last Name:</ion-label>
+      <ion-label>{{ fastingPerson.lastName }} </ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-label>Number of people:</ion-label>
+      <ion-label>{{ fastingPerson.fasting }} </ion-label>
+    </ion-item>
+    <ion-item>
+      <ion-label>Meal taken:</ion-label>
+      <ion-label> {{isMealTaken ? 'Yes':'Not yet!'}} </ion-label>
+    </ion-item>
+
+    <ion-button
+      shape="round"
+      expand="block"
+      [disabled]="isMealTaken"
+      color="primary"
+      (click)="confirmMealTaken()"
     >
-    <br />
-    <ion-label
-      ><strong>Number of people: </strong>{{fastingPerson.fasting}}</ion-label
-    >
-    <br />
-    <ion-label><strong>Meal taken: </strong></ion-label>
-    <ion-checkbox
-      disabled
-      [checked]="isMealTaken"
-      color="success"
-    ></ion-checkbox>
-    <ion-row>
-      <ion-button
-        [disabled]="isMealTaken"
-        color="success"
-        (click)="confirmMealTaken()"
-        >Confirm Meal</ion-button
-      >
-    </ion-row>
+      Confirm Meal
+    </ion-button>
   </div>
 </ion-content>
