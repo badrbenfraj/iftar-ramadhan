@@ -1,7 +1,10 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
-import { AlertController, LoadingController } from '@ionic/angular';
+import {
+  AlertController,
+  LoadingController,
+  NavController,
+} from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { AuthenticationService } from '../authentication.service';
 
@@ -19,11 +22,15 @@ export class RegistrationPage implements OnInit, OnDestroy {
 
   constructor(
     public authService: AuthenticationService,
-    public router: Router,
+    private navController: NavController,
     private alertController: AlertController,
     private loadingController: LoadingController,
     private formBuilder: FormBuilder
-  ) {}
+  ) {
+    if (this.authService.isLoggedIn) {
+      this.navController.navigateRoot(['/pages/list']);
+    }
+  }
 
   get form() {
     return this.registerForm.controls;
@@ -48,7 +55,10 @@ export class RegistrationPage implements OnInit, OnDestroy {
       return;
     }
     this.authService
-      .registerUser(this.form.email.value, this.form.password.value)
+      .registerUser(
+        this.form.email.value,
+        this.form.password.value
+      )
       .then((res) => {
         // Do something here
         this.authService.sendVerificationMail();

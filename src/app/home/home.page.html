@@ -1,5 +1,5 @@
 <ion-content>
-  <div class="home">
+  <div class="home" *ngIf="!authService.isLoggedIn">
     <div id="header">
       <img src="assets/ramadan.png" alt="ramadan" />
     </div>

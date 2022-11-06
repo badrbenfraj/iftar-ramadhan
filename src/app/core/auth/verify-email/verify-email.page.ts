@@ -1,4 +1,6 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { NavController } from '@ionic/angular';
 import { AuthenticationService } from '../authentication.service';
 
 @Component({
@@ -7,7 +9,14 @@ import { AuthenticationService } from '../authentication.service';
   styleUrls: ['./verify-email.page.scss'],
 })
 export class VerifyEmailPage implements OnInit {
-  constructor(public authService: AuthenticationService) {}
+  constructor(
+    private navController: NavController,
+    public authService: AuthenticationService
+  ) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    if (this.authService.isLoggedIn) {
+      this.navController.navigateRoot(['/pages/list']);
+    }
+  }
 }

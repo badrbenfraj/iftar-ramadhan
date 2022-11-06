@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { PreloadAllModules, RouterModule, Routes } from '@angular/router';
+import { AuthGuard } from '@auth/auth.guard';
 
 const routes: Routes = [
   {
@@ -9,6 +10,7 @@ const routes: Routes = [
   },
   {
     path: 'pages',
+    canActivate: [AuthGuard],
     loadChildren: () =>
       import('./pages/pages.module').then((m) => m.PagesPageModule),
   },
@@ -22,9 +24,7 @@ const routes: Routes = [
   {
     path: 'login',
     loadChildren: () =>
-      import('./core/auth/login/login.module').then(
-        (m) => m.LoginPageModule
-      ),
+      import('./core/auth/login/login.module').then((m) => m.LoginPageModule),
   },
   {
     path: 'verify-email',
@@ -35,7 +35,10 @@ const routes: Routes = [
   },
   {
     path: 'password-reset',
-    loadChildren: () => import('./core/auth/password-reset/password-reset.module').then( m => m.PasswordResetPageModule)
+    loadChildren: () =>
+      import('./core/auth/password-reset/password-reset.module').then(
+        (m) => m.PasswordResetPageModule
+      ),
   },
   {
     path: '',

@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { NavController } from '@ionic/angular';
 import { AuthenticationService } from '../authentication.service';
 
 @Component({
@@ -7,7 +8,13 @@ import { AuthenticationService } from '../authentication.service';
   styleUrls: ['./password-reset.page.scss'],
 })
 export class PasswordResetPage implements OnInit {
-  constructor(public authService: AuthenticationService) {}
+  constructor(
+    private navController: NavController,
+    public authService: AuthenticationService) {}
 
-  ngOnInit() {}
+  ngOnInit() {
+    if (this.authService.isLoggedIn) {
+      this.navController.navigateRoot(['/pages/list']);
+    }
+  }
 }

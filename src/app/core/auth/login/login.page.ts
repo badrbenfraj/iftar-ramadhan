@@ -1,7 +1,11 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthenticationService } from '../authentication.service';
-import { AlertController, LoadingController } from '@ionic/angular';
+import {
+  AlertController,
+  LoadingController,
+  NavController,
+} from '@ionic/angular';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
@@ -21,10 +25,15 @@ export class LoginPage implements OnInit, OnDestroy {
   constructor(
     public authService: AuthenticationService,
     public router: Router,
+    private navController: NavController,
     private alertController: AlertController,
     private loadingController: LoadingController,
     private formBuilder: FormBuilder
-  ) {}
+  ) {
+    if (this.authService.isLoggedIn) {
+      this.navController.navigateRoot(['/pages/list']);
+    }
+  }
 
   get form() {
     return this.loginForm.controls;
@@ -65,7 +74,7 @@ export class LoginPage implements OnInit, OnDestroy {
             }
 
             if (this.authService.isEmailVerified) {
-              this.router.navigate(['pages']);
+              this.navController.navigateRoot(['pages']);
             } else {
               this.showAlert('Email is not verified');
               return false;

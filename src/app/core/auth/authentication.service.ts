@@ -3,7 +3,7 @@ import * as auth from 'firebase/auth';
 import { User } from './model/user';
 import { Router } from '@angular/router';
 import { AngularFireAuth } from '@angular/fire/compat/auth';
-import { AlertController } from '@ionic/angular';
+import { AlertController, NavController } from '@ionic/angular';
 import {
   AngularFirestore,
   AngularFirestoreDocument,
@@ -17,6 +17,7 @@ export class AuthenticationService {
   constructor(
     public afStore: AngularFirestore,
     public ngFireAuth: AngularFireAuth,
+    private navController: NavController,
     public router: Router,
     public ngZone: NgZone,
     private alertController: AlertController
@@ -25,7 +26,7 @@ export class AuthenticationService {
   // Returns true when user is looged in
   get isLoggedIn(): boolean {
     const user = JSON.parse(localStorage.getItem('user'));
-    return user !== null && user.emailVerified !== false ? true : false;
+    return user !== null && user.emailVerified !== false;
   }
   // Returns true when user's email is verified
   get isEmailVerified(): boolean {
@@ -77,7 +78,7 @@ export class AuthenticationService {
       .signInWithPopup(provider)
       .then((result) => {
         this.ngZone.run(() => {
-          this.router.navigate(['tabs']);
+          this.navController.navigateRoot(['pages']);
         });
         this.setUserData(result.user);
       })
@@ -105,7 +106,7 @@ export class AuthenticationService {
   signOut() {
     return this.ngFireAuth.signOut().then(() => {
       localStorage.removeItem('user');
-      this.router.navigate(['login']);
+      this.navController.navigateRoot(['/']);
     });
   }
 
