@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { filter, map } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
+import { PDFGenerator } from '@awesome-cordova-plugins/pdf-generator/ngx';
 
 @Component({
   selector: 'app-tab3',
@@ -9,9 +10,13 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
   styleUrls: ['tab3.page.scss'],
 })
 export class Tab3Page implements OnInit {
+  content: string;
   fastingPersonsList: FastingPerson[] = [];
 
-  constructor(private fastingPersonService: FastingPersonService) {}
+  constructor(
+    private fastingPersonService: FastingPersonService,
+    private pdfGenerator: PDFGenerator
+  ) {}
 
   ngOnInit(): void {
     this.getFastionsPersonsList();
@@ -38,5 +43,17 @@ export class Tab3Page implements OnInit {
       fastingPeople += person.fasting;
     }
     return fastingPeople;
+  }
+
+  downloadPDF() {
+    this.content = document.getElementById('PrintStats').innerHTML;
+
+    const options = {
+      type: 'share',
+      fileName: `statistics_${new Date().getDate()}_${new Date().getMonth()}_${new Date().getFullYear()}.pdf`,
+    };
+    this.pdfGenerator
+      .fromData(this.content, options)
+      .then((base64String) => console.log(base64String));
   }
 }
