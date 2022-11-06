@@ -14,20 +14,51 @@
     <img src="assets/ramadan.png" alt="ramadan" />
   </div>
   <form [formGroup]="registerForm" id="form" (ngSubmit)="onSubmit()" novalidate>
-    <ion-item class="ion-margin-bottom">
+    <ion-item
+      class="ion-margin-bottom"
+      [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
+    >
       <ion-input
         formControlName="email"
         type="email"
         placeholder="Email"
       ></ion-input>
     </ion-item>
-    <ion-item class="ion-margin-bottom">
+    <div *ngIf="isSubmitted && form.email.errors">
+      <span
+        class="is-invalid"
+        *ngIf="isSubmitted && form.email.errors?.required"
+      >
+        Email is <strong>required</strong>.
+      </span>
+      <span class="is-invalid" *ngIf="isSubmitted && form.email.errors?.email">
+        Should be a valid email.
+      </span>
+    </div>
+    <ion-item
+      class="ion-margin-bottom"
+      [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
+    >
       <ion-input
         formControlName="password"
         type="password"
         placeholder="Password"
       ></ion-input>
     </ion-item>
+    <div *ngIf="isSubmitted && form.password.errors">
+      <span
+        class="is-invalid"
+        *ngIf="isSubmitted && form.password.errors?.required"
+      >
+        Password is <strong>required</strong>.
+      </span>
+      <span
+        class="ion-invalid"
+        *ngIf="isSubmitted && form.password.errors?.minLength"
+      >
+        Min length 8 characters.
+      </span>
+    </div>
     <ion-button type="submit" expand="block" shape="round">Sign Up</ion-button>
   </form>
 </ion-content>
