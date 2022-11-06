@@ -65,7 +65,7 @@ export class LoginPage implements OnInit, OnDestroy {
             }
 
             if (this.authService.isEmailVerified) {
-              this.router.navigate(['tabs']);
+              this.router.navigate(['pages']);
             } else {
               this.showAlert('Email is not verified');
               return false;

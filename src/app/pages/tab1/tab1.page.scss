@@ -1,8 +1,12 @@
 .virtual-scroll {
-    overflow-y: auto;
-    height: 60vh;
+  overflow-y: auto;
+  height: 60vh;
 }
 
 ion-refresher {
-    margin-top: 4vh;
+  margin-top: 4vh;
+}
+
+ion-label.code {
+  max-width: 15%;
 }

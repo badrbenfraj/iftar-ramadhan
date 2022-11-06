@@ -1,93 +1,64 @@
-<ion-header>
+<ion-header class="ion-no-border">
   <ion-toolbar>
     <ion-buttons slot="start">
       <ion-back-button></ion-back-button>
     </ion-buttons>
-    <ion-title>Sign in User</ion-title>
+    <ion-buttons slot="end">
+      <ion-button [routerLink]="['/register']">Sign up</ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
 <ion-content>
-  <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" novalidate>
+  <div id="header">
+    <img src="assets/ramadan.png" alt="ramadan" />
+  </div>
+  <form [formGroup]="loginForm" id="form" (ngSubmit)="onSubmit()" novalidate>
     <ion-item
-      lines="full"
+      class="ion-margin-bottom"
       [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
     >
-      <ion-label position="floating">Email</ion-label>
-      <ion-input formControlName="email" type="email"></ion-input>
+      <ion-input
+        formControlName="email"
+        type="email"
+        placeholder="Email"
+      ></ion-input>
     </ion-item>
     <div *ngIf="isSubmitted && form.email.errors">
       <span
-        class="is-invalid ion-padding"
+        class="is-invalid"
         *ngIf="isSubmitted && form.email.errors?.required"
       >
         Email is <strong>required</strong>.
       </span>
-      <span
-        class="is-invalid ion-padding"
-        *ngIf="isSubmitted && form.email.errors?.email"
-      >
+      <span class="is-invalid" *ngIf="isSubmitted && form.email.errors?.email">
         Should be a valid email.
       </span>
     </div>
-
     <ion-item
-      lines="full"
+      class="ion-margin-bottom"
       [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
     >
-      <ion-label position="floating">Password</ion-label>
       <ion-input
-        [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
-        type="password"
         formControlName="password"
+        type="password"
+        placeholder="Password"
       ></ion-input>
     </ion-item>
     <div *ngIf="isSubmitted && form.password.errors">
       <span
-        class="is-invalid ion-padding"
+        class="is-invalid"
         *ngIf="isSubmitted && form.password.errors?.required"
       >
         Password is <strong>required</strong>.
       </span>
       <span
-        class="ion-invalid ion-padding"
+        class="ion-invalid"
         *ngIf="isSubmitted && form.password.errors?.minLength"
       >
         Min length 8 characters.
       </span>
     </div>
-
-    <ion-row>
-      <ion-col>
-        <ion-button type="submit" expand="block" 
-          >Login
-        </ion-button>
-      </ion-col>
-    </ion-row>
-
-    <ion-row>
-      <ion-col>
-        <ion-button
-          expand="block"
-          color="warning"
-          [routerLink]="['/password-reset']"
-        >
-          Password Reset
-        </ion-button>
-      </ion-col>
-    </ion-row>
-
-    <ion-row>
-      <ion-col>
-        <ion-button
-          type="submit"
-          color="danger"
-          (click)="authService.googleAuth()"
-          expand="block"
-        >
-          Login with Google
-        </ion-button>
-      </ion-col>
-    </ion-row>
+    <ion-button type="submit" expand="block" shape="round">Login</ion-button>
   </form>
 </ion-content>
