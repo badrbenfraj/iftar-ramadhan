@@ -1,5 +1,9 @@
 [
 	{
+		"pkg": "@capacitor-community/app-icon",
+		"classpath": "com.mycompany.plugins.example.AppIconPlugin"
+	},
+	{
 		"pkg": "@capacitor-community/http",
 		"classpath": "com.getcapacitor.plugin.http.Http"
 	},
