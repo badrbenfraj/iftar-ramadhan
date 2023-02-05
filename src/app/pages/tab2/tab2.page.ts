@@ -12,7 +12,14 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
 })
 export class Tab2Page implements OnInit, OnDestroy {
   fastingPersonForm;
+
+  bulkMealsForm;
+
+  bulkMode = false;
+
   isSubmitted: boolean;
+
+  isBulkSubmitted: boolean;
 
   private destroy$ = new Subject();
 
@@ -26,6 +33,10 @@ export class Tab2Page implements OnInit, OnDestroy {
     return this.fastingPersonForm.controls;
   }
 
+  get bulkForm() {
+    return this.bulkMealsForm.controls;
+  }
+
   ngOnInit() {
     this.fastingPersonForm = this.formBuilder.group({
       firstName: ['', [Validators.required]],
@@ -34,6 +45,13 @@ export class Tab2Page implements OnInit, OnDestroy {
       singleMeal: [null, [Validators.required]],
       lastTakenMeal: ['', []],
     });
+
+    this.bulkMealsForm = this.formBuilder.group({
+      familyMeal: [null, [Validators.required]],
+      singleMeal: [null, [Validators.required]],
+      lastTakenMeal: ['', []],
+    });
+
     this.fastingPersonService
       .getFastingPersonsCount()
       .pipe(takeUntil(this.destroy$))
@@ -93,6 +111,8 @@ export class Tab2Page implements OnInit, OnDestroy {
       .then(() => {
         this.isSubmitted = false;
         this.fastingPersonForm.reset();
+        this.bulkMealsForm.reset();
+        this.bulkMode = false;
         this.router.navigate(['pages']);
         this.fastingPersonService.updateFastingPersonCount({
           'fasting-person-count': code,
@@ -110,6 +130,35 @@ export class Tab2Page implements OnInit, OnDestroy {
     } else {
       return false;
     }
+  }
+
+  onBulkSubmit() {
+    this.isBulkSubmitted = true;
+
+    if (this.bulkMealsForm.invalid) {
+      return;
+    }
+
+    const familyMeal = this.bulkForm.familyMeal.value;
+    const singleMeal = this.bulkForm.singleMeal.value;
+    const lastTakenMeal = this.bulkForm.lastTakenMeal.value;
+
+    this.fastingPersonService
+      .addBulkMeals({
+        singleMeal,
+        familyMeal,
+        lastTakenMeal,
+      })
+      .then(() => {
+        this.isBulkSubmitted = false;
+        this.fastingPersonForm.reset();
+        this.bulkMealsForm.reset();
+        this.router.navigate(['pages']);
+      });
+  }
+
+  changeMode() {
+    this.bulkMode = !this.bulkMode;
   }
 
   ngOnDestroy(): void {

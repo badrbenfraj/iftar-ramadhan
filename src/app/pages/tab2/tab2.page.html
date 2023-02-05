@@ -3,11 +3,27 @@
     <ion-buttons slot="start">
       <ion-back-button></ion-back-button>
     </ion-buttons>
-    <ion-title>Add new person</ion-title>
+
+    <ion-title *ngIf="bulkMode">Add Meals</ion-title>
+    <ion-title *ngIf="!bulkMode">Add new person</ion-title>
+
+    <ion-buttons slot="end">
+      <ion-button *ngIf="!bulkMode" (click)="changeMode()"
+        >Bluk mode</ion-button
+      >
+      <ion-button *ngIf="bulkMode" (click)="changeMode()"
+        >Normal mode</ion-button
+      >
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 <ion-content>
-  <form [formGroup]="fastingPersonForm" (ngSubmit)="onSubmit()" novalidate>
+  <form
+    *ngIf="!bulkMode"
+    [formGroup]="fastingPersonForm"
+    (ngSubmit)="onSubmit()"
+    novalidate
+  >
     <ion-item lines="full">
       <ion-label position="floating">First Name</ion-label>
       <ion-input type="text" formControlName="firstName"></ion-input>
@@ -75,6 +91,58 @@
       <ion-col>
         <ion-button type="submit" shape="round" expand="block"
           >Add new person</ion-button
+        >
+      </ion-col>
+    </ion-row>
+  </form>
+  <form
+    *ngIf="bulkMode"
+    [formGroup]="bulkMealsForm"
+    (ngSubmit)="onBulkSubmit()"
+    novalidate
+  >
+    <ion-item lines="full">
+      <ion-label position="floating">Signle meal</ion-label>
+      <ion-input type="number" formControlName="singleMeal"></ion-input>
+    </ion-item>
+    <div *ngIf="bulkForm.singleMeal.errors">
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isBulkSubmitted && bulkForm.singleMeal.errors?.required"
+      >
+        Single meal is <strong>required</strong>.
+      </span>
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isBulkSubmitted && bulkForm.singleMeal?.errors?.incorrect"
+      >
+        Single meal or Family meal should be <strong>greater than 0</strong>.
+      </span>
+    </div>
+
+    <ion-item lines="full">
+      <ion-label position="floating">Family meal</ion-label>
+      <ion-input type="number" formControlName="familyMeal"></ion-input>
+    </ion-item>
+    <div *ngIf="bulkForm.familyMeal.errors">
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isBulkSubmitted && bulkForm.familyMeal.errors?.required"
+      >
+        Family meal is <strong>required</strong>.
+      </span>
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isBulkSubmitted && bulkForm.familyMeal?.errors?.incorrect"
+      >
+        Single meal or Family meal should be <strong>greater than 0</strong>.
+      </span>
+    </div>
+
+    <ion-row>
+      <ion-col>
+        <ion-button type="submit" shape="round" expand="block"
+          >Add meals</ion-button
         >
       </ion-col>
     </ion-row>

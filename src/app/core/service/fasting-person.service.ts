@@ -7,6 +7,7 @@ import { filter, map, tap } from 'rxjs/operators';
 import { FastingPerson } from '../model/fasting-person.model';
 
 const COLLECTION_NAME = 'fasting-person';
+const COLLECTION_BULK_NAME = 'bulk-meals';
 
 @Injectable({
   providedIn: 'root',
@@ -61,6 +62,10 @@ export class FastingPersonService {
       .collection(COLLECTION_NAME)
       .doc(fastingPerson.id)
       .update(fastingPerson);
+  }
+
+  addBulkMeals(meals) {
+    return this.firestore.collection(COLLECTION_BULK_NAME).add(meals);
   }
 
   private async deleteItems(items) {
