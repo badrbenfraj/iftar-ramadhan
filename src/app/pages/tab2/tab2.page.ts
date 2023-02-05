@@ -49,7 +49,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     this.bulkMealsForm = this.formBuilder.group({
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
-      lastTakenMeal: ['', []],
+      creationDate: [new Date(), []],
     });
 
     this.fastingPersonService
@@ -80,11 +80,11 @@ export class Tab2Page implements OnInit, OnDestroy {
       this.form.familyMeal.setErrors({ incorrect: true });
     }
 
-    if (this.form.singleMeal?.value > 0) {
+    if (this.form.singleMeal?.value > 0 && !this.form.familyMeal?.value) {
       this.form.familyMeal.patchValue(0);
     }
 
-    if (this.form.familyMeal?.value > 0) {
+    if (this.form.familyMeal?.value > 0 && !this.form.singleMeal?.value) {
       this.form.singleMeal.patchValue(0);
     }
 
@@ -112,7 +112,6 @@ export class Tab2Page implements OnInit, OnDestroy {
         this.isSubmitted = false;
         this.fastingPersonForm.reset();
         this.bulkMealsForm.reset();
-        this.bulkMode = false;
         this.router.navigate(['pages']);
         this.fastingPersonService.updateFastingPersonCount({
           'fasting-person-count': code,
@@ -135,24 +134,47 @@ export class Tab2Page implements OnInit, OnDestroy {
   onBulkSubmit() {
     this.isBulkSubmitted = true;
 
+    if (this.bulkForm.singleMeal?.value === 0) {
+      this.bulkForm.singleMeal.setErrors({ incorrect: true });
+    }
+
+    if (this.bulkForm.familyMeal?.value === 0) {
+      this.bulkForm.familyMeal.setErrors({ incorrect: true });
+    }
+
+    if (
+      this.bulkForm.singleMeal?.value > 0 &&
+      !this.bulkForm.familyMeal?.value
+    ) {
+      this.bulkForm.familyMeal.patchValue(0);
+    }
+
+    if (
+      this.bulkForm.familyMeal?.value > 0 &&
+      !this.bulkForm.singleMeal?.value
+    ) {
+      this.bulkForm.singleMeal.patchValue(0);
+    }
+
     if (this.bulkMealsForm.invalid) {
       return;
     }
 
     const familyMeal = this.bulkForm.familyMeal.value;
     const singleMeal = this.bulkForm.singleMeal.value;
-    const lastTakenMeal = this.bulkForm.lastTakenMeal.value;
+    const creationDate = new Date(new Date().setHours(0, 0, 0, 0));
 
     this.fastingPersonService
       .addBulkMeals({
         singleMeal,
         familyMeal,
-        lastTakenMeal,
+        creationDate,
       })
       .then(() => {
         this.isBulkSubmitted = false;
         this.fastingPersonForm.reset();
         this.bulkMealsForm.reset();
+        this.bulkMode = false;
         this.router.navigate(['pages']);
       });
   }

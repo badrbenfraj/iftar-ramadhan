@@ -68,6 +68,14 @@ export class FastingPersonService {
     return this.firestore.collection(COLLECTION_BULK_NAME).add(meals);
   }
 
+  getStatisticsByDate(creationDate: Date): Observable<any[]> {
+    return this.firestore
+      .collection(COLLECTION_BULK_NAME, (ref) =>
+        ref.where('creationDate', '==', creationDate)
+      )
+      .valueChanges({ idField: 'id' });
+  }
+
   private async deleteItems(items) {
     items.forEach(async (item) => {
       await this.deleteFastingPerson(item);
