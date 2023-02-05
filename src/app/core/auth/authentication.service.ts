@@ -34,6 +34,10 @@ export class AuthenticationService {
     return user.emailVerified;
   }
 
+  get loggedUser(): User {
+    return JSON.parse(localStorage.getItem('user'));
+  }
+
   getAuthState() {
     return this.ngFireAuth.authState;
   }

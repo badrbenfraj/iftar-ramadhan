@@ -7,16 +7,8 @@
 <ion-content padding class="animated fadeIn common-bg">
   <ion-card no-margin margin-bottom class="full-width">
     <ion-item>
-      <ion-label position="floating">Email</ion-label>
-      <ion-input ></ion-input>
-    </ion-item>
-    <ion-item>
-      <ion-label position="floating">Password</ion-label>
-      <ion-input ></ion-input>
-    </ion-item>
-    <ion-item>
-      <ion-label position="floating">Email</ion-label>
-      <ion-input ></ion-input>
+      <ion-label>Email</ion-label>
+      <ion-label>{{ loggedUser?.email }}</ion-label>
     </ion-item>
   </ion-card>
   <ion-button (click)="logOut()">logout</ion-button>

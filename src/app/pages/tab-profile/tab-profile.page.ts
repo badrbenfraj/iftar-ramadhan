@@ -9,6 +9,10 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
 export class TabProfilePage {
   constructor(private authenticationService: AuthenticationService) {}
 
+  get loggedUser() {
+    return this.authenticationService.loggedUser;
+  }
+
   logOut() {
     this.authenticationService.signOut();
   }

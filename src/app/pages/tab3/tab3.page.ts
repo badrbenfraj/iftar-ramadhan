@@ -95,8 +95,8 @@ export class Tab3Page implements OnInit {
     const firstday = curr.getDate() - curr.getDay() + 1;
     const lastday = firstday + 6;
 
-    new Date(curr.setDate(firstday)).toUTCString();
-    new Date(curr.setDate(lastday)).toUTCString();
+    new Date(curr.setDate(firstday));
+    new Date(curr.setDate(lastday));
   }
 
   downloadPDF() {
