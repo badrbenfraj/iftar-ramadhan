@@ -3,6 +3,7 @@ export interface FastingPerson {
   code: number;
   firstName: string;
   lastName: string;
-  fasting: number;
+  singleMeal: number;
+  familyMeal: number;
   lastTakenMeal: string;
 }

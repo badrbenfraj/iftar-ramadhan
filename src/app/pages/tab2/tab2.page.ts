@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { FormBuilder, FormControl, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Subject } from 'rxjs';
+import { first, takeUntil } from 'rxjs/operators';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 
 @Component({
@@ -8,9 +10,11 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
   templateUrl: 'tab2.page.html',
   styleUrls: ['tab2.page.scss'],
 })
-export class Tab2Page implements OnInit {
+export class Tab2Page implements OnInit, OnDestroy {
   fastingPersonForm;
   isSubmitted: boolean;
+
+  private destroy$ = new Subject();
 
   constructor(
     private fastingPersonService: FastingPersonService,
@@ -26,26 +30,45 @@ export class Tab2Page implements OnInit {
     this.fastingPersonForm = this.formBuilder.group({
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
-      fasting: ['', [Validators.required]],
+      familyMeal: [null, [Validators.required]],
+      singleMeal: [null, [Validators.required]],
       lastTakenMeal: ['', []],
     });
-    this.fastingPersonService.getFastingPersonsCount().subscribe((settings) => {
-      const formControlField = {
-        name: 'code',
-        control: new FormControl(settings['fasting-person-count'] + 1, [
-          Validators.required,
-        ]),
-      };
+    this.fastingPersonService
+      .getFastingPersonsCount()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((settings) => {
+        const formControlField = {
+          name: 'code',
+          control: new FormControl(settings['fasting-person-count'] + 1, [
+            Validators.required,
+          ]),
+        };
 
-      this.fastingPersonForm.addControl(
-        formControlField.name,
-        formControlField.control
-      );
-    });
+        this.fastingPersonForm.addControl(
+          formControlField.name,
+          formControlField.control
+        );
+      });
   }
 
   onSubmit() {
     this.isSubmitted = true;
+    if (this.form.singleMeal?.value === 0) {
+      this.form.singleMeal.setErrors({ incorrect: true });
+    }
+
+    if (this.form.familyMeal?.value === 0) {
+      this.form.familyMeal.setErrors({ incorrect: true });
+    }
+
+    if (this.form.singleMeal?.value > 0) {
+      this.form.familyMeal.patchValue(0);
+    }
+
+    if (this.form.familyMeal?.value > 0) {
+      this.form.singleMeal.patchValue(0);
+    }
 
     if (this.fastingPersonForm.invalid) {
       return;
@@ -53,7 +76,8 @@ export class Tab2Page implements OnInit {
 
     const firstName = this.form.firstName.value;
     const lastName = this.form.lastName.value;
-    const fasting = this.form.fasting.value;
+    const familyMeal = this.form.familyMeal.value;
+    const singleMeal = this.form.singleMeal.value;
     const lastTakenMeal = this.form.lastTakenMeal.value;
     const code = this.form.code.value;
 
@@ -62,7 +86,8 @@ export class Tab2Page implements OnInit {
         code,
         firstName,
         lastName,
-        fasting,
+        singleMeal,
+        familyMeal,
         lastTakenMeal,
       })
       .then(() => {
@@ -73,5 +98,22 @@ export class Tab2Page implements OnInit {
           'fasting-person-count': code,
         });
       });
+  }
+
+  validateMealForm() {
+    if (
+      this.form.singleMeal?.value === 0 ||
+      this.form.familyMeal?.value === 0
+    ) {
+      this.form.controls.singleMeal.setErrors({ incorrect: true });
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next(true);
+    this.destroy$.complete();
   }
 }
