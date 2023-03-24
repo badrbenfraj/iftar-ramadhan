@@ -5,6 +5,9 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
+  <ion-refresher slot="fixed" (ionRefresh)="refreshStats($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
   <div #content id="PrintStats">
     <ion-item>
       <ion-label>Number of Family meals:</ion-label>

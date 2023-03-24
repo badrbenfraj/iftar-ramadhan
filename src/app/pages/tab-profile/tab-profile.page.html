@@ -1,14 +1,14 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title> Tab Profile </ion-title>
+    <ion-title> Profile </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content padding class="animated fadeIn common-bg">
   <ion-card no-margin margin-bottom class="full-width">
     <ion-item>
-      <ion-label>Email</ion-label>
-      <ion-label>{{ loggedUser?.email }}</ion-label>
+      <ion-label class="email">Email: </ion-label>
+      <ion-label>{{ loggedUser.email }}</ion-label>
     </ion-item>
   </ion-card>
   <ion-button (click)="logOut()">logout</ion-button>

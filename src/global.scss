@@ -46,3 +46,7 @@ ion-header {
 ion-spinner {
   margin-left: 10px;
 }
+
+.alert-button.sc-ion-alert-md.ion-color-danger.alert-button-role-cancel {
+  color: var(--ion-color-danger, #eb445a) !important;
+}

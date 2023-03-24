@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { BarcodeScanner } from '@ionic-native/barcode-scanner/ngx';
 import { AlertController, NavController } from '@ionic/angular';
 import { first } from 'rxjs/operators';
@@ -18,6 +19,7 @@ export class ScanPage implements OnInit {
     private barcodeScanner: BarcodeScanner,
     private navCtl: NavController,
     private alertController: AlertController,
+    private router: Router,
     private fastingPersonService: FastingPersonService
   ) {}
 
@@ -105,5 +107,9 @@ export class ScanPage implements OnInit {
       buttons: ['OK'],
     });
     await alert.present();
+  }
+
+  editPersonDetails(person) {
+    this.router.navigate(['/pages/person/edit', person.code]);
   }
 }

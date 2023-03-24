@@ -10,7 +10,14 @@ const routes: Routes = [
   {
     path: 'details/:code',
     component: PersonDetailsPage,
-  }
+  },
+  {
+    path: 'edit',
+    loadChildren: () =>
+      import('./edit-person-details/edit-person-details.module').then(
+        (m) => m.EditPersonDetailsModule
+      ),
+  },
 ];
 
 @NgModule({

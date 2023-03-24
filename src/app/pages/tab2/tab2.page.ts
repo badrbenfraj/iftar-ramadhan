@@ -1,8 +1,13 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormControl, Validators } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
-import { first, takeUntil } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 
 @Component({
@@ -11,7 +16,7 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
   styleUrls: ['tab2.page.scss'],
 })
 export class Tab2Page implements OnInit, OnDestroy {
-  fastingPersonForm;
+  fastingPersonForm: FormGroup;
 
   bulkMealsForm;
 
@@ -54,7 +59,7 @@ export class Tab2Page implements OnInit, OnDestroy {
 
     this.fastingPersonService
       .getFastingPersonsCount()
-      .pipe(takeUntil(this.destroy$))
+      .pipe(take(1))
       .subscribe((settings) => {
         const formControlField = {
           name: 'code',
@@ -116,6 +121,15 @@ export class Tab2Page implements OnInit, OnDestroy {
         this.fastingPersonService.updateFastingPersonCount({
           'fasting-person-count': code,
         });
+
+        this.fastingPersonService
+          .getFastingPersonsCount()
+          .pipe(take(1))
+          .subscribe((settings) => {
+            this.fastingPersonForm.patchValue({
+              code: settings['fasting-person-count'] + 1,
+            });
+          });
       });
   }
 
@@ -124,7 +138,7 @@ export class Tab2Page implements OnInit, OnDestroy {
       this.form.singleMeal?.value === 0 ||
       this.form.familyMeal?.value === 0
     ) {
-      this.form.controls.singleMeal.setErrors({ incorrect: true });
+      this.form.controls.get('singleMeal').setErrors({ incorrect: true });
       return true;
     } else {
       return false;

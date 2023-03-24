@@ -114,4 +114,15 @@ export class Tab3Page implements OnInit {
       .fromData(this.content, options)
       .then((base64String) => console.log(base64String));
   }
+
+  refreshStats(event) {
+    this.getFastionsPersonsList();
+    this.fastingPersonService
+      .getStatisticsByDate(new Date(new Date().setHours(0, 0, 0, 0)))
+      .pipe(first())
+      .subscribe((data) => {
+        this.bulkData = data;
+        event.target.complete();
+      });
+  }
 }

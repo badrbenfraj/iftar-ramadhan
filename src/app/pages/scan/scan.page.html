@@ -4,6 +4,15 @@
       <ion-back-button></ion-back-button>
     </ion-buttons>
     <ion-title> {{fastingPerson ? 'Person Details': 'Scan Code'}} </ion-title>
+    <ion-buttons slot="end">
+      <ion-button
+        *ngIf="fastingPerson"
+        (click)="editPersonDetails(fastingPerson)"
+      >
+        <ion-icon name="create-outline"></ion-icon>
+        Edit
+      </ion-button>
+    </ion-buttons>
   </ion-toolbar>
 </ion-header>
 

@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { User } from '@app/core/auth/model/user';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
 
 @Component({
@@ -9,7 +10,7 @@ import { AuthenticationService } from 'src/app/core/auth/authentication.service'
 export class TabProfilePage {
   constructor(private authenticationService: AuthenticationService) {}
 
-  get loggedUser() {
+  get loggedUser(): User {
     return this.authenticationService.loggedUser;
   }
 
