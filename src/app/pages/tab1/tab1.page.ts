@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 
 @Component({
@@ -33,6 +34,8 @@ export class Tab1Page implements OnInit {
   }
 
   async getFastingPersons() {
-    this.fastingPeople$ = await this.fastingPersonService.getFastingPersons();
+    this.fastingPeople$ = await this.fastingPersonService
+      .getFastingPersons()
+      .pipe(map((items) => items.sort((a, b) => a.code - b.code)));
   }
 }
