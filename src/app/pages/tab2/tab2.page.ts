@@ -44,6 +44,7 @@ export class Tab2Page implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.fastingPersonForm = this.formBuilder.group({
+      code: ['', [Validators.required]],
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
@@ -61,17 +62,9 @@ export class Tab2Page implements OnInit, OnDestroy {
       .getFastingPersonsCount()
       .pipe(take(1))
       .subscribe((settings) => {
-        const formControlField = {
-          name: 'code',
-          control: new FormControl(settings['fasting-person-count'] + 1, [
-            Validators.required,
-          ]),
-        };
-
-        this.fastingPersonForm.addControl(
-          formControlField.name,
-          formControlField.control
-        );
+        this.fastingPersonForm.patchValue({
+          code: settings['fasting-person-count'] + 1,
+        });
       });
   }
 

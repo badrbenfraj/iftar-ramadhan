@@ -1,10 +1,24 @@
 .virtual-scroll {
   overflow-y: auto;
-  height: 60vh;
+  height: calc(100vh - 230px);
 }
 
 ion-refresher {
   margin-top: 4vh;
+}
+
+::ng-deep {
+  ion-searchbar {
+    .searchbar-input.sc-ion-searchbar-md {
+      border-radius: 22px;
+    }
+  }
+}
+
+ion-list {
+  &.md.list-md.hydrated {
+    padding-bottom: 0;
+  }
 }
 
 ion-label.code {

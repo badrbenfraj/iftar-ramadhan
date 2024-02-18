@@ -7,8 +7,18 @@
 <ion-content padding class="animated fadeIn common-bg">
   <ion-card no-margin margin-bottom class="full-width">
     <ion-item>
-      <ion-label class="email">Email: </ion-label>
+      <ion-label class="email btn-label">Email: </ion-label>
       <ion-label>{{ loggedUser.email }}</ion-label>
+    </ion-item>
+  </ion-card>
+  <ion-card no-margin margin-bottom class="full-width">
+    <ion-item>
+      <ion-label class="export btn-label"
+        >Export fasting persons list:
+      </ion-label>
+      <ion-button class="export-btn" fill="clear" (click)="export()"
+        >Download</ion-button
+      >
     </ion-item>
   </ion-card>
   <ion-button (click)="logOut()">logout</ion-button>

@@ -25,6 +25,18 @@
     novalidate
   >
     <ion-item lines="full">
+      <ion-label position="floating">Identifier</ion-label>
+      <ion-input type="text" formControlName="code"></ion-input>
+    </ion-item>
+    <div *ngIf="form.code.errors">
+      <span
+        class="is-invalid ion-padding"
+        *ngIf="isSubmitted && form.code.errors?.required"
+      >
+        Identifier is <strong>required</strong>.
+      </span>
+    </div>
+    <ion-item lines="full">
       <ion-label position="floating">First Name</ion-label>
       <ion-input type="text" formControlName="firstName"></ion-input>
     </ion-item>
