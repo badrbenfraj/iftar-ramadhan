@@ -2,7 +2,6 @@ import { Component, OnInit } from '@angular/core';
 import { first, map } from 'rxjs/operators';
 import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
-import { PDFGenerator } from '@awesome-cordova-plugins/pdf-generator/ngx';
 import { Bulk } from '@app/core/model/bulk.model';
 
 @Component({
@@ -19,7 +18,6 @@ export class Tab3Page implements OnInit {
 
   constructor(
     private fastingPersonService: FastingPersonService,
-    private pdfGenerator: PDFGenerator
   ) {}
 
   ngOnInit(): void {
@@ -110,9 +108,6 @@ export class Tab3Page implements OnInit {
       type: 'share',
       fileName: `statistics_${date}_${month}_${year}.pdf`,
     };
-    this.pdfGenerator
-      .fromData(this.content, options)
-      .then((base64String) => console.log(base64String));
   }
 
   refreshStats(event) {

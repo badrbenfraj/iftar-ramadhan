@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Tab1Page } from './tab1.page';
 
 import { Tab1PageRoutingModule } from './tab1-routing.module';
-import { Ng2SearchPipeModule } from 'ng2-search-filter';
+import { SearchPipeModule } from '@app/shared/components/filter/filter.module';
 
 @NgModule({
   imports: [
@@ -13,7 +13,7 @@ import { Ng2SearchPipeModule } from 'ng2-search-filter';
     CommonModule,
     FormsModule,
     Tab1PageRoutingModule,
-    Ng2SearchPipeModule,
+    SearchPipeModule,
   ],
   declarations: [Tab1Page]
 })
