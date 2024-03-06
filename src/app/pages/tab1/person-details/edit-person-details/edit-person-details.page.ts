@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { first } from 'rxjs/operators';
@@ -14,14 +14,14 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
 export class EditPersonDetailsPage implements OnInit {
   fastingPerson: FastingPerson;
 
-  fastingPersonForm: FormGroup;
+  fastingPersonForm: UntypedFormGroup;
 
   isSubmitted: boolean;
 
   constructor(
     private activeRoute: ActivatedRoute,
     private router: Router,
-    private formBuilder: FormBuilder,
+    private formBuilder: UntypedFormBuilder,
     private alertController: AlertController,
     private fastingPersonService: FastingPersonService
   ) {}

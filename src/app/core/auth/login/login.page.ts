@@ -6,7 +6,7 @@ import {
   LoadingController,
   NavController,
 } from '@ionic/angular';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -16,7 +16,7 @@ import { takeUntil } from 'rxjs/operators';
   styleUrls: ['./login.page.scss'],
 })
 export class LoginPage implements OnInit, OnDestroy {
-  loginForm: FormGroup;
+  loginForm: UntypedFormGroup;
 
   isSubmitted = false;
 
@@ -28,7 +28,7 @@ export class LoginPage implements OnInit, OnDestroy {
     private navController: NavController,
     private alertController: AlertController,
     private loadingController: LoadingController,
-    private formBuilder: FormBuilder
+    private formBuilder: UntypedFormBuilder
   ) {
     if (this.authService.isLoggedIn) {
       this.navController.navigateRoot(['/pages/list']);

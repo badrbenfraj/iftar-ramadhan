@@ -1,8 +1,8 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
-  FormBuilder,
+  UntypedFormBuilder,
   FormControl,
-  FormGroup,
+  UntypedFormGroup,
   Validators,
 } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -16,7 +16,7 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
   styleUrls: ['tab2.page.scss'],
 })
 export class Tab2Page implements OnInit, OnDestroy {
-  fastingPersonForm: FormGroup;
+  fastingPersonForm: UntypedFormGroup;
 
   bulkMealsForm;
 
@@ -31,7 +31,7 @@ export class Tab2Page implements OnInit, OnDestroy {
   constructor(
     private fastingPersonService: FastingPersonService,
     private router: Router,
-    private formBuilder: FormBuilder
+    private formBuilder: UntypedFormBuilder
   ) {}
 
   get form() {

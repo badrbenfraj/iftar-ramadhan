@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
 import {
   AlertController,
   LoadingController,
@@ -14,7 +14,7 @@ import { AuthenticationService } from '../authentication.service';
   styleUrls: ['./registration.page.scss'],
 })
 export class RegistrationPage implements OnInit, OnDestroy {
-  registerForm: FormGroup;
+  registerForm: UntypedFormGroup;
 
   isSubmitted = false;
 
@@ -25,7 +25,7 @@ export class RegistrationPage implements OnInit, OnDestroy {
     private navController: NavController,
     private alertController: AlertController,
     private loadingController: LoadingController,
-    private formBuilder: FormBuilder
+    private formBuilder: UntypedFormBuilder
   ) {
     if (this.authService.isLoggedIn) {
       this.navController.navigateRoot(['/pages/list']);
