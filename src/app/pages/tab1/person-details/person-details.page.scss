@@ -1,0 +1,23 @@
+.meal-label {
+  max-width: 50%;
+}
+
+.not-taken {
+  background-color: red;
+  border-radius: 15px;
+  padding: 0 15px;
+  width: 25%;
+  color: #fff;
+  font-weight: bold;
+  max-width: fit-content;
+}
+
+.taken {
+  background-color: green;
+  border-radius: 15px;
+  padding: 0 15px;
+  width: 25%;
+  color: #fff;
+  font-weight: bold;
+  max-width: fit-content;
+}

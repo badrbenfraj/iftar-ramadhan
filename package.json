@@ -8,7 +8,8 @@
     "start": "ionic serve",
     "sync": "ionic cap sync android",
     "build": "ionic cap build android",
-    "build:prod": "ionic build --prod && npx cap sync android",
+    "build:prod": "ionic build --prod && npx cap sync android && npm run build:prod:apk",
+    "build:prod:apk": "ionic capacitor copy android && cd android && ./gradlew assembleDebug && cd ..",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e"

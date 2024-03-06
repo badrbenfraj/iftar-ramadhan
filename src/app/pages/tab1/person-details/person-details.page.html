@@ -42,8 +42,10 @@
       <ion-label>{{ fastingPerson.familyMeal }} </ion-label>
     </ion-item>
     <ion-item>
-      <ion-label>Meal taken:</ion-label>
-      <ion-label> {{isMealTaken ? 'Yes':'Not yet!'}} </ion-label>
+      <ion-label class="meal-label">Meal taken:</ion-label>
+      <ion-label [ngClass]="isMealTaken ? 'taken': 'not-taken'">
+        {{isMealTaken ? 'خذا':'ما خذاش!'}}
+      </ion-label>
     </ion-item>
 
     <ion-button
