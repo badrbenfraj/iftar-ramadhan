@@ -20,9 +20,19 @@ const firebaseConfig = {
   measurementId: 'G-58K3JZTCSF',
 };
 
+const firebaseConfigSokra = {
+  apiKey: 'AIzaSyDbW_TUrDdCah55HT1ZhDFL6kU4jJE4aHk',
+  authDomain: 'iftar-ramadan-sokra-e1400.firebaseapp.com',
+  projectId: 'iftar-ramadan-sokra-e1400',
+  storageBucket: 'iftar-ramadan-sokra-e1400.appspot.com',
+  messagingSenderId: '14895589017',
+  appId: '1:14895589017:web:230710ccc3ca5c2ea6ba08',
+  measurementId: 'G-TSXXWYPH6L',
+};
+
 export const environment = {
   production: false,
-  firebaseConfig: firebaseConfigSousse,
+  firebaseConfig: firebaseConfigSokra,
 };
 /*
  * For easier debugging in development mode, you can import the following file

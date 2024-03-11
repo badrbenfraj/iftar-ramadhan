@@ -7,10 +7,10 @@ android {
             excludes += ['META-INF/NOTICE', 'META-INF/LICENSE']
         }
     }
-    namespace 'io.ionic.starter'
+    namespace 'io.ionic.starter.iftar2024'
     compileSdkVersion rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "io.ionic.starter"
+        applicationId "io.ionic.starter.iftar2024"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
