@@ -90,10 +90,16 @@
 
       <ion-row>
         <ion-col>
-          <ion-button type="submit" shape="round" expand="block">
+          <ion-button
+            [disabled]="isSubmitted"
+            type="submit"
+            shape="round"
+            expand="block"
+          >
             Update person details
           </ion-button>
           <ion-button
+            [disabled]="isSubmitted"
             color="danger"
             shape="round"
             expand="block"

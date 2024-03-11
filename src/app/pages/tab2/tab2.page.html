@@ -101,7 +101,11 @@
 
     <ion-row>
       <ion-col>
-        <ion-button type="submit" shape="round" expand="block"
+        <ion-button
+          [disabled]="isSubmitted"
+          type="submit"
+          shape="round"
+          expand="block"
           >Add new person</ion-button
         >
       </ion-col>
@@ -153,7 +157,11 @@
 
     <ion-row>
       <ion-col>
-        <ion-button type="submit" shape="round" expand="block"
+        <ion-button
+          [disabled]="isSubmitted"
+          type="submit"
+          shape="round"
+          expand="block"
           >Add meals</ion-button
         >
       </ion-col>

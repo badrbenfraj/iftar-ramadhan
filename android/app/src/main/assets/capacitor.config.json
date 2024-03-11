@@ -1,6 +1,6 @@
 {
-  "appId": "io.ionic.starter.iftar2024",
-  "appName": "إفطار صائم",
-  "webDir": "www",
-  "bundledWebRuntime": false
+	"appId": "io.ionic.starter.iftar2024",
+	"appName": "إفطار صائم",
+	"webDir": "www",
+	"bundledWebRuntime": false
 }

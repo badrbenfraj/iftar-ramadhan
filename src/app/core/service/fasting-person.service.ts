@@ -22,7 +22,9 @@ export class FastingPersonService {
 
   getFastingPersonById(code: string): Observable<any> {
     return this.getFastingPersons().pipe(
-      map((items) => items.filter((item) => item?.code === Number(code)))
+      map((items) =>
+        items.filter((item) => Number(item?.code) === Number(code))
+      )
     );
   }
 

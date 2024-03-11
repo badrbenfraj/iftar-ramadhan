@@ -19,6 +19,10 @@
 <ion-content>
   <div *ngIf="fastingPerson">
     <ion-item>
+      <ion-label>Identifier:</ion-label>
+      <ion-label>{{ fastingPerson.code }} </ion-label>
+    </ion-item>
+    <ion-item>
       <ion-label>First Name:</ion-label>
       <ion-label>{{ fastingPerson.firstName }} </ion-label>
     </ion-item>

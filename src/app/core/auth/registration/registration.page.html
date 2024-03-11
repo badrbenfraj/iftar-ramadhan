@@ -59,6 +59,12 @@
         Min length 8 characters.
       </span>
     </div>
-    <ion-button type="submit" expand="block" shape="round">Sign Up</ion-button>
+    <ion-button
+      [disabled]="isSubmitted"
+      type="submit"
+      expand="block"
+      shape="round"
+      >Sign Up</ion-button
+    >
   </form>
 </ion-content>

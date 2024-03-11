@@ -1,0 +1,10 @@
+{
+  "projects": {
+    "default": "iftar-ramadan-sokra-e1400",
+    "ramadan-sousse": "iftar-ramadan-sousse",
+    "sousse": "iftar-ramadan-sousse",
+    "sokra": "iftar-ramadan-sokra-e1400"
+  },
+  "targets": {},
+  "etags": {}
+}
