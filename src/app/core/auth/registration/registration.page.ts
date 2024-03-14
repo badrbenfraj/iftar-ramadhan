@@ -1,5 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  Validators,
+} from '@angular/forms';
 import {
   AlertController,
   LoadingController,
@@ -38,6 +42,8 @@ export class RegistrationPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.registerForm = this.formBuilder.group({
+      name: ['', [Validators.required]],
+      username: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(3)]],
     });
@@ -50,21 +56,28 @@ export class RegistrationPage implements OnInit, OnDestroy {
 
     // stop here if form is invalid
     if (this.registerForm.invalid) {
+      this.isSubmitted = false;
       await loading.dismiss();
 
       return;
     }
     this.authService
       .registerUser(
+        this.form.name.value,
+        this.form.username.value,
         this.form.email.value,
         this.form.password.value
       )
-      .then((res) => {
-        // Do something here
-        this.authService.sendVerificationMail();
-      })
-      .catch((error) => {
-        this.showAlert(error.message);
+      .subscribe({
+        next: (res) => {
+          // this.authService.sendVerificationMail();
+          this.navController.navigateRoot(['login']);
+          this.isSubmitted = false;
+        },
+        error: (error) => {
+          this.isSubmitted = false;
+          this.showAlert(error.message);
+        },
       });
     await loading.dismiss();
   }

@@ -35,7 +35,6 @@ export class ScanPage implements OnInit {
         formats: 'QR_CODE',
       })
       .then((barcodeData) => {
-        // Barcode data {"cancelled":0,"text":"8413384010008","format":"EAN_13"}
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
@@ -77,14 +76,15 @@ export class ScanPage implements OnInit {
     this.navCtl.back();
   }
 
-  async getFastingPerson(code) {
+  async getFastingPerson(id) {
     this.fastingPersonService
-      .getFastingPersonById(code)
+      .getFastingPersonById(id)
       .pipe(first())
       .subscribe((person) => {
-        this.fastingPerson = person.length
-          ? (person[0] as FastingPerson)
+        this.fastingPerson = person?.data
+          ? (person?.data as FastingPerson)
           : undefined;
+
         this.isMealTaken =
           new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
           new Date().setHours(0, 0, 0, 0);
@@ -110,6 +110,6 @@ export class ScanPage implements OnInit {
   }
 
   editPersonDetails(person) {
-    this.router.navigate(['/pages/person/edit', person.code]);
+    this.router.navigate(['/pages/person/edit', person.id]);
   }
 }

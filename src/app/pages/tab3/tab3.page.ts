@@ -33,7 +33,7 @@ export class Tab3Page implements OnInit {
       .getFastingPersons()
       .pipe(
         map((items) =>
-          items.filter(
+          items?.data?.filter(
             (item: FastingPerson) =>
               new Date(item.lastTakenMeal).setHours(0, 0, 0, 0) ===
               new Date().setHours(0, 0, 0, 0)

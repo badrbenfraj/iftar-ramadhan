@@ -7,7 +7,7 @@ import {
 } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Subject } from 'rxjs';
-import { take } from 'rxjs/operators';
+import { concatMap, take } from 'rxjs/operators';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 
 @Component({
@@ -44,12 +44,12 @@ export class Tab2Page implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.fastingPersonForm = this.formBuilder.group({
-      code: ['', [Validators.required]],
+      id: [null, []],
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
-      lastTakenMeal: ['', []],
+      lastTakenMeal: [this.getTodayDate(), []],
     });
 
     this.bulkMealsForm = this.formBuilder.group({
@@ -57,15 +57,6 @@ export class Tab2Page implements OnInit, OnDestroy {
       singleMeal: [null, [Validators.required]],
       creationDate: [new Date(), []],
     });
-
-    this.fastingPersonService
-      .getFastingPersonsCount()
-      .pipe(take(1))
-      .subscribe((settings) => {
-        this.fastingPersonForm.patchValue({
-          code: settings['fasting-person-count'] + 1,
-        });
-      });
   }
 
   onSubmit() {
@@ -87,6 +78,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     }
 
     if (this.fastingPersonForm.invalid) {
+      this.isSubmitted = false;
       return;
     }
 
@@ -94,35 +86,27 @@ export class Tab2Page implements OnInit, OnDestroy {
     const lastName = this.form.lastName.value;
     const familyMeal = this.form.familyMeal.value;
     const singleMeal = this.form.singleMeal.value;
-    const lastTakenMeal = this.form.lastTakenMeal.value;
-    const code = this.form.code.value;
+    const lastTakenMeal = this.getTodayDate();
+    const id = this.form.id.value;
 
     this.fastingPersonService
       .addFastingPerson({
-        code,
         firstName,
         lastName,
         singleMeal,
         familyMeal,
         lastTakenMeal,
       })
-      .then(() => {
-        this.isSubmitted = false;
-        this.fastingPersonForm.reset();
-        this.bulkMealsForm.reset();
-        this.router.navigate(['pages']);
-        this.fastingPersonService.updateFastingPersonCount({
-          'fasting-person-count': code,
-        });
-
-        this.fastingPersonService
-          .getFastingPersonsCount()
-          .pipe(take(1))
-          .subscribe((settings) => {
-            this.fastingPersonForm.patchValue({
-              code: settings['fasting-person-count'] + 1,
-            });
-          });
+      .subscribe({
+        next: () => {
+          this.isSubmitted = false;
+          this.fastingPersonForm.reset();
+          this.bulkMealsForm.reset();
+          this.router.navigate(['pages']);
+        },
+        error: (error) => {
+          this.isSubmitted = false;
+        },
       });
   }
 
@@ -164,6 +148,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     }
 
     if (this.bulkMealsForm.invalid) {
+      this.isSubmitted = false;
       return;
     }
 
@@ -171,23 +156,27 @@ export class Tab2Page implements OnInit, OnDestroy {
     const singleMeal = this.bulkForm.singleMeal.value;
     const creationDate = new Date(new Date().setHours(0, 0, 0, 0));
 
-    this.fastingPersonService
-      .addBulkMeals({
-        singleMeal,
-        familyMeal,
-        creationDate,
-      })
-      .then(() => {
-        this.isBulkSubmitted = false;
-        this.fastingPersonForm.reset();
-        this.bulkMealsForm.reset();
-        this.bulkMode = false;
-        this.router.navigate(['pages']);
-      });
+    // this.fastingPersonService
+    //   .addBulkMeals({
+    //     singleMeal,
+    //     familyMeal,
+    //     creationDate,
+    //   })
+    //   .then(() => {
+    //     this.isBulkSubmitted = false;
+    //     this.fastingPersonForm.reset();
+    //     this.bulkMealsForm.reset();
+    //     this.bulkMode = false;
+    //     this.router.navigate(['pages']);
+    //   });
   }
 
   changeMode() {
     this.bulkMode = !this.bulkMode;
+  }
+
+  getTodayDate() {
+    return new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
   }
 
   ngOnDestroy(): void {

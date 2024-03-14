@@ -1,5 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import { first } from 'rxjs/operators';
@@ -32,12 +36,12 @@ export class EditPersonDetailsPage implements OnInit {
 
   ngOnInit(): void {
     this.fastingPersonForm = this.formBuilder.group({
-      code: ['', [Validators.required]],
+      id: [null, []],
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
-      lastTakenMeal: ['', []],
+      lastTakenMeal: [new Date(new Date().setHours(0, 0, 0, 0)).toISOString(), []],
     });
     this.getFastingPerson();
   }
@@ -54,9 +58,10 @@ export class EditPersonDetailsPage implements OnInit {
         .getFastingPersonById(params.code)
         .pipe(first())
         .subscribe((person) => {
-          this.fastingPerson = person.length
-            ? (person[0] as FastingPerson)
+          this.fastingPerson = person?.data
+            ? (person?.data as FastingPerson)
             : undefined;
+
           if (this.fastingPerson) {
             this.fastingPersonForm.patchValue({
               ...this.fastingPerson,
@@ -84,6 +89,8 @@ export class EditPersonDetailsPage implements OnInit {
     }
 
     if (this.fastingPersonForm.invalid) {
+      this.isSubmitted = false;
+
       return;
     }
 
@@ -91,24 +98,28 @@ export class EditPersonDetailsPage implements OnInit {
     const lastName = this.form.lastName.value;
     const familyMeal = this.form.familyMeal.value;
     const singleMeal = this.form.singleMeal.value;
-    const lastTakenMeal = this.form.lastTakenMeal.value;
-    const code = this.form.code.value;
-    const id = this.fastingPerson.id;
+    const lastTakenMeal = this.getTodayDate();
+    const id = this.form.id.value;
 
     this.fastingPersonService
       .updateFastingPerson({
         id,
-        code,
         firstName,
         lastName,
         singleMeal,
         familyMeal,
         lastTakenMeal,
       })
-      .then(() => {
-        this.isSubmitted = false;
-        this.fastingPersonForm.reset();
-        this.router.navigate(['pages']);
+      .subscribe({
+        next: () => {
+          this.isSubmitted = false;
+          this.fastingPersonForm.reset();
+          this.fastingPersonService.getFastingPersons();
+          this.router.navigate(['pages']);
+        },
+        error: (error) => {
+          this.isSubmitted = false;
+        },
       });
   }
 
@@ -128,7 +139,8 @@ export class EditPersonDetailsPage implements OnInit {
           handler: () => {
             this.fastingPersonService
               .deleteFastingPerson(fastingPerson)
-              .then(() => {
+              .subscribe(() => {
+                this.fastingPersonService.getFastingPersons();
                 this.router.navigate(['pages']);
               });
           },
@@ -137,5 +149,9 @@ export class EditPersonDetailsPage implements OnInit {
     });
 
     await alert.present();
+  }
+
+  getTodayDate() {
+    return new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
   }
 }

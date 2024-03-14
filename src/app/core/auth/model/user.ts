@@ -1,7 +1,8 @@
 export interface User {
-  uid: string;
   email: string;
-  displayName: string;
-  photoURL: string;
-  emailVerified: boolean;
+  name: string;
+  username: string;
+  password: string;
+  roles: string[];
+  isAccountDisabled: boolean;
 }

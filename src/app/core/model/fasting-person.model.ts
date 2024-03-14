@@ -1,6 +1,5 @@
 export interface FastingPerson {
-  id?: string;
-  code: number;
+  id?: number;
   firstName: string;
   lastName: string;
   singleMeal: number;

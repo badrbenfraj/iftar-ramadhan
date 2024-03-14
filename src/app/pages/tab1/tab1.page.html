@@ -13,16 +13,16 @@
 
   <ion-list>
     <ion-item>
-      <ion-label class="code">Id</ion-label>
+      <ion-label class="id">Id</ion-label>
       <ion-label>Name</ion-label>
       <ion-icon></ion-icon>
     </ion-item>
     <div class="virtual-scroll">
       <ion-item
-        *ngFor="let person of (fastingPeople$ | async) | filter:searchTerm"
+        *ngFor="let person of (fastingPersonService.fastingPeople$ | async) | filter:searchTerm"
         (click)="personDetails(person)"
       >
-        <ion-label class="code">{{person.code}}</ion-label>
+        <ion-label class="id">{{person.id}}</ion-label>
         <ion-label>{{person.firstName}} {{person.lastName}} </ion-label>
         <ion-icon name="arrow-forward"></ion-icon>
       </ion-item>

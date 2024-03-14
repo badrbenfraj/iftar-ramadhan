@@ -33,9 +33,7 @@ export class PersonDetailsPage implements OnInit {
         .getFastingPersonById(params.code)
         .pipe(first())
         .subscribe((person) => {
-          this.fastingPerson = person.length
-            ? (person[0] as FastingPerson)
-            : undefined;
+          this.fastingPerson = person?.data ? (person?.data as FastingPerson) : undefined;
           this.isMealTaken =
             new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
             new Date().setHours(0, 0, 0, 0);
@@ -50,6 +48,6 @@ export class PersonDetailsPage implements OnInit {
   }
 
   editPersonDetails(person) {
-    this.router.navigate(['/pages/person/edit', person.code]);
+    this.router.navigate(['/pages/person/edit', person.id]);
   }
 }

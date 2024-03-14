@@ -22,19 +22,13 @@ export class TabProfilePage {
   }
 
   export() {
-    this.fastingPersonService
-      .getFastingPersons()
-      .pipe(
-        first(),
-        map((items) => items.sort((a, b) => a.code - b.code))
-      )
-      .subscribe((data) => {
-        this.exportToExcel(data);
-      });
+    this.fastingPersonService.fastingPeople$.subscribe((data) => {
+      this.exportToExcel(data);
+    });
   }
 
   logOut() {
-    this.authenticationService.signOut();
+    this.authenticationService.logout();
   }
 
   async exportToExcel(data) {
