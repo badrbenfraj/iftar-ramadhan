@@ -35,7 +35,7 @@
     "migration:revert": "ts-node node_modules/.bin/typeorm migration:revert -d ormconfig.ts",
     "doc:serve": "npx compodoc -p tsconfig.json -w -s -r 8001",
     "doc:generate": "npx compodoc -p tsconfig.json",
-    "prepare": "husky install",
+    "prepare": "cd .. && husky ./api/.husky",
     "pre-commit": "lint-staged"
   },
   "lint-staged": {
