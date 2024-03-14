@@ -50,6 +50,7 @@ describe('UserRepository', () => {
         email: 'default-user@random.com',
         createdAt: currentDate,
         updatedAt: currentDate,
+        fastings: [],
       };
 
       jest.spyOn(repository, 'findOne').mockResolvedValue(expectedOutput);
@@ -68,6 +69,7 @@ describe('UserRepository', () => {
         email: 'default-user@random.com',
         createdAt: currentDate,
         updatedAt: currentDate,
+        fastings: [],
       };
 
       jest.spyOn(repository, 'findOne').mockResolvedValue(expectedOutput);
