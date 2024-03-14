@@ -387,7 +387,6 @@ Temporary Items
 
 =======
 # Local
-.env
 dist
 local/
 documentation

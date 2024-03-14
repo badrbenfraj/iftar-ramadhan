@@ -39,19 +39,17 @@ export class AuthenticationService {
     };
   }
 
-  getAuthState() {
-  }
+  getAuthState() {}
 
   getCurrentUser() {
     return this.httpClient.get<any>(`${BASE_PATH}/users/me`);
   }
 
   // Login in with email/password
-  signIn(email, password) {
+  signIn(username, password) {
     const body = {
-      username: 'e2etester',
+      username,
       password,
-      email,
     };
     return this.httpClient.post<any>(`${BASE_PATH}/auth/login`, body);
   }

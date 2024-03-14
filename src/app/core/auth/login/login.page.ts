@@ -45,7 +45,8 @@ export class LoginPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loginForm = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required]],
+      // email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(3)]],
     });
   }
@@ -64,7 +65,7 @@ export class LoginPage implements OnInit, OnDestroy {
     }
 
     this.authService
-      .signIn(this.form.email.value, this.form.password.value)
+      .signIn(this.form.username.value, this.form.password.value)
       .pipe(
         concatMap((token) => {
           const accessToken = token?.data?.accessToken;
