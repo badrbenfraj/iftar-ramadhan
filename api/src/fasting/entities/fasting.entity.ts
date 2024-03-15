@@ -12,7 +12,7 @@ import { User } from '../../user/entities/user.entity';
 
 @Entity('fastings')
 export class Fasting {
-  @PrimaryGeneratedColumn()
+  @PrimaryColumn()
   id: number;
 
   @Column()
