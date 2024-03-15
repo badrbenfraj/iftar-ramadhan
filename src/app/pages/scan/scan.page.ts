@@ -16,7 +16,7 @@ export class ScanPage implements OnInit {
 
   isMealTaken = false;
 
-  loading = true;
+  loading = false;
 
   constructor(
     private barcodeScanner: BarcodeScanner,
@@ -41,7 +41,6 @@ export class ScanPage implements OnInit {
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
-            this.loading = true;
             this.getFastingPerson(scanCode);
           }
         } else {
@@ -69,10 +68,12 @@ export class ScanPage implements OnInit {
               this.getFastingPerson(scanCode);
             }
           } else {
+            this.loading = false;
             this.presentAlert();
           }
         })
         .catch((err) => {
+          this.loading = false;
           this.presentAlert();
         });
     });
@@ -83,10 +84,12 @@ export class ScanPage implements OnInit {
   }
 
   async getFastingPerson(id) {
+    this.loading = true;
     this.fastingPersonService
       .getFastingPersonById(id)
       .pipe(first())
-      .subscribe((person) => {
+      .subscribe({next: (person) => {
+        this.loading = false;
         this.fastingPerson = person?.data
           ? (person?.data as FastingPerson)
           : undefined;
@@ -94,7 +97,9 @@ export class ScanPage implements OnInit {
         this.isMealTaken =
           new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
           new Date().setHours(0, 0, 0, 0);
-      });
+        }, error: (error) => {
+          this.loading = false;
+        }});
   }
 
   async confirmMealTaken() {
