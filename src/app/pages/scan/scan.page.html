@@ -52,6 +52,7 @@
     </ion-item>
   </div>
   <ion-button
+    *ngIf="fastingPerson && !loading"
     color="primary"
     expand="full"
     shape="round"
