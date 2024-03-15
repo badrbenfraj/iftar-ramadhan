@@ -41,7 +41,10 @@ export class EditPersonDetailsPage implements OnInit {
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
-      lastTakenMeal: [new Date(new Date().setHours(0, 0, 0, 0)).toISOString(), []],
+      lastTakenMeal: [
+        new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
+        [],
+      ],
     });
     this.getFastingPerson();
   }
@@ -58,9 +61,7 @@ export class EditPersonDetailsPage implements OnInit {
         .getFastingPersonById(params.code)
         .pipe(first())
         .subscribe((person) => {
-          this.fastingPerson = person?.data
-            ? (person?.data as FastingPerson)
-            : undefined;
+          this.fastingPerson = person?.data as FastingPerson;
 
           if (this.fastingPerson) {
             this.fastingPersonForm.patchValue({

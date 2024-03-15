@@ -47,22 +47,28 @@
     <ion-item>
       <ion-label class="meal-label">Meal taken:</ion-label>
       <ion-label [ngClass]="isMealTaken ? 'taken': 'not-taken'">
-        {{isMealTaken ? 'خذا':'ما خذاش!'}}
+        {{isMealTaken ? 'خذا!':'ما خذاش'}}
       </ion-label>
     </ion-item>
   </div>
   <ion-button
-    *ngIf="fastingPerson && !loading"
+    *ngIf="fastingPerson && !isMealTaken && !loading"
+    color="primary"
+    expand="full"
+    shape="round"
+    [disabled]="isSubmitted"
+    (click)="confirmAndOpenBarCodeScanner()"
+  >
+    Confirm and scan another code
+    <ion-spinner *ngIf="isSubmitted"> </ion-spinner>
+  </ion-button>
+  <ion-button
+    *ngIf="fastingPerson && isMealTaken && !loading"
     color="primary"
     expand="full"
     shape="round"
     (click)="confirmAndOpenBarCodeScanner()"
   >
-    <span *ngIf="fastingPerson && !isMealTaken" style="padding: 5px">
-      Confirm and
-    </span>
-    Scan
-    <span *ngIf="fastingPerson" style="padding: 5px"> another </span>
-    code</ion-button
-  >
+    Scan another code
+  </ion-button>
 </ion-content>

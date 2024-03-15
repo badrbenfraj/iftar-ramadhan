@@ -106,8 +106,9 @@
           type="submit"
           shape="round"
           expand="block"
-          >Add new person</ion-button
-        >
+          >Add new person
+          <ion-spinner *ngIf="isSubmitted"></ion-spinner>
+        </ion-button>
       </ion-col>
     </ion-row>
   </form>
@@ -162,8 +163,9 @@
           type="submit"
           shape="round"
           expand="block"
-          >Add meals</ion-button
-        >
+          >Add meals
+          <ion-spinner *ngIf="isSubmitted"></ion-spinner>
+        </ion-button>
       </ion-col>
     </ion-row>
   </form>

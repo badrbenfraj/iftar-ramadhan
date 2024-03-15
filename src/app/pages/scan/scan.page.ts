@@ -14,6 +14,8 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
 export class ScanPage implements OnInit {
   fastingPerson;
 
+  isSubmitted = false;
+
   isMealTaken = false;
 
   loading = false;
@@ -30,7 +32,7 @@ export class ScanPage implements OnInit {
     this.openBarCodeScanner();
   }
 
-  openBarCodeScanner(confirm?) {
+  openBarCodeScanner() {
     this.barcodeScanner
       .scan({
         disableSuccessBeep: true,
@@ -38,13 +40,13 @@ export class ScanPage implements OnInit {
         formats: 'QR_CODE',
       })
       .then((barcodeData) => {
+        this.loading = true;
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
             this.getFastingPerson(scanCode);
           }
         } else {
-          this.loading = false;
           this.presentAlert();
         }
       })
@@ -54,64 +56,61 @@ export class ScanPage implements OnInit {
       });
   }
   confirmAndOpenBarCodeScanner() {
-    this.confirmMealTaken().then(() => {
-      this.barcodeScanner
-        .scan({
-          disableSuccessBeep: true,
-          resultDisplayDuration: 0,
-          formats: 'QR_CODE',
-        })
-        .then((barcodeData) => {
-          if (barcodeData) {
-            const scanCode = barcodeData.text;
-            if (scanCode) {
-              this.getFastingPerson(scanCode);
-            }
-          } else {
-            this.loading = false;
-            this.presentAlert();
-          }
-        })
-        .catch((err) => {
-          this.loading = false;
-          this.presentAlert();
+    if (this.isMealTaken) {
+      this.openBarCodeScanner();
+    } else {
+      this.confirmMealTaken()
+        .pipe(first())
+        .subscribe({
+          next: () => {
+            this.isSubmitted = false;
+
+            this.openBarCodeScanner();
+          },
+          error: (error) => {
+            this.isSubmitted = false;
+          },
         });
-    });
+    }
   }
 
   stopScan() {
     this.navCtl.back();
   }
 
-  async getFastingPerson(id) {
-    this.loading = true;
+  getFastingPerson(id) {
     this.fastingPersonService
       .getFastingPersonById(id)
       .pipe(first())
-      .subscribe({next: (person) => {
-        this.loading = false;
-        this.fastingPerson = person?.data
-          ? (person?.data as FastingPerson)
-          : undefined;
-
-        this.isMealTaken =
-          new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
-          new Date().setHours(0, 0, 0, 0);
-        }, error: (error) => {
+      .subscribe({
+        next: (person) => {
           this.loading = false;
-        }});
+          this.fastingPerson = person?.data as FastingPerson;
+
+          this.isMealTaken =
+            new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
+            new Date().setHours(0, 0, 0, 0);
+        },
+        error: (error) => {
+          this.loading = false;
+        },
+      });
   }
 
-  async confirmMealTaken() {
-    if (this.fastingPerson) {
-      this.fastingPerson.lastTakenMeal = new Date().toISOString();
-      return await this.fastingPersonService.updateFastingPerson(
-        this.fastingPerson
-      );
-    }
+  confirmMealTaken() {
+    this.isSubmitted = true;
+
+    this.fastingPerson.lastTakenMeal = this.getTodayDate();
+    return this.fastingPersonService.updateFastingPerson(this.fastingPerson);
+  }
+
+  getTodayDate() {
+    return new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
   }
 
   async presentAlert() {
+    this.loading = false;
+
     const alert = await this.alertController.create({
       header: 'Warning',
       message: 'Please enter a valid qr code.',
