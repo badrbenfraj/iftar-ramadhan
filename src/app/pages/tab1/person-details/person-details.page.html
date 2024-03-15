@@ -20,6 +20,12 @@
   <ion-refresher slot="fixed" (ionRefresh)="refreshFastingPeople($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
+  <ion-spinner
+    *ngIf="!fastingPerson"
+    class="spinner"
+    name="bubbles"
+    color="tertiary"
+  ></ion-spinner>
   <div *ngIf="fastingPerson">
     <ion-item>
       <ion-label>Identifier:</ion-label>

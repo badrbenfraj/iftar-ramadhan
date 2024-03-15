@@ -33,7 +33,9 @@ export class PersonDetailsPage implements OnInit {
         .getFastingPersonById(params.code)
         .pipe(first())
         .subscribe((person) => {
-          this.fastingPerson = person?.data ? (person?.data as FastingPerson) : undefined;
+          this.fastingPerson = person?.data
+            ? (person?.data as FastingPerson)
+            : undefined;
           this.isMealTaken =
             new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
             new Date().setHours(0, 0, 0, 0);
@@ -42,9 +44,19 @@ export class PersonDetailsPage implements OnInit {
   }
 
   confirmMealTaken() {
-    this.fastingPerson.lastTakenMeal = new Date().toISOString();
-    this.fastingPersonService.updateFastingPerson(this.fastingPerson);
-    this.getFastingPerson();
+    this.fastingPerson.lastTakenMeal = this.getTodayDate();
+
+    this.fastingPersonService
+      .updateFastingPerson(this.fastingPerson)
+      .subscribe(() => {
+        this.isMealTaken =
+          new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
+          new Date().setHours(0, 0, 0, 0);
+      });
+  }
+
+  getTodayDate() {
+    return new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
   }
 
   editPersonDetails(person) {
