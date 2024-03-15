@@ -13,7 +13,10 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
 })
 export class ScanPage implements OnInit {
   fastingPerson;
+
   isMealTaken = false;
+
+  loading = true;
 
   constructor(
     private barcodeScanner: BarcodeScanner,
@@ -38,13 +41,16 @@ export class ScanPage implements OnInit {
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
+            this.loading = true;
             this.getFastingPerson(scanCode);
           }
         } else {
+          this.loading = false;
           this.presentAlert();
         }
       })
       .catch((err) => {
+        this.loading = false;
         this.presentAlert();
       });
   }
