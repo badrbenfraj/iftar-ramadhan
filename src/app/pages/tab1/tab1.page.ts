@@ -2761,7 +2761,7 @@ export class Tab1Page implements OnInit {
     //   }
     // }
     // asyncLoop();
-
+    this.getFastingPersons()
   }
 
   personDetails(person) {

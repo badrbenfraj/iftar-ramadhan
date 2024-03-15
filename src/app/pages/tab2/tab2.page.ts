@@ -44,7 +44,7 @@ export class Tab2Page implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.fastingPersonForm = this.formBuilder.group({
-      id: [null, []],
+      id: [null, [Validators.required]],
       firstName: ['', [Validators.required]],
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
@@ -91,6 +91,7 @@ export class Tab2Page implements OnInit, OnDestroy {
 
     this.fastingPersonService
       .addFastingPerson({
+        id,
         firstName,
         lastName,
         singleMeal,
