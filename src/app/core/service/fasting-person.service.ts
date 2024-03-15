@@ -15,10 +15,27 @@ export class FastingPersonService {
   fastingPeople$: Observable<{ data: any[]; meta: any }>;
   constructor(private httpClient: HttpClient) {}
 
-  getFastingPersons(): Observable<{ data: any[]; meta: any }> {
+  getFastingPersons(
+    limit = 1000,
+    offset = 0
+  ): Observable<{ data: any[]; meta: any }> {
+    const params = {};
+    const isNumber = (value) => typeof value === 'number' && isFinite(value);
+
+    if (limit > 0 && isNumber(limit)) {
+      params['limit'] = limit;
+    }
+
+    if (isNumber(offset)) {
+      params['offset'] = offset;
+    }
+
     this.fastingPeople$ = this.httpClient
-      .get<any>(`${BASE_PATH}/fastings`)
-      .pipe(map((items: any) => items?.data?.sort((a, b) => a.id - b.id)), shareReplay(1));
+      .get<any>(`${BASE_PATH}/fastings`, { params })
+      .pipe(
+        map((items: any) => items?.data?.sort((a, b) => a.id - b.id)),
+        shareReplay(1)
+      );
     return this.fastingPeople$;
   }
 
