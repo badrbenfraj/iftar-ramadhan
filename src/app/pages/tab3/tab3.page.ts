@@ -58,7 +58,8 @@ export class Tab3Page implements OnInit {
     const date = new Date().getDate();
     const month = new Date().getMonth();
     const year = new Date().getFullYear();
-
+    this.fastingPersonService
+    .downloadDailyStatistics().subscribe()
     const options = {
       type: 'share',
       fileName: `statistics_${date}_${month}_${year}.pdf`,

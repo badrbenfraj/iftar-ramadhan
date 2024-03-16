@@ -192,7 +192,7 @@ export class FastingController {
     @Body() input: UpdateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
     input.lastTakenMeal = new Date();
-    console.log('input: ', input)
+    console.log('input: ', input);
     const fasting = await this.fastingService.updateFasting(
       ctx,
       fastingId,
@@ -267,7 +267,7 @@ export class FastingController {
       fastingsWithtakenMeal.reduce((acc, curr) => {
         acc.familyMeal += curr?.familyMeal * 4;
         acc.singleMeal += curr?.singleMeal;
-        acc.totalMeals += curr?.singleMeal + curr?.familyMeal;
+        acc.totalMeals += curr?.singleMeal + curr?.familyMeal * 4;
 
         return acc;
       }, statistics);
@@ -276,5 +276,25 @@ export class FastingController {
       data: { totalPersons, persons, singleMeal, familyMeal, totalMeals },
       meta: {},
     };
+  }
+  @Get('/daily/statistics/:region/download')
+  @ApiOperation({
+    summary: 'Get daily statistics fastings by region API',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([FastingOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async downloadFastingsStatisticsByRegion(
+    @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
+    @Query() query: PaginationParamsDto,
+  ): Promise<BaseApiResponse<any>> {
+    this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
+
+    return;
   }
 }

@@ -115,4 +115,12 @@ export class FastingPersonService {
       `${BASE_PATH}/fastings/daily/statistics/${currentUser?.region}`
     );
   }
+
+  downloadDailyStatistics(): Observable<any> {
+    const currentUser = this.authenticationService.currentUser;
+
+    return this.httpClient.get<any>(
+      `${BASE_PATH}/fastings/daily/statistics/${currentUser?.region}/download`
+    );
+  }
 }
