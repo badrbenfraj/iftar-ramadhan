@@ -9,6 +9,7 @@ import { UpdateUserInput } from '../dtos/user-update-input.dto';
 import { User } from '../entities/user.entity';
 import { UserRepository } from '../repositories/user.repository';
 import { UserService } from './user.service';
+import { Region } from 'api/src/fasting/enums/regions.enum';
 
 describe('UserService', () => {
   let service: UserService;
@@ -22,6 +23,7 @@ describe('UserService', () => {
 
   const user = {
     id: 6,
+    region: Region.SOKRA,
     username: 'jhon',
     name: 'Jhon doe',
     roles: [ROLE.USER],
@@ -64,6 +66,7 @@ describe('UserService', () => {
     it('should encrypt password before saving', async () => {
       const userInput = {
         name: user.name,
+        region: user.region,
         username: user.username,
         password: 'plain-password',
         roles: [ROLE.USER],

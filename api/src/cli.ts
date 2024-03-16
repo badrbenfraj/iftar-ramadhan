@@ -6,6 +6,7 @@ import { ROLE } from './auth/constants/role.constant';
 import { RequestContext } from './shared/request-context/request-context.dto';
 import { CreateUserInput } from './user/dtos/user-create-input.dto';
 import { UserService } from './user/services/user.service';
+import { Region } from './fasting/enums/regions.enum';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);
@@ -22,6 +23,7 @@ async function bootstrap() {
     username: 'default-admin',
     password: defaultAdminUserPassword,
     roles: [ROLE.ADMIN],
+    region: Region.SOKRA,
     isAccountDisabled: false,
     email: 'default-admin@example.com',
   };

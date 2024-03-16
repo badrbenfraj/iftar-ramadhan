@@ -18,7 +18,7 @@ export class TabProfilePage {
   ) {}
 
   get loggedUser(): User {
-    return this.authenticationService.loggedUser;
+    return this.authenticationService.currentUser;
   }
 
   export() {

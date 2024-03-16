@@ -14,6 +14,7 @@ import {
 } from 'class-validator';
 
 import { ROLE } from '../../auth/constants/role.constant';
+import { Region } from '../../fasting/enums/regions.enum';
 
 export class CreateUserInput {
   @ApiPropertyOptional()
@@ -21,6 +22,11 @@ export class CreateUserInput {
   @IsNotEmpty()
   @IsString()
   name: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsEnum(Region)
+  region: Region;
 
   @ApiProperty()
   @IsNotEmpty()

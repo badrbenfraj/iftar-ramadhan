@@ -15,6 +15,7 @@ import { FastingOutput } from '../dtos/fasting-output.dto';
 import { Fasting } from '../entities/fasting.entity';
 import { FastingRepository } from '../repositories/fasting.repository';
 import { FastingAclService } from './fasting-acl.service';
+import { Region } from '../enums/regions.enum';
 
 @Injectable()
 export class FastingService {
@@ -29,10 +30,11 @@ export class FastingService {
 
   async createFasting(
     ctx: RequestContext,
+    region: Region,
     input: CreateFastingInput,
   ): Promise<FastingOutput> {
     this.logger.log(ctx, `${this.createFasting.name} was called`);
-
+    input['region'] = region;
     const fasting = plainToClass(Fasting, input);
 
     const actor: Actor = ctx.user;
@@ -54,6 +56,37 @@ export class FastingService {
     return plainToClass(FastingOutput, savedFasting, {
       excludeExtraneousValues: true,
     });
+  }
+
+  async getFastingsByRegion(
+    ctx: RequestContext,
+    region: Region,
+    limit: number,
+    offset: number,
+  ): Promise<{ fastings: FastingOutput[]; count: number }> {
+    this.logger.log(ctx, `${this.getFastings.name} was called`);
+
+    const actor: Actor = ctx.user;
+
+    const isAllowed = this.aclService.forActor(actor).canDoAction(Action.List);
+    if (!isAllowed) {
+      throw new UnauthorizedException();
+    }
+
+    this.logger.log(ctx, `calling ${FastingRepository.name}.findAndCount`);
+    const [fastings, count] = await this.repository.findAndCount({
+      where: {
+        region,
+      },
+      take: limit,
+      skip: offset,
+    });
+
+    const fastingsOutput = plainToClass(FastingOutput, fastings, {
+      excludeExtraneousValues: true,
+    });
+
+    return { fastings: fastingsOutput, count };
   }
 
   async getFastings(
@@ -87,13 +120,14 @@ export class FastingService {
   async getFastingById(
     ctx: RequestContext,
     id: number,
+    region: Region,
   ): Promise<FastingOutput> {
     this.logger.log(ctx, `${this.getFastingById.name} was called`);
 
     const actor: Actor = ctx.user;
 
-    this.logger.log(ctx, `calling ${FastingRepository.name}.getById`);
-    const fasting = await this.repository.getById(id);
+    this.logger.log(ctx, `calling ${FastingRepository.name}.getByIdAndRegion`);
+    const fasting = await this.repository.getByIdAndRegion(id, region);
 
     const isAllowed = this.aclService
       .forActor(actor)
@@ -110,12 +144,13 @@ export class FastingService {
   async updateFasting(
     ctx: RequestContext,
     fastingId: number,
+    region: Region,
     input: UpdateFastingInput,
   ): Promise<FastingOutput> {
     this.logger.log(ctx, `${this.updateFasting.name} was called`);
 
-    this.logger.log(ctx, `calling ${FastingRepository.name}.getById`);
-    const fasting = await this.repository.getById(fastingId);
+    this.logger.log(ctx, `calling ${FastingRepository.name}.getByIdAndRegion`);
+    const fasting = await this.repository.getByIdAndRegion(fastingId, region);
 
     const actor: Actor = ctx.user;
 
@@ -139,11 +174,15 @@ export class FastingService {
     });
   }
 
-  async deleteFasting(ctx: RequestContext, id: number): Promise<void> {
+  async deleteFasting(
+    ctx: RequestContext,
+    id: number,
+    region: Region,
+  ): Promise<void> {
     this.logger.log(ctx, `${this.deleteFasting.name} was called`);
 
-    this.logger.log(ctx, `calling ${FastingRepository.name}.getById`);
-    const fasting = await this.repository.getById(id);
+    this.logger.log(ctx, `calling ${FastingRepository.name}.getByIdAndRegion`);
+    const fasting = await this.repository.getByIdAndRegion(id, region);
 
     const actor: Actor = ctx.user;
 

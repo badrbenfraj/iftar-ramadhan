@@ -44,6 +44,7 @@ export class RegistrationPage implements OnInit, OnDestroy {
     this.registerForm = this.formBuilder.group({
       name: ['', [Validators.required]],
       username: ['', [Validators.required]],
+      region: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(3)]],
     });
@@ -63,10 +64,7 @@ export class RegistrationPage implements OnInit, OnDestroy {
     }
     this.authService
       .registerUser(
-        this.form.name.value,
-        this.form.username.value,
-        this.form.email.value,
-        this.form.password.value
+        this.registerForm.getRawValue()
       )
       .subscribe({
         next: (res) => {

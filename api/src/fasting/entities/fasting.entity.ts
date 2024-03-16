@@ -9,11 +9,15 @@ import {
 } from 'typeorm';
 
 import { User } from '../../user/entities/user.entity';
+import { Region } from '../enums/regions.enum';
 
 @Entity('fastings')
 export class Fasting {
   @PrimaryColumn()
   id: number;
+
+  @PrimaryColumn({ type: 'enum', enum: Region })
+  region: Region;
 
   @Column()
   firstName: string;

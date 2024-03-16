@@ -35,6 +35,7 @@ import {
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
 import { FastingService } from '../services/fasting.service';
+import { Region } from '../enums/regions.enum';
 
 @ApiTags('fastings')
 @Controller('fastings')
@@ -46,7 +47,7 @@ export class FastingController {
     this.logger.setContext(FastingController.name);
   }
 
-  @Post()
+  @Post(':region')
   @ApiOperation({
     summary: 'Create fasting API',
   })
@@ -59,10 +60,39 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async createFasting(
     @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
     @Body() input: CreateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
-    const fasting = await this.fastingService.createFasting(ctx, input);
+    const fasting = await this.fastingService.createFasting(ctx, region, input);
     return { data: fasting, meta: {} };
+  }
+
+  @Get(':region')
+  @ApiOperation({
+    summary: 'Get fastings as a list API',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([FastingOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async getFastingsByRegion(
+    @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
+    @Query() query: PaginationParamsDto,
+  ): Promise<BaseApiResponse<FastingOutput[]>> {
+    this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
+
+    const { fastings, count } = await this.fastingService.getFastingsByRegion(
+      ctx,
+      region,
+      query.limit,
+      query.offset,
+    );
+
+    return { data: fastings, meta: { count } };
   }
 
   @Get()
@@ -91,7 +121,7 @@ export class FastingController {
     return { data: fastings, meta: { count } };
   }
 
-  @Get(':id')
+  @Get(':region/:id')
   @ApiOperation({
     summary: 'Get fasting by id API',
   })
@@ -107,15 +137,16 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async getFasting(
     @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
     @Param('id') id: number,
   ): Promise<BaseApiResponse<FastingOutput>> {
     this.logger.log(ctx, `${this.getFasting.name} was called`);
 
-    const fasting = await this.fastingService.getFastingById(ctx, id);
+    const fasting = await this.fastingService.getFastingById(ctx, id, region);
     return { data: fasting, meta: {} };
   }
 
-  @Patch(':id')
+  @Patch(':region/:id')
   @ApiOperation({
     summary: 'Update fasting API',
   })
@@ -128,18 +159,20 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async updateFasting(
     @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
     @Param('id') fastingId: number,
     @Body() input: UpdateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
     const fasting = await this.fastingService.updateFasting(
       ctx,
       fastingId,
+      region,
       input,
     );
     return { data: fasting, meta: {} };
   }
 
-  @Delete(':id')
+  @Delete(':region/:id')
   @ApiOperation({
     summary: 'Delete fasting by id API',
   })
@@ -150,10 +183,11 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async deleteFasting(
     @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
     @Param('id') id: number,
   ): Promise<void> {
     this.logger.log(ctx, `${this.deleteFasting.name} was called`);
 
-    return this.fastingService.deleteFasting(ctx, id);
+    return this.fastingService.deleteFasting(ctx, id, region);
   }
 }

@@ -52,6 +52,23 @@
     </div>
     <ion-item
       class="ion-margin-bottom"
+      [ngClass]="{ 'is-invalid': isSubmitted && form.region.errors }"
+    >
+      <ion-select formControlName="region" placeholder="Choose region">
+        <ion-select-option value="sokra">Dar Soukra</ion-select-option>
+        <ion-select-option value="sousse">Dar Sousse</ion-select-option>
+      </ion-select>
+    </ion-item>
+    <div *ngIf="isSubmitted && form.region.errors">
+      <span
+        class="is-invalid"
+        *ngIf="isSubmitted && form.region.errors?.required"
+      >
+        Region is <strong>required</strong>.
+      </span>
+    </div>
+    <ion-item
+      class="ion-margin-bottom"
       [ngClass]="{ 'is-invalid': isSubmitted && form.email.errors }"
     >
       <ion-input

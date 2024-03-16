@@ -32,7 +32,7 @@ export class AuthenticationService {
     return !user.isAccountDisabled;
   }
 
-  get loggedUser() {
+  get currentUser() {
     return {
       token: JSON.parse(localStorage.getItem('token')),
       ...JSON.parse(localStorage.getItem('user')),
@@ -54,18 +54,13 @@ export class AuthenticationService {
     return this.httpClient.post<any>(`${BASE_PATH}/auth/login`, body);
   }
 
-  registerUser(
-    name: string,
-    username: string,
-    email: string,
-    password: string
-  ) {
-    const body = {
-      name,
-      username,
-      password,
-      email,
-    };
+  registerUser(body: {
+    name: string;
+    username: string;
+    region: string;
+    email: string;
+    password: string;
+  }) {
     return this.httpClient.post<any>(`${BASE_PATH}/auth/register`, body);
   }
 
