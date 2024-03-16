@@ -94,7 +94,7 @@ export class FastingPersonService {
 
     return this.httpClient
       .patch<any>(
-        `${BASE_PATH}/fastings/${currentUser?.region}/${body?.id}`,
+        `${BASE_PATH}/fastings/confirm/${currentUser?.region}/${body?.id}`,
         body
       )
       .pipe(concatMap(() => this.getFastingPersons()));

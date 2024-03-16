@@ -174,7 +174,7 @@ export class FastingController {
     return { data: fasting, meta: {} };
   }
 
-  @Post('confirm/:region/:id')
+  @Patch('confirm/:region/:id')
   @ApiOperation({
     summary: 'confirm meal taken fasting API',
   })
@@ -192,6 +192,7 @@ export class FastingController {
     @Body() input: UpdateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
     input.lastTakenMeal = new Date();
+    console.log('input: ', input)
     const fasting = await this.fastingService.updateFasting(
       ctx,
       fastingId,
