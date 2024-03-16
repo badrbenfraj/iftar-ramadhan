@@ -17,23 +17,14 @@ export class FastingPersonService {
 
   fastingPeople$: Observable<{ data: any[]; meta: any }>;
 
-  currentUser: {
-    name: string;
-    username: string;
-    region: string;
-    email: string;
-    password: string;
-  };
-
-  constructor(private httpClient: HttpClient) {
-    this.currentUser = this.authenticationService.currentUser;
-  }
+  constructor(private httpClient: HttpClient) {}
 
   getFastingPersons(
     limit = 1000,
     offset = 0
   ): Observable<{ data: any[]; meta: any }> {
     const params = {};
+    const currentUser = this.authenticationService.currentUser;
 
     const isNumber = (value) => typeof value === 'number' && isFinite(value);
 
@@ -46,7 +37,7 @@ export class FastingPersonService {
     }
 
     this.fastingPeople$ = this.httpClient
-      .get<any>(`${BASE_PATH}/fastings/${this.currentUser?.region}`, { params })
+      .get<any>(`${BASE_PATH}/fastings/${currentUser?.region}`, { params })
       .pipe(
         map((items: any) => items?.data?.sort((a, b) => a.id - b.id)),
         shareReplay(1)
@@ -55,58 +46,73 @@ export class FastingPersonService {
   }
 
   getFastingPersonById(id: string): Observable<any> {
+    const currentUser = this.authenticationService.currentUser;
+
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/${this.currentUser?.region}/${id}`
+      `${BASE_PATH}/fastings/${currentUser?.region}/${id}`
     );
   }
 
   addFastingPerson(body: FastingPerson) {
+    const currentUser = this.authenticationService.currentUser;
+
     return this.httpClient
-      .post(`${BASE_PATH}/fastings/${this.currentUser?.region}`, body)
+      .post(`${BASE_PATH}/fastings/${currentUser?.region}`, body)
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 
   deleteFastingPersonsList() {
+    const currentUser = this.authenticationService.currentUser;
+
     return this.httpClient
-      .delete<any>(`${BASE_PATH}/fastings/${this.currentUser?.region}/all`)
+      .delete<any>(`${BASE_PATH}/fastings/${currentUser?.region}/all`)
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 
   deleteFastingPerson(fastingPerson: FastingPerson) {
+    const currentUser = this.authenticationService.currentUser;
     return this.httpClient
       .delete<any>(
-        `${BASE_PATH}/fastings/${this.currentUser?.region}/${fastingPerson?.id}`
+        `${BASE_PATH}/fastings/${currentUser?.region}/${fastingPerson?.id}`
       )
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 
   updateFastingPerson(body: FastingPerson) {
+    const currentUser = this.authenticationService.currentUser;
+
     return this.httpClient
       .patch<any>(
-        `${BASE_PATH}/fastings/${this.currentUser?.region}/${body?.id}`,
+        `${BASE_PATH}/fastings/${currentUser?.region}/${body?.id}`,
         body
       )
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 
   confirmMeal(body: FastingPerson) {
+    const currentUser = this.authenticationService.currentUser;
+
     return this.httpClient
       .patch<any>(
-        `${BASE_PATH}/fastings/confirm/${this.currentUser?.region}/${body?.id}`,
+        `${BASE_PATH}/fastings/${currentUser?.region}/${body?.id}`,
         body
       )
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 
   addBulkMeals(meals) {
+    const currentUser = this.authenticationService.currentUser;
+
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/bulk/${this.currentUser?.region}`
+      `${BASE_PATH}/fastings/statistics/${currentUser?.region}`
     );
   }
 
   getDailyStatistics(): Observable<any> {
+    const currentUser = this.authenticationService.currentUser;
+
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/daily/statistics/${this.currentUser?.region}`
+      `${BASE_PATH}/fastings/daily/statistics/${currentUser?.region}`
     );
   }
 }
