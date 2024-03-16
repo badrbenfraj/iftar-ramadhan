@@ -20,6 +20,8 @@ export class ScanPage implements OnInit {
 
   loading = false;
 
+  emptyCode = false;
+
   constructor(
     private barcodeScanner: BarcodeScanner,
     private navCtl: NavController,
@@ -47,9 +49,11 @@ export class ScanPage implements OnInit {
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
+            this.emptyCode = false;
             this.getFastingPerson(scanCode);
           }
         } else {
+          this.emptyCode = true;
           this.presentAlert();
         }
       })

@@ -63,7 +63,7 @@
     <ion-spinner *ngIf="isSubmitted"> </ion-spinner>
   </ion-button>
   <ion-button
-    *ngIf="fastingPerson && isMealTaken && !loading"
+    *ngIf="(fastingPerson && isMealTaken) || emptyCode && !loading"
     color="primary"
     expand="full"
     shape="round"
