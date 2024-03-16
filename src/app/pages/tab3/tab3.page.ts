@@ -70,7 +70,7 @@ export class Tab3Page implements OnInit {
       .getDailyStatistics()
       .pipe(first())
       .subscribe((data) => {
-        this.data = data;
+        this.data = data?.data;
         event.target.complete();
       });
   }
