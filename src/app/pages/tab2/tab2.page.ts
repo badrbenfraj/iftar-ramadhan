@@ -49,7 +49,6 @@ export class Tab2Page implements OnInit, OnDestroy {
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
-      lastTakenMeal: [this.getTodayDate(), []],
     });
 
     this.bulkMealsForm = this.formBuilder.group({
@@ -86,7 +85,6 @@ export class Tab2Page implements OnInit, OnDestroy {
     const lastName = this.form.lastName.value;
     const familyMeal = this.form.familyMeal.value;
     const singleMeal = this.form.singleMeal.value;
-    const lastTakenMeal = this.getTodayDate();
     const id = this.form.id.value;
 
     this.fastingPersonService
@@ -96,7 +94,6 @@ export class Tab2Page implements OnInit, OnDestroy {
         lastName,
         singleMeal,
         familyMeal,
-        lastTakenMeal,
       })
       .subscribe({
         next: () => {

@@ -34,27 +34,31 @@ export class PersonDetailsPage implements OnInit {
         .pipe(first())
         .subscribe((person) => {
           this.fastingPerson = person?.data as FastingPerson;
+          console.log(
+            this.getDate(this.fastingPerson.lastTakenMeal),
+            this.getDate()
+          );
           this.isMealTaken =
-            new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
-            new Date().setHours(0, 0, 0, 0);
+            this.getDate(this.fastingPerson.lastTakenMeal) === this.getDate();
         });
     });
   }
 
   confirmMealTaken() {
-    this.fastingPerson.lastTakenMeal = this.getTodayDate();
-
-    this.fastingPersonService
-      .updateFastingPerson(this.fastingPerson)
-      .subscribe(() => {
-        this.isMealTaken =
-          new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
-          new Date().setHours(0, 0, 0, 0);
-      });
+    this.fastingPersonService.confirmMeal(this.fastingPerson).subscribe({
+      next: () => {
+        this.isMealTaken = true;
+      },
+      error: (error) => {
+        this.isMealTaken = false;
+      },
+    });
   }
 
-  getTodayDate() {
-    return new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
+  getDate(date?) {
+    return new Date(
+      ((date && new Date(date)) || new Date()).toLocaleString().split(',')[0]
+    ).getTime();
   }
 
   editPersonDetails(person) {

@@ -67,8 +67,10 @@
     color="primary"
     expand="full"
     shape="round"
+    [disabled]="isSubmitted"
     (click)="confirmAndOpenBarCodeScanner()"
   >
     Scan another code
+    <ion-spinner *ngIf="isSubmitted"> </ion-spinner>
   </ion-button>
 </ion-content>

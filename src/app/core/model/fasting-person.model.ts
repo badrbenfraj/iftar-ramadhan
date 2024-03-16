@@ -7,5 +7,5 @@ export interface FastingPerson {
   region?: Region;
   singleMeal: number;
   familyMeal: number;
-  lastTakenMeal: string;
+  lastTakenMeal?: string;
 }

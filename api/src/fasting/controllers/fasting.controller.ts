@@ -63,6 +63,8 @@ export class FastingController {
     @Param('region') region: Region,
     @Body() input: CreateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
+    input.lastTakenMeal = new Date();
+
     const fasting = await this.fastingService.createFasting(ctx, region, input);
     return { data: fasting, meta: {} };
   }
@@ -172,6 +174,33 @@ export class FastingController {
     return { data: fasting, meta: {} };
   }
 
+  @Post('confirm/:region/:id')
+  @ApiOperation({
+    summary: 'confirm meal taken fasting API',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse(FastingOutput),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async confirmFastingMeal(
+    @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
+    @Param('id') fastingId: number,
+    @Body() input: UpdateFastingInput,
+  ): Promise<BaseApiResponse<FastingOutput>> {
+    input.lastTakenMeal = new Date();
+    const fasting = await this.fastingService.updateFasting(
+      ctx,
+      fastingId,
+      region,
+      input,
+    );
+    return { data: fasting, meta: {} };
+  }
+
   @Delete(':region/:id')
   @ApiOperation({
     summary: 'Delete fasting by id API',
@@ -189,5 +218,62 @@ export class FastingController {
     this.logger.log(ctx, `${this.deleteFasting.name} was called`);
 
     return this.fastingService.deleteFasting(ctx, id, region);
+  }
+
+  @Get('/daily/statistics/:region')
+  @ApiOperation({
+    summary: 'Get daily statistics fastings by region API',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([FastingOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async getFastingsStatisticsByRegion(
+    @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
+    @Query() query: PaginationParamsDto,
+  ): Promise<BaseApiResponse<any>> {
+    this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
+
+    const { fastings, count } = await this.fastingService.getFastingsByRegion(
+      ctx,
+      region,
+      query.limit,
+      query.offset,
+    );
+
+    const getDate = (date?) =>
+      new Date(
+        ((date && new Date(date)) || new Date()).toLocaleString().split(',')[0],
+      ).getTime();
+
+    const fastingsWithtakenMeal = fastings.filter(
+      (item: FastingOutput) => getDate(item.lastTakenMeal) === getDate(),
+    );
+
+    const statistics = {
+      totalPersons: count,
+      persons: fastingsWithtakenMeal.length,
+      singleMeal: 0,
+      familyMeal: 0,
+      totalMeals: 0,
+    };
+
+    const { persons, singleMeal, familyMeal, totalMeals, totalPersons } =
+      fastingsWithtakenMeal.reduce((acc, curr) => {
+        acc.familyMeal += curr?.familyMeal * 4;
+        acc.singleMeal += curr?.singleMeal;
+        acc.totalMeals += curr?.singleMeal + curr?.familyMeal;
+
+        return acc;
+      }, statistics);
+
+    return {
+      data: { totalPersons, persons, singleMeal, familyMeal, totalMeals },
+      meta: {},
+    };
   }
 }

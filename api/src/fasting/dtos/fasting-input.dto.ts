@@ -9,7 +9,7 @@ import {
 
 export class CreateFastingInput {
   @IsNumber()
-  @IsOptional()
+  @IsNotEmpty()
   @ApiProperty()
   id: number;
 
@@ -34,7 +34,7 @@ export class CreateFastingInput {
   familyMeal: number;
 
   @IsDateString()
-  @IsNotEmpty()
+  @IsOptional()
   @ApiProperty()
   lastTakenMeal: Date;
 }
@@ -61,7 +61,7 @@ export class UpdateFastingInput {
   familyMeal: number;
 
   @IsDateString()
-  @IsNotEmpty()
+  @IsOptional()
   @ApiProperty()
   lastTakenMeal: Date;
 }

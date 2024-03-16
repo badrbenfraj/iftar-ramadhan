@@ -33,6 +33,8 @@ export class ScanPage implements OnInit {
   }
 
   openBarCodeScanner() {
+    this.loading = false;
+    this.isSubmitted = false;
     this.barcodeScanner
       .scan({
         disableSuccessBeep: true,
@@ -41,6 +43,7 @@ export class ScanPage implements OnInit {
       })
       .then((barcodeData) => {
         this.loading = true;
+        this.isSubmitted = true;
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
@@ -51,7 +54,6 @@ export class ScanPage implements OnInit {
         }
       })
       .catch((err) => {
-        this.loading = false;
         this.presentAlert();
       });
   }
@@ -63,11 +65,10 @@ export class ScanPage implements OnInit {
         .pipe(first())
         .subscribe({
           next: () => {
-            this.isSubmitted = false;
-
             this.openBarCodeScanner();
           },
           error: (error) => {
+            this.loading = false;
             this.isSubmitted = false;
           },
         });
@@ -85,6 +86,8 @@ export class ScanPage implements OnInit {
       .subscribe({
         next: (person) => {
           this.loading = false;
+          this.isSubmitted = false;
+
           this.fastingPerson = person?.data as FastingPerson;
 
           this.isMealTaken =
@@ -92,16 +95,17 @@ export class ScanPage implements OnInit {
             new Date().setHours(0, 0, 0, 0);
         },
         error: (error) => {
+          this.isSubmitted = false;
           this.loading = false;
         },
       });
   }
 
   confirmMealTaken() {
+    this.loading = true;
     this.isSubmitted = true;
 
-    this.fastingPerson.lastTakenMeal = this.getTodayDate();
-    return this.fastingPersonService.updateFastingPerson(this.fastingPerson);
+    return this.fastingPersonService.confirmMeal(this.fastingPerson);
   }
 
   getTodayDate() {
@@ -110,6 +114,7 @@ export class ScanPage implements OnInit {
 
   async presentAlert() {
     this.loading = false;
+    this.isSubmitted = false;
 
     const alert = await this.alertController.create({
       header: 'Warning',

@@ -89,15 +89,24 @@ export class FastingPersonService {
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 
+  confirmMeal(body: FastingPerson) {
+    return this.httpClient
+      .patch<any>(
+        `${BASE_PATH}/fastings/confirm/${this.currentUser?.region}/${body?.id}`,
+        body
+      )
+      .pipe(concatMap(() => this.getFastingPersons()));
+  }
+
   addBulkMeals(meals) {
     return this.httpClient.get<any>(
       `${BASE_PATH}/fastings/bulk/${this.currentUser?.region}`
     );
   }
 
-  getStatisticsByDate(creationDate: Date): Observable<any[]> {
+  getDailyStatistics(): Observable<any> {
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/statistics/${this.currentUser?.region}/${creationDate}`
+      `${BASE_PATH}/fastings/daily/statistics/${this.currentUser?.region}`
     );
   }
 }

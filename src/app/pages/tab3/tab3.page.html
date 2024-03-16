@@ -10,16 +10,20 @@
   </ion-refresher>
   <div #content id="PrintStats">
     <ion-item>
+      <ion-label>Number of persons with taken meals:</ion-label>
+      <ion-label> {{ personsNumber }} / {{ totalPersonsNumber }} </ion-label>
+    </ion-item>
+    <ion-item>
       <ion-label>Number of Family meals:</ion-label>
-      <ion-label>{{ getFamilyMealsNumber() }} </ion-label>
+      <ion-label>{{ familyMealsNumber }} </ion-label>
     </ion-item>
     <ion-item>
       <ion-label>Number of Single meals:</ion-label>
-      <ion-label>{{ getSingleMealsNumber() }} </ion-label>
+      <ion-label>{{ singleMealsNumber }} </ion-label>
     </ion-item>
     <ion-item>
       <ion-label>Number of meals:</ion-label>
-      <ion-label>{{ getMealsNumber() }} </ion-label>
+      <ion-label>{{ mealsNumber }} </ion-label>
     </ion-item>
   </div>
   <ion-button expand="block" shape="round" (click)="downloadPDF()">

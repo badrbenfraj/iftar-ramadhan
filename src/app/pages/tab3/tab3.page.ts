@@ -12,80 +12,35 @@ import { Bulk } from '@app/core/model/bulk.model';
 export class Tab3Page implements OnInit {
   content: string;
 
-  fastingPersonsList: FastingPerson[] = [];
+  data: any;
 
-  bulkData: Bulk[] = [];
-
-  constructor(
-    private fastingPersonService: FastingPersonService,
-  ) {}
+  constructor(private fastingPersonService: FastingPersonService) {}
 
   ngOnInit(): void {
-    this.getFastionsPersonsList();
     this.fastingPersonService
-      .getStatisticsByDate(new Date(new Date().setHours(0, 0, 0, 0)))
+      .getDailyStatistics()
       .pipe(first())
-      .subscribe((data) => (this.bulkData = data));
+      .subscribe((data) => (this.data = data?.data));
   }
 
-  getFastionsPersonsList() {
-    this.fastingPersonService
-      .getFastingPersons()
-      .pipe(
-        map((items) =>
-          items?.data?.filter(
-            (item: FastingPerson) =>
-              new Date(item.lastTakenMeal).setHours(0, 0, 0, 0) ===
-              new Date().setHours(0, 0, 0, 0)
-          )
-        ),
-        first()
-      )
-      .subscribe((items) => (this.fastingPersonsList = items));
+  get totalPersonsNumber() {
+    return this.data?.totalPersons;
   }
 
-  getMealsNumber() {
-    let fastingPeople = 0;
-    for (const person of this.fastingPersonsList) {
-      fastingPeople += person?.singleMeal + person?.familyMeal * 4;
-    }
-    return (
-      fastingPeople +
-      this.getSingleBulkMealsNumber() +
-      this.getFamilyBulkMealsNumber()
-    );
+  get personsNumber() {
+    return this.data?.persons;
   }
 
-  getSingleMealsNumber() {
-    let fastingPeople = 0;
-    for (const person of this.fastingPersonsList) {
-      fastingPeople += person?.singleMeal;
-    }
-    return fastingPeople + this.getSingleBulkMealsNumber();
+  get mealsNumber() {
+    return this.data?.totalMeals;
   }
 
-  getFamilyMealsNumber() {
-    let fastingPeople = 0;
-    for (const person of this.fastingPersonsList) {
-      fastingPeople += person?.familyMeal * 4;
-    }
-    return fastingPeople + this.getFamilyBulkMealsNumber();
+  get singleMealsNumber() {
+    return this.data?.singleMeal;
   }
 
-  getSingleBulkMealsNumber() {
-    let fastingPeople = 0;
-    for (const bulk of this.bulkData) {
-      fastingPeople += bulk?.singleMeal;
-    }
-    return fastingPeople;
-  }
-
-  getFamilyBulkMealsNumber() {
-    let fastingPeople = 0;
-    for (const bulk of this.bulkData) {
-      fastingPeople += bulk?.familyMeal * 4;
-    }
-    return fastingPeople;
+  get familyMealsNumber() {
+    return this.data?.familyMeal;
   }
 
   getWeeklyStats() {
@@ -111,12 +66,11 @@ export class Tab3Page implements OnInit {
   }
 
   refreshStats(event) {
-    this.getFastionsPersonsList();
     this.fastingPersonService
-      .getStatisticsByDate(new Date(new Date().setHours(0, 0, 0, 0)))
+      .getDailyStatistics()
       .pipe(first())
       .subscribe((data) => {
-        this.bulkData = data;
+        this.data = data;
         event.target.complete();
       });
   }

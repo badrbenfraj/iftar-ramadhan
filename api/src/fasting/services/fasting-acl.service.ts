@@ -11,7 +11,7 @@ export class FastingAclService extends BaseAclService<Fasting> {
   constructor() {
     super();
     this.canDo(ROLE.ADMIN, [Action.Manage]);
-    this.canDo(ROLE.USER, [Action.Create, Action.List, Action.Read]);
+    this.canDo(ROLE.USER, [Action.Manage]);
     this.canDo(ROLE.USER, [Action.Update, Action.Delete], this.isFastingAuthor);
   }
 

@@ -41,10 +41,6 @@ export class EditPersonDetailsPage implements OnInit {
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
-      lastTakenMeal: [
-        new Date(new Date().setHours(0, 0, 0, 0)).toISOString(),
-        [],
-      ],
     });
     this.getFastingPerson();
   }
@@ -99,7 +95,6 @@ export class EditPersonDetailsPage implements OnInit {
     const lastName = this.form.lastName.value;
     const familyMeal = this.form.familyMeal.value;
     const singleMeal = this.form.singleMeal.value;
-    const lastTakenMeal = this.getTodayDate();
     const id = this.form.id.value;
 
     this.fastingPersonService
@@ -109,7 +104,6 @@ export class EditPersonDetailsPage implements OnInit {
         lastName,
         singleMeal,
         familyMeal,
-        lastTakenMeal,
       })
       .subscribe({
         next: () => {
@@ -152,7 +146,9 @@ export class EditPersonDetailsPage implements OnInit {
     await alert.present();
   }
 
-  getTodayDate() {
-    return new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
-  }
+  getDate = (date?) => {
+    return new Date(
+      ((date && new Date(date)) || new Date()).toLocaleString().split(',')[0]
+    );
+  };
 }
