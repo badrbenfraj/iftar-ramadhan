@@ -8,7 +8,11 @@
   <ion-refresher slot="fixed" (ionRefresh)="refreshStats($event)">
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
-  <div #content id="PrintStats">
+  <div *ngIf="loading" class="empty">
+    <ion-spinner class="spinner" name="bubbles" color="tertiary"></ion-spinner>
+    <span>Fetching date</span>
+  </div>
+  <div #content *ngIf="!loading" id="PrintStats">
     <ion-item>
       <ion-label>Number of persons with taken meals:</ion-label>
       <ion-label> {{ personsNumber }} / {{ totalPersonsNumber }} </ion-label>

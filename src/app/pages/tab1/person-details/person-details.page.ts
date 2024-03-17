@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { first } from 'rxjs/operators';
 import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
+import * as fn from '@app/shared/functions/functions-expression';
 
 @Component({
   selector: 'app-person-details',
@@ -56,9 +57,7 @@ export class PersonDetailsPage implements OnInit {
   }
 
   getDate(date?) {
-    return new Date(
-      ((date && new Date(date)) || new Date()).toLocaleString().split(',')[0]
-    ).getTime();
+    return fn.getDate(date);
   }
 
   editPersonDetails(person) {

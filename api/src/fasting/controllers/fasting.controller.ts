@@ -246,10 +246,14 @@ export class FastingController {
       query.offset,
     );
 
-    const getDate = (date?) =>
-      new Date(
-        ((date && new Date(date)) || new Date()).toLocaleString().split(',')[0],
-      ).getTime();
+    const getDate = (date?) => {
+      const t =
+        (date && new Date(new Date(date).setHours(0, 0, 0, 0))) ||
+        new Date(new Date().setHours(0, 0, 0, 0));
+
+      const actiondate = new Date(t);
+      return actiondate.getTime();
+    };
 
     const fastingsWithtakenMeal = fastings.filter(
       (item: FastingOutput) => getDate(item.lastTakenMeal) === getDate(),

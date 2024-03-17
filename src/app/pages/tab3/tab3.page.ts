@@ -12,6 +12,8 @@ import { Bulk } from '@app/core/model/bulk.model';
 export class Tab3Page implements OnInit {
   content: string;
 
+  loading: boolean = true;
+
   data: any;
 
   constructor(private fastingPersonService: FastingPersonService) {}
@@ -20,7 +22,10 @@ export class Tab3Page implements OnInit {
     this.fastingPersonService
       .getDailyStatistics()
       .pipe(first())
-      .subscribe((data) => (this.data = data?.data));
+      .subscribe((data) => {
+        this.data = data?.data;
+        this.loading = false;
+      });
   }
 
   get totalPersonsNumber() {
@@ -58,8 +63,7 @@ export class Tab3Page implements OnInit {
     const date = new Date().getDate();
     const month = new Date().getMonth();
     const year = new Date().getFullYear();
-    this.fastingPersonService
-    .downloadDailyStatistics().subscribe()
+    this.fastingPersonService.downloadDailyStatistics().subscribe();
     const options = {
       type: 'share',
       fileName: `statistics_${date}_${month}_${year}.pdf`,
@@ -72,6 +76,7 @@ export class Tab3Page implements OnInit {
       .pipe(first())
       .subscribe((data) => {
         this.data = data?.data;
+        this.loading = false;
         event.target.complete();
       });
   }
