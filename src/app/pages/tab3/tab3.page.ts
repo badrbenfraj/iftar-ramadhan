@@ -71,6 +71,7 @@ export class Tab3Page implements OnInit {
   }
 
   refreshStats(event) {
+    this.loading = true;
     this.fastingPersonService
       .getDailyStatistics()
       .pipe(first())

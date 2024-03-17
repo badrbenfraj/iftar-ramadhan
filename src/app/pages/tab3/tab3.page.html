@@ -10,7 +10,7 @@
   </ion-refresher>
   <div *ngIf="loading" class="empty">
     <ion-spinner class="spinner" name="bubbles" color="tertiary"></ion-spinner>
-    <span>Fetching date</span>
+    <span>Fetching data</span>
   </div>
   <div #content *ngIf="!loading" id="PrintStats">
     <ion-item>
@@ -30,7 +30,12 @@
       <ion-label>{{ mealsNumber }} </ion-label>
     </ion-item>
   </div>
-  <ion-button expand="block" shape="round" (click)="downloadPDF()">
+  <ion-button
+    *ngIf="!loading"
+    expand="block"
+    shape="round"
+    (click)="downloadPDF()"
+  >
     Download Daily Statistics
   </ion-button>
 </ion-content>
