@@ -242,7 +242,7 @@ export class FastingController {
     const { fastings, count } = await this.fastingService.getFastingsByRegion(
       ctx,
       region,
-      query.limit,
+      Number.MAX_SAFE_INTEGER,
       query.offset,
     );
 
