@@ -6,6 +6,8 @@
   "scripts": {
     "ng": "ng",
     "start": "ionic serve",
+    "android": "ionic capacitor run android -l --external",
+    "ios": "ionic capacitor run ios -l --external",
     "sync": "ionic cap sync android",
     "build": "ionic cap build android",
     "build:prod": "ionic build --prod && npx cap sync android && npm run build:prod:apk",
