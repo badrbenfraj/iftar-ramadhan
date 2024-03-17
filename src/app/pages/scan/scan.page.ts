@@ -5,6 +5,7 @@ import { AlertController, NavController } from '@ionic/angular';
 import { first } from 'rxjs/operators';
 import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
+import * as fn from '@app/shared/functions/functions-expression';
 
 @Component({
   selector: 'app-scan',
@@ -34,22 +35,17 @@ export class ScanPage implements OnInit {
     this.openBarCodeScanner();
   }
 
-  openBarCodeScanner() {
-    this.loading = false;
-    this.isSubmitted = false;
-    this.barcodeScanner
+  async openBarCodeScanner() {
+    await this.barcodeScanner
       .scan({
         disableSuccessBeep: true,
         resultDisplayDuration: 0,
         formats: 'QR_CODE',
       })
       .then((barcodeData) => {
-        this.loading = true;
-        this.isSubmitted = true;
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
-            this.emptyCode = false;
             this.getFastingPerson(scanCode);
           }
         } else {
@@ -60,23 +56,21 @@ export class ScanPage implements OnInit {
       .catch((err) => {
         this.presentAlert();
       });
+    this.loading = false;
+    this.isSubmitted = false;
   }
   confirmAndOpenBarCodeScanner() {
-    if (this.isMealTaken) {
-      this.openBarCodeScanner();
-    } else {
-      this.confirmMealTaken()
-        .pipe(first())
-        .subscribe({
-          next: () => {
-            this.openBarCodeScanner();
-          },
-          error: (error) => {
-            this.loading = false;
-            this.isSubmitted = false;
-          },
-        });
-    }
+    this.confirmMealTaken()
+      .pipe(first())
+      .subscribe({
+        next: () => {
+          this.openBarCodeScanner();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.isSubmitted = false;
+        },
+      });
   }
 
   stopScan() {
@@ -84,6 +78,9 @@ export class ScanPage implements OnInit {
   }
 
   getFastingPerson(id) {
+    this.emptyCode = false;
+    this.loading = true;
+    this.isSubmitted = true;
     this.fastingPersonService
       .getFastingPersonById(id)
       .pipe(first())
@@ -93,12 +90,15 @@ export class ScanPage implements OnInit {
           this.isSubmitted = false;
 
           this.fastingPerson = person?.data as FastingPerson;
-
-          this.isMealTaken =
-            new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
-            new Date().setHours(0, 0, 0, 0);
+          if (Object.keys(person?.data || {}).length === 0) {
+            this.emptyCode = true;
+          } else {
+            this.isMealTaken =
+              fn.getDate(this.fastingPerson.lastTakenMeal) === fn.getDate();
+          }
         },
         error: (error) => {
+          this.emptyCode = true;
           this.isSubmitted = false;
           this.loading = false;
         },
@@ -110,10 +110,6 @@ export class ScanPage implements OnInit {
     this.isSubmitted = true;
 
     return this.fastingPersonService.confirmMeal(this.fastingPerson);
-  }
-
-  getTodayDate() {
-    return new Date(new Date().setHours(0, 0, 0, 0)).toISOString();
   }
 
   async presentAlert() {

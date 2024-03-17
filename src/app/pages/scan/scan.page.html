@@ -23,7 +23,7 @@
     name="bubbles"
     color="tertiary"
   ></ion-spinner>
-  <div *ngIf="fastingPerson">
+  <div *ngIf="fastingPerson && !emptyCode">
     <ion-item>
       <ion-label>Identifier:</ion-label>
       <ion-label>{{ fastingPerson.id }} </ion-label>
@@ -51,8 +51,11 @@
       </ion-label>
     </ion-item>
   </div>
+  <div *ngIf="emptyCode" class="empty-code">
+    <span>Invalid qr code</span>
+  </div>
   <ion-button
-    *ngIf="fastingPerson && !isMealTaken && !loading"
+    *ngIf="fastingPerson && !isMealTaken && !emptyCode"
     color="primary"
     expand="full"
     shape="round"
@@ -63,12 +66,12 @@
     <ion-spinner *ngIf="isSubmitted"> </ion-spinner>
   </ion-button>
   <ion-button
-    *ngIf="(fastingPerson && isMealTaken) || emptyCode && !loading"
+    *ngIf="(fastingPerson && isMealTaken) || emptyCode"
     color="primary"
     expand="full"
     shape="round"
     [disabled]="isSubmitted"
-    (click)="confirmAndOpenBarCodeScanner()"
+    (click)="openBarCodeScanner()"
   >
     Scan another code
     <ion-spinner *ngIf="isSubmitted"> </ion-spinner>
