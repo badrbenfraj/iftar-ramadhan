@@ -2,9 +2,9 @@ import { Component } from '@angular/core';
 import { User } from '@app/core/auth/model/user';
 import { AuthenticationService } from 'src/app/core/auth/authentication.service';
 import { saveAs } from 'file-saver';
-import { first, map } from 'rxjs/operators';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 import * as XLSX from 'xlsx';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
 @Component({
   selector: 'app-tab-profile',
@@ -22,7 +22,7 @@ export class TabProfilePage {
   }
 
   export() {
-    this.fastingPersonService.fastingPeople$.subscribe((data) => {
+    this.fastingPersonService.getFastingPersons().subscribe((data) => {
       this.exportToExcel(data);
     });
   }
@@ -34,10 +34,25 @@ export class TabProfilePage {
   async exportToExcel(data) {
     const now = new Date();
     const time = `${now.getHours()}_${now.getMinutes()}`;
-    const fileName = `${now.toDateString()}-${time}`;
+    const filename = `${now.toDateString()}-${time}.xlsx`;
     const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, fileName);
-    XLSX.writeFile(wb, `${fileName}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, filename);
+    const excelBuffer: any = XLSX.write(wb, {
+      bookType: 'xlsx',
+      type: 'array',
+    });
+    try {
+      const result = await Filesystem.writeFile({
+        path: filename,
+        data: excelBuffer,
+        directory: Directory.Data,
+        encoding: Encoding.UTF8,
+        recursive: false,
+      });
+      console.log(result);
+    } catch (e) {
+      console.error(e);
+    }
   }
 }
