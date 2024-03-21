@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  HttpStatus,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
@@ -59,15 +64,21 @@ export class AuthService {
     input: RegisterInput,
   ): Promise<RegisterOutput> {
     this.logger.log(ctx, `${this.register.name} was called`);
+    try {
+      // TODO : Setting default role as USER here. Will add option to change this later via ADMIN users.
+      input.roles = [ROLE.USER];
+      input.isAccountDisabled = false;
 
-    // TODO : Setting default role as USER here. Will add option to change this later via ADMIN users.
-    input.roles = [ROLE.USER];
-    input.isAccountDisabled = false;
-
-    const registeredUser = await this.userService.createUser(ctx, input);
-    return plainToClass(RegisterOutput, registeredUser, {
-      excludeExtraneousValues: true,
-    });
+      const registeredUser = await this.userService.createUser(ctx, input);
+      return plainToClass(RegisterOutput, registeredUser, {
+        excludeExtraneousValues: true,
+      });
+    } catch (error) {
+      if (error.status === HttpStatus.CONFLICT) {
+        throw new ConflictException('Username or email is already in use');
+      }
+      throw error;
+    }
   }
 
   async refreshToken(ctx: RequestContext): Promise<AuthTokenOutput> {

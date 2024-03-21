@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 import { plainToClass } from 'class-transformer';
 
@@ -23,6 +27,14 @@ export class UserService {
     input: CreateUserInput,
   ): Promise<UserOutput> {
     this.logger.log(ctx, `${this.createUser.name} was called`);
+
+    const existingUser = await this.repository.findOne({
+      where: [{ username: input.username }, { email: input.email }],
+    });
+
+    if (existingUser) {
+      throw new ConflictException('Username or email is already in use');
+    }
 
     const user = plainToClass(User, input);
 
