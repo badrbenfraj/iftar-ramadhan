@@ -1,8 +1,18 @@
-var fs = require("fs");
-fs.rename(
-  "/Users/badrbenfraj/projects/iftar-ramadhan/android/app/build/outputs/apk/debug/app-debug.apk",
-  "/Users/badrbenfraj/projects/iftar-ramadhan/android/app/build/outputs/apk/debug/إفطار صائم.apk",
-  function (err) {
-    if (err) console.log("ERROR: " + err);
+const { rename } = require("fs").promises;
+const { resolve } = require("path");
+
+async function renameApk() {
+  const outputDir = "android/app/build/outputs/apk/debug";
+  const [currentPath, newPath] = ["app-debug.apk", "إفطار صائم.apk"].map(
+    (file) => resolve(outputDir, file)
+  );
+
+  try {
+    await rename(currentPath, newPath);
+    console.log("APK renamed successfully.");
+  } catch (err) {
+    console.error("ERROR:", err);
   }
-);
+}
+
+renameApk();
