@@ -11,6 +11,7 @@ import {
 } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { AuthenticationService } from '../authentication.service';
+import { HttpStatusCode } from '@angular/common/http';
 
 @Component({
   selector: 'app-registration',
@@ -62,21 +63,21 @@ export class RegistrationPage implements OnInit, OnDestroy {
 
       return;
     }
-    this.authService
-      .registerUser(
-        this.registerForm.getRawValue()
-      )
-      .subscribe({
-        next: (res) => {
-          // this.authService.sendVerificationMail();
-          this.navController.navigateRoot(['login']);
-          this.isSubmitted = false;
-        },
-        error: (error) => {
-          this.isSubmitted = false;
-          this.showAlert(error.message);
-        },
-      });
+    this.authService.registerUser(this.registerForm.getRawValue()).subscribe({
+      next: (res) => {
+        // this.authService.sendVerificationMail();
+        this.navController.navigateRoot(['login']);
+        this.isSubmitted = false;
+      },
+      error: (error) => {
+        this.isSubmitted = false;
+        if (error === 'Conflict') {
+          this.showAlert('Username or email is already in use');
+        } else {
+          this.showAlert(error);
+        }
+      },
+    });
     await loading.dismiss();
   }
 
