@@ -15,6 +15,8 @@ export class Tab1Page implements OnInit {
 
   searchTerm: string;
 
+  loading = false;
+
   constructor(private router: Router) {}
 
   ngOnInit(): void {
@@ -38,9 +40,15 @@ export class Tab1Page implements OnInit {
   }
 
   refreshFastingPeople(event) {
+    this.loading = true;
     this.getFastingPersons();
     this.fastingPersonService.fastingPeople$.subscribe({
       complete: () => {
+        this.loading = false;
+        event.target.complete();
+      },
+      error: (error) => {
+        this.loading = false;
         event.target.complete();
       },
     });

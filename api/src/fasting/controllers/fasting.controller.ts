@@ -63,7 +63,13 @@ export class FastingController {
     @Param('region') region: Region,
     @Body() input: CreateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
-    input.lastTakenMeal = new Date();
+    const today = new Date();
+    if (input.cameToday === true) {
+      input.lastTakenMeal = today;
+    } else {
+      today.setDate(today.getDate() - 1);
+      input.lastTakenMeal = today;
+    }
 
     const fasting = await this.fastingService.createFasting(ctx, region, input);
     return { data: fasting, meta: {} };

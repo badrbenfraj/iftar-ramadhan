@@ -49,6 +49,7 @@ export class Tab2Page implements OnInit, OnDestroy {
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
+      cameToday: [true, []],
     });
 
     this.bulkMealsForm = this.formBuilder.group({
@@ -81,20 +82,8 @@ export class Tab2Page implements OnInit, OnDestroy {
       return;
     }
 
-    const firstName = this.form.firstName.value;
-    const lastName = this.form.lastName.value;
-    const familyMeal = this.form.familyMeal.value;
-    const singleMeal = this.form.singleMeal.value;
-    const id = this.form.id.value;
-
     this.fastingPersonService
-      .addFastingPerson({
-        id,
-        firstName,
-        lastName,
-        singleMeal,
-        familyMeal,
-      })
+      .addFastingPerson(this.fastingPersonForm.getRawValue())
       .subscribe({
         next: () => {
           this.isSubmitted = false;

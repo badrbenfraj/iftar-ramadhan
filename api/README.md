@@ -180,3 +180,11 @@ $ npm run migration:revert
 <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo.svg" width="150" alt="Nest Logo" /></a>
 
 [![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-white.svg)](https://sonarcloud.io/dashboard?id=monstar-lab-oss_nestjs-starter-rest-api)
+
+configure postgres:
+docker exec -it api-pgsqldb-1 bash
+root@0643565adeb1:/# cd /var/lib/postgresql/data/ && nano pg_hba.conf
+paste this into the file: 
+host all all 172.18.0.4/32  trust
+root@0643565adeb1:/var/lib/postgresql/data# exit
+docker restart api-pgsqldb-1

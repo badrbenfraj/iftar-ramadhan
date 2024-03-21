@@ -11,7 +11,12 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
 
-  <ion-list>
+  <div *ngIf="loading" class="empty">
+    <ion-spinner class="spinner" name="bubbles" color="tertiary"></ion-spinner>
+    <span>Fetching data</span>
+  </div>
+
+  <ion-list *ngIf="!loading">
     <ion-item>
       <ion-label class="id">Id</ion-label>
       <ion-label>Name</ion-label>

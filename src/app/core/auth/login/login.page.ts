@@ -93,7 +93,7 @@ export class LoginPage implements OnInit, OnDestroy {
         },
         error: (error) => {
           this.isSubmitted = false;
-          this.showAlert(error.message);
+          this.showAlert(error);
         },
       });
 

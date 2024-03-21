@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsBoolean,
   IsDateString,
   IsNotEmpty,
   IsNumber,
@@ -37,6 +38,11 @@ export class CreateFastingInput {
   @IsOptional()
   @ApiProperty()
   lastTakenMeal: Date;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty()
+  cameToday: boolean;
 }
 
 export class UpdateFastingInput {
