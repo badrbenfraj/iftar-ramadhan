@@ -8,9 +8,6 @@ COPY package.json package-lock.json ./
 
 RUN npm ci
 
-# Copy SSL/TLS certificates into the container
-COPY /etc/letsencrypt/live/vps-906ab37a.vps.ovh.net/ /app/certs/
-
 COPY . .
 
 ARG APP_ENV=development
