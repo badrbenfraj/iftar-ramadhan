@@ -39,7 +39,8 @@ async function bootstrap() {
     cert,
   };
   const port = configService.get<number>('port');
-  await app.listen(port);
-  await https.createServer(httpsOptions, app.getHttpAdapter().getInstance());
+  await https
+    .createServer(httpsOptions, app.getHttpAdapter().getInstance())
+    .listen(port);
 }
 bootstrap();
