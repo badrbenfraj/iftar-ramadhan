@@ -10,7 +10,18 @@ import { VALIDATION_PIPE_OPTIONS } from './shared/constants';
 import { RequestIdMiddleware } from './shared/middlewares/request-id/request-id.middleware';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  // Load SSL/TLS certificates
+  const key = fs.readFileSync('../certs/privkey.pem');
+  const cert = fs.readFileSync('../certs/fullchain.pem');
+
+  // Create HTTPS server
+  const httpsOptions = {
+    key,
+    cert,
+  };
+  const app = await NestFactory.create(AppModule, {
+    httpsOptions
+  });
   app.setGlobalPrefix('api/v1');
 
   app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
@@ -28,19 +39,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('swagger', app, document);
 
-  // Load SSL/TLS certificates
   const configService = app.get(ConfigService);
-  const key = fs.readFileSync('./certs/privkey.pem');
-  const cert = fs.readFileSync('./certs/fullchain.pem');
-
-  // Create HTTPS server
-  const httpsOptions = {
-    key,
-    cert,
-  };
   const port = configService.get<number>('port');
-  await https
-    .createServer(httpsOptions, app.getHttpAdapter().getInstance())
-    .listen(port);
+  await app.listen(port);
 }
 bootstrap();
