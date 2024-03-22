@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as fs from 'fs';
-import * as https from 'https';
 
 import { AppModule } from './app.module';
 import { VALIDATION_PIPE_OPTIONS } from './shared/constants';
@@ -11,8 +10,8 @@ import { RequestIdMiddleware } from './shared/middlewares/request-id/request-id.
 
 async function bootstrap() {
   // Load SSL/TLS certificates
-  const key = fs.readFileSync('../certs/privkey.pem');
-  const cert = fs.readFileSync('../certs/fullchain.pem');
+  const key = fs.readFileSync(__dirname + '../certs/privkey.pem');
+  const cert = fs.readFileSync(__dirname + '../certs/fullchain.pem');
 
   // Create HTTPS server
   const httpsOptions = {
@@ -20,7 +19,7 @@ async function bootstrap() {
     cert,
   };
   const app = await NestFactory.create(AppModule, {
-    httpsOptions
+    httpsOptions,
   });
   app.setGlobalPrefix('api/v1');
 
