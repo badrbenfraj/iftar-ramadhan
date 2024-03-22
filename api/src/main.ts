@@ -9,37 +9,44 @@ import { VALIDATION_PIPE_OPTIONS } from './shared/constants';
 import { RequestIdMiddleware } from './shared/middlewares/request-id/request-id.middleware';
 
 async function bootstrap() {
-  // Load SSL/TLS certificates
-  const key = fs.readFileSync(__dirname + '../certs/privkey.pem');
-  const cert = fs.readFileSync(__dirname + '../certs/fullchain.pem');
+  try {
+    // Load SSL/TLS certificates
+    const key = fs.readFileSync(__dirname + '/../certs/privkey.pem');
+    const cert = fs.readFileSync(__dirname + '/../certs/fullchain.pem');
 
-  // Create HTTPS server
-  const httpsOptions = {
-    key,
-    cert,
-  };
-  const app = await NestFactory.create(AppModule, {
-    httpsOptions,
-  });
-  app.setGlobalPrefix('api/v1');
+    // Create HTTPS server
+    const httpsOptions = {
+      key,
+      cert,
+    };
+    const app = await NestFactory.create(AppModule, {
+      httpsOptions,
+    });
+    app.setGlobalPrefix('api/v1');
 
-  app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
-  app.use(RequestIdMiddleware);
-  app.enableCors();
+    app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
+    app.use(RequestIdMiddleware);
+    app.enableCors();
 
-  /** Swagger configuration*/
-  const options = new DocumentBuilder()
-    .setTitle('Nestjs API starter')
-    .setDescription('Nestjs API description')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
+    /** Swagger configuration*/
+    const options = new DocumentBuilder()
+      .setTitle('Nestjs API starter')
+      .setDescription('Nestjs API description')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
 
-  const document = SwaggerModule.createDocument(app, options);
-  SwaggerModule.setup('swagger', app, document);
+    const document = SwaggerModule.createDocument(app, options);
+    SwaggerModule.setup('swagger', app, document);
 
-  const configService = app.get(ConfigService);
-  const port = configService.get<number>('port');
-  await app.listen(port);
+    const configService = app.get(ConfigService);
+    const port = configService.get<number>('port');
+    await app.listen(port);
+  } catch (error) {
+    console.error('Failed to bootstrap application:', error);
+  }
 }
+
+bootstrap();
+
 bootstrap();
