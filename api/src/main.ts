@@ -1,7 +1,9 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder,SwaggerModule } from '@nestjs/swagger';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import * as fs from 'fs';
+import * as https from 'https';
 
 import { AppModule } from './app.module';
 import { VALIDATION_PIPE_OPTIONS } from './shared/constants';
@@ -26,8 +28,18 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup('swagger', app, document);
 
+  // Load SSL/TLS certificates
   const configService = app.get(ConfigService);
+  const key = fs.readFileSync('./certs/privkey.pem');
+  const cert = fs.readFileSync('./certs/fullchain.pem');
+
+  // Create HTTPS server
+  const httpsOptions = {
+    key,
+    cert,
+  };
   const port = configService.get<number>('port');
   await app.listen(port);
+  await https.createServer(httpsOptions, app.getHttpAdapter().getInstance());
 }
 bootstrap();

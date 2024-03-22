@@ -1,11 +1,15 @@
-# lts-gallium refers to v16
+# lts-hydrogen refers to v20
 # Using this instead of node:16 to avoid dependabot updates
-FROM node:lts-gallium as builder
+FROM node:lts-hydrogen as builder
 
 WORKDIR /usr/src/app
 
 COPY package.json package-lock.json ./
+
 RUN npm ci
+
+# Copy SSL/TLS certificates into the container
+COPY /etc/letsencrypt/live/vps-906ab37a.vps.ovh.net/ /app/certs/
 
 COPY . .
 
@@ -16,7 +20,7 @@ RUN npm run build
 
 RUN npm prune
 
-FROM node:lts-gallium
+FROM node:lts-hydrogen
 
 ARG APP_ENV=development
 ENV NODE_ENV=${APP_ENV}
