@@ -3,7 +3,7 @@
 // The list of file replacements can be found in `angular.json`.
 export const environment = {
   production: false,
-  basePath: 'http://vps-906ab37a.vps.ovh.net:3000/api/v1',
+  basePath: 'https://vps-906ab37a.vps.ovh.net:3000/api/v1',
 };
 /*
  * For easier debugging in development mode, you can import the following file

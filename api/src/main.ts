@@ -2,7 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as fs from 'fs';
+import path from 'path';
 
 import { AppModule } from './app.module';
 import { VALIDATION_PIPE_OPTIONS } from './shared/constants';
@@ -11,8 +11,8 @@ import { RequestIdMiddleware } from './shared/middlewares/request-id/request-id.
 async function bootstrap() {
   try {
     // Load SSL/TLS certificates
-    const key = fs.readFileSync(__dirname + '/../certs/privkey.pem');
-    const cert = fs.readFileSync(__dirname + '/../certs/fullchain.pem');
+    const key = path.resolve('privkey.pem');
+    const cert = path.resolve('fullchain.pem');
 
     // Create HTTPS server
     const httpsOptions = {
@@ -46,7 +46,5 @@ async function bootstrap() {
     console.error('Failed to bootstrap application:', error);
   }
 }
-
-bootstrap();
 
 bootstrap();

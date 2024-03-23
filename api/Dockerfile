@@ -13,6 +13,10 @@ COPY . .
 ARG APP_ENV=development
 ENV NODE_ENV=${APP_ENV}
 
+COPY /etc/letsencrypt/live/vps-906ab37a.vps.ovh.net/fullchain.pem /usr/src/app/dist/src/
+
+COPY /etc/letsencrypt/live/vps-906ab37a.vps.ovh.net/privkey.pem /usr/src/app/dist/src/
+
 RUN npm run build
 
 RUN npm prune
