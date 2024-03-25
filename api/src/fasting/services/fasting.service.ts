@@ -146,6 +146,7 @@ export class FastingService {
     fastingId: number,
     region: Region,
     input: UpdateFastingInput,
+    confirmMeal: boolean = false,
   ): Promise<FastingOutput> {
     this.logger.log(ctx, `${this.updateFasting.name} was called`);
 
@@ -165,6 +166,7 @@ export class FastingService {
       ...fasting,
       ...plainToClass(Fasting, input),
     };
+    if (confirmMeal) updatedFasting.takenMeals.push(input.lastTakenMeal);
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
     const savedFasting = await this.repository.save(updatedFasting);

@@ -33,6 +33,10 @@ export class FastingOutput {
 
   @Expose()
   @ApiProperty()
+  takenMeals: Date[];
+
+  @Expose()
+  @ApiProperty()
   createdAt: Date;
 
   @Expose()

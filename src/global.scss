@@ -73,3 +73,8 @@ ion-spinner {
     color: #43cebb;
   }
 }
+
+:host {
+  max-width: unset;
+  --background: unset;
+}

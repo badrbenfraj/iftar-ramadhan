@@ -35,9 +35,14 @@ export class CreateFastingInput {
   familyMeal: number;
 
   @IsDateString()
-  @IsOptional()
+  @IsNotEmpty()
   @ApiProperty()
   lastTakenMeal: Date;
+
+  @IsDateString()
+  @IsNotEmpty()
+  @ApiProperty()
+  takenMeals: Date[];
 
   @IsBoolean()
   @IsOptional()
@@ -70,4 +75,9 @@ export class UpdateFastingInput {
   @IsOptional()
   @ApiProperty()
   lastTakenMeal: Date;
+
+  @IsDateString()
+  @IsOptional()
+  @ApiProperty()
+  takenMeals: Date[];
 }

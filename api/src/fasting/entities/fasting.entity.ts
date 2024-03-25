@@ -31,8 +31,11 @@ export class Fasting {
   @Column()
   singleMeal: number;
 
-  @CreateDateColumn({ name: 'lastTakenMeal' })
+  @Column({ name: 'lastTakenMeal' })
   lastTakenMeal: Date;
+
+  @Column({ name: 'takenMeals' })
+  takenMeals: Date[];
 
   @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date;

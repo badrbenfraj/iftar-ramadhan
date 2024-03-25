@@ -1,51 +1,101 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { first, map } from 'rxjs/operators';
-import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 import { Bulk } from '@app/core/model/bulk.model';
+import {
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  Validators,
+} from '@angular/forms';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-tab3',
   templateUrl: 'tab3.page.html',
   styleUrls: ['tab3.page.scss'],
+  providers: [DatePipe],
 })
 export class Tab3Page implements OnInit {
+  form: UntypedFormGroup;
+
+  formBuilder = inject(UntypedFormBuilder);
+
+  datePipe = inject(DatePipe);
+
   content: string;
 
-  loading: boolean = true;
+  loading: boolean = false;
+
+  isDataLoaded: boolean = false;
 
   data: any;
+
+  showTo = false;
+
+  showFrom = false;
+
+  formattedTo = '';
+
+  formattedFrom = '';
 
   constructor(private fastingPersonService: FastingPersonService) {}
 
   ngOnInit(): void {
+    this.form = this.formBuilder.group({
+      fromDate: [null, [Validators.required]],
+      toDate: ['', [Validators.required]],
+    });
+  }
+
+  toDateChanged() {
+    console.log(this.form);
+    setTimeout(() => {
+      this.showTo = false;
+    }, 150);
+  }
+
+  fromDateChanged() {
+    setTimeout(() => {
+      this.showFrom = false;
+    }, 150);
+  }
+
+  retry() {
+    this.form.reset();
+    this.data = [];
+    this.isDataLoaded = false;
+  }
+
+  validate() {
+    this.loading = true;
     this.fastingPersonService
-      .getDailyStatistics()
+      .getStatistics(this.form.getRawValue())
       .pipe(first())
-      .subscribe((data) => {
-        this.data = data?.data;
-        this.loading = false;
+      .subscribe({
+        next: (data) => {
+          this.data = data?.data;
+          this.loading = false;
+          this.isDataLoaded = true;
+        },
+        error: () => {
+          this.loading = false;
+          this.isDataLoaded = false;
+        },
       });
   }
 
-  get totalPersonsNumber() {
-    return this.data?.totalPersons;
+  visibilityTo() {
+    this.showTo = !this.showTo;
+    this.showFrom = false;
   }
 
-  get personsNumber() {
-    return this.data?.persons;
+  visibilityFrom() {
+    this.showFrom = !this.showFrom;
+    this.showTo = false;
   }
 
-  get mealsNumber() {
-    return this.data?.totalMeals;
-  }
-
-  get singleMealsNumber() {
-    return this.data?.singleMeal;
-  }
-
-  get familyMealsNumber() {
-    return this.data?.familyMeal;
+  validateReadOnly() {
+    return !this.form.value.fromDate || !this.form.value.toDate;
   }
 
   getWeeklyStats() {
@@ -73,12 +123,36 @@ export class Tab3Page implements OnInit {
   refreshStats(event) {
     this.loading = true;
     this.fastingPersonService
-      .getDailyStatistics()
+      .getStatistics(this.form.getRawValue())
       .pipe(first())
-      .subscribe((data) => {
-        this.data = data?.data;
-        this.loading = false;
-        event.target.complete();
+      .subscribe({
+        next: (data) => {
+          this.data = data?.data;
+          this.loading = false;
+          this.isDataLoaded = true;
+          event.target.complete();
+        },
+        error: () => {
+          this.loading = false;
+          this.isDataLoaded = false;
+          event.target.complete();
+        },
       });
+  }
+
+  getFromDate() {
+    if (this.form.get('fromDate').value) {
+      return this.datePipe.transform(this.form.get('fromDate').value);
+    } else {
+      return 'Choose a Date';
+    }
+  }
+
+  getToDate() {
+    if (this.form.get('toDate').value) {
+      return this.datePipe.transform(this.form.get('toDate').value);
+    } else {
+      return 'Choose a Date';
+    }
   }
 }

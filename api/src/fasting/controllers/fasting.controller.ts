@@ -66,9 +66,11 @@ export class FastingController {
     const today = new Date();
     if (input.cameToday === true) {
       input.lastTakenMeal = today;
+      input.takenMeals = [today];
     } else {
       today.setDate(today.getDate() - 1);
       input.lastTakenMeal = today;
+      input.takenMeals = [today];
     }
 
     const fasting = await this.fastingService.createFasting(ctx, region, input);
@@ -204,6 +206,7 @@ export class FastingController {
       fastingId,
       region,
       input,
+      true,
     );
     return { data: fasting, meta: {} };
   }
@@ -227,7 +230,7 @@ export class FastingController {
     return this.fastingService.deleteFasting(ctx, id, region);
   }
 
-  @Get('/daily/statistics/:region')
+  @Get('/statistics/:region')
   @ApiOperation({
     summary: 'Get daily statistics fastings by region API',
   })
@@ -241,7 +244,7 @@ export class FastingController {
   async getFastingsStatisticsByRegion(
     @ReqContext() ctx: RequestContext,
     @Param('region') region: Region,
-    @Query() query: PaginationParamsDto,
+    @Query() query: any,
   ): Promise<BaseApiResponse<any>> {
     this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
 
@@ -252,41 +255,59 @@ export class FastingController {
       query.offset,
     );
 
-    const getDate = (date?) => {
-      const t =
-        (date && new Date(new Date(date).setHours(0, 0, 0, 0))) ||
-        new Date(new Date().setHours(0, 0, 0, 0));
+    const startDate = new Date(query.start);
+    const endDate = new Date(query.end);
 
-      const actiondate = new Date(t);
-      return actiondate.getTime();
-    };
+    const statisticsByDay = {};
 
-    const fastingsWithtakenMeal = fastings.filter(
-      (item: FastingOutput) => getDate(item.lastTakenMeal) === getDate(),
+    // Iterate over the range of dates and initialize statistics for each day
+    for (
+      let currentDate = new Date(startDate);
+      currentDate <= endDate;
+      currentDate.setDate(currentDate.getDate() + 1)
+    ) {
+      statisticsByDay[currentDate.toDateString()] = {
+        totalPersons: 0,
+        persons: 0,
+        singleMeal: 0,
+        familyMeal: 0,
+        totalMeals: 0,
+      };
+    }
+
+    // Iterate over the fasting data and update statistics for each day
+    fastings.forEach((person) => {
+      person.takenMeals.forEach((takenMealDate) => {
+        const mealDate = new Date(takenMealDate).getTime();
+        if (mealDate >= startDate.getTime() && mealDate <= endDate.getTime()) {
+          const date = new Date(mealDate).toDateString();
+          const statistics = statisticsByDay[date];
+          if (statistics) {
+            statistics.totalPersons = count;
+            statistics.persons += 1;
+            statistics.singleMeal += person?.singleMeal || 0;
+            statistics.familyMeal += person?.familyMeal * 4 || 0;
+            statistics.totalMeals +=
+              (person?.singleMeal || 0) + (person?.familyMeal * 4 || 0);
+          }
+        }
+      });
+    });
+
+    // Convert statisticsByDay object to array format
+    const statisticsArray = Object.entries(statisticsByDay).map(
+      ([date, statistics]) => ({
+        date,
+        statistics,
+      }),
     );
 
-    const statistics = {
-      totalPersons: count,
-      persons: fastingsWithtakenMeal.length,
-      singleMeal: 0,
-      familyMeal: 0,
-      totalMeals: 0,
-    };
-
-    const { persons, singleMeal, familyMeal, totalMeals, totalPersons } =
-      fastingsWithtakenMeal.reduce((acc, curr) => {
-        acc.familyMeal += curr?.familyMeal * 4;
-        acc.singleMeal += curr?.singleMeal;
-        acc.totalMeals += curr?.singleMeal + curr?.familyMeal * 4;
-
-        return acc;
-      }, statistics);
-
     return {
-      data: { totalPersons, persons, singleMeal, familyMeal, totalMeals },
+      data: statisticsArray,
       meta: {},
     };
   }
+
   @Get('/daily/statistics/:region/download')
   @ApiOperation({
     summary: 'Get daily statistics fastings by region API',

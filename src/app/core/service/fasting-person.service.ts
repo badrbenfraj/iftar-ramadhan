@@ -108,11 +108,20 @@ export class FastingPersonService {
     );
   }
 
-  getDailyStatistics(): Observable<any> {
+  getStatistics({ fromDate, toDate }): Observable<any> {
     const currentUser = this.authenticationService.currentUser;
+    const params = {};
+
+    if (fromDate) {
+      params['start'] = fromDate;
+    }
+
+    if (toDate) {
+      params['end'] = toDate;
+    }
 
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/daily/statistics/${currentUser?.region}`
+      `${BASE_PATH}/fastings/statistics/${currentUser?.region}`
     );
   }
 
