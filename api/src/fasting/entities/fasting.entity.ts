@@ -25,6 +25,12 @@ export class Fasting {
   @Column()
   lastName: string;
 
+  @Column({ nullable: true, type: 'varchar' })
+  phone: string;
+
+  @Column({ nullable: true, type: 'text' })
+  comment: string;
+
   @Column()
   familyMeal: number;
 
