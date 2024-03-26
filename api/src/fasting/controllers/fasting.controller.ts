@@ -230,7 +230,7 @@ export class FastingController {
     return this.fastingService.deleteFasting(ctx, id, region);
   }
 
-  @Get('/statistics/:region')
+  @Get('statistics/:region')
   @ApiOperation({
     summary: 'Get statistics fastings by region API',
   })
@@ -309,7 +309,7 @@ export class FastingController {
     };
   }
 
-  @Get('/daily/statistics/:region/download')
+  @Get('daily/statistics/:region/download')
   @ApiOperation({
     summary: 'Get daily statistics fastings by region API',
   })
