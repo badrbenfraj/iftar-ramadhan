@@ -232,7 +232,7 @@ export class FastingController {
 
   @Get('/statistics/:region')
   @ApiOperation({
-    summary: 'Get daily statistics fastings by region API',
+    summary: 'Get statistics fastings by region API',
   })
   @ApiResponse({
     status: HttpStatus.OK,

@@ -121,7 +121,8 @@ export class FastingPersonService {
     }
 
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/statistics/${currentUser?.region}`
+      `${BASE_PATH}/fastings/statistics/${currentUser?.region}`,
+      { params }
     );
   }
 
