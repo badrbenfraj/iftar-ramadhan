@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDate,
@@ -8,6 +9,7 @@ import {
   IsOptional,
   IsString,
   Validate,
+  ValidateNested,
 } from 'class-validator';
 
 export class CreateFastingInput {
@@ -42,8 +44,8 @@ export class CreateFastingInput {
   lastTakenMeal: Date;
 
   @IsOptional()
-  @ApiProperty()
-  @IsDate({ each: true }) // Validate each element of the array as a Date
+  @ValidateNested({ each: true })
+  @Type(() => Date)
   takenMeals: Date[];
 
   @IsBoolean()
@@ -79,7 +81,7 @@ export class UpdateFastingInput {
   lastTakenMeal: Date;
 
   @IsOptional()
-  @ApiProperty()
-  @IsDate({ each: true }) // Validate each element of the array as a Date
+  @ValidateNested({ each: true })
+  @Type(() => Date)
   takenMeals: Date[];
 }
