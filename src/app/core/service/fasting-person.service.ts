@@ -113,11 +113,11 @@ export class FastingPersonService {
     const params = {};
 
     if (fromDate) {
-      params['start'] = fromDate;
+      params['start'] = new Date(fromDate).toDateString();
     }
 
     if (toDate) {
-      params['end'] = toDate;
+      params['end'] = new Date(toDate).toDateString();
     }
 
     return this.httpClient.get<any>(

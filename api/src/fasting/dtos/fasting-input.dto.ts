@@ -28,6 +28,16 @@ export class CreateFastingInput {
   @ApiProperty()
   lastName: string;
 
+  @IsString()
+  @IsOptional()
+  @ApiProperty()
+  comment: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty()
+  phone: string;
+
   @IsNumber()
   @IsNotEmpty()
   @ApiProperty()
@@ -64,6 +74,16 @@ export class UpdateFastingInput {
   @IsNotEmpty()
   @ApiProperty()
   lastName: string;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty()
+  comment: string;
+
+  @IsString()
+  @IsNotEmpty()
+  @ApiProperty()
+  phone: string;
 
   @IsNumber()
   @IsNotEmpty()

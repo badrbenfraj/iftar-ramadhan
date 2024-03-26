@@ -244,7 +244,8 @@ export class FastingController {
   async getFastingsStatisticsByRegion(
     @ReqContext() ctx: RequestContext,
     @Param('region') region: Region,
-    @Query() query: any,
+    @Query('start') start: string,
+    @Query('end') end: string,
   ): Promise<BaseApiResponse<any>> {
     this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
 
@@ -252,11 +253,11 @@ export class FastingController {
       ctx,
       region,
       Number.MAX_SAFE_INTEGER,
-      query.offset,
+      0,
     );
 
-    const startDate = new Date(query.start);
-    const endDate = new Date(query.end);
+    const startDate = new Date(start);
+    const endDate = new Date(end);
 
     const statisticsByDay = {};
 

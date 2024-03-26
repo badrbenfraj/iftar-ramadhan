@@ -42,6 +42,8 @@ export class EditPersonDetailsPage implements OnInit {
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
+      phone: ['', []],
+      comments: ['', []],
     });
     this.getFastingPerson();
   }
@@ -92,20 +94,8 @@ export class EditPersonDetailsPage implements OnInit {
       return;
     }
 
-    const firstName = this.form.firstName.value;
-    const lastName = this.form.lastName.value;
-    const familyMeal = this.form.familyMeal.value;
-    const singleMeal = this.form.singleMeal.value;
-    const id = this.form.id.value;
-
     this.fastingPersonService
-      .updateFastingPerson({
-        id,
-        firstName,
-        lastName,
-        singleMeal,
-        familyMeal,
-      })
+      .updateFastingPerson(this.fastingPersonForm.getRawValue())
       .subscribe({
         next: () => {
           this.isSubmitted = false;

@@ -21,6 +21,14 @@ export class FastingOutput {
 
   @Expose()
   @ApiProperty()
+  comment: string;
+
+  @Expose()
+  @ApiProperty()
+  phone: string;
+
+  @Expose()
+  @ApiProperty()
   singleMeal: number;
 
   @Expose()
