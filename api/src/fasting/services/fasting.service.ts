@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 
 import { Action } from '../../shared/acl/action.constant';
@@ -162,12 +166,26 @@ export class FastingService {
       throw new UnauthorizedException();
     }
 
+    // Convert input.lastTakenMeal to a valid ISO 8601 date string
+    if (confirmMeal && input.lastTakenMeal) {
+      let lastTakenMealDate: Date;
+      if (confirmMeal && input.lastTakenMeal) {
+        const parsedDate = Date.parse(input.lastTakenMeal.toISOString());
+        if (!isNaN(parsedDate)) {
+          lastTakenMealDate = new Date(parsedDate);
+          input.takenMeals.push(lastTakenMealDate);
+        } else {
+          throw new BadRequestException(
+            'lastTakenMeal must be a valid date string',
+          );
+        }
+      }
+    }
+
     const updatedFasting: Fasting = {
       ...fasting,
       ...plainToClass(Fasting, input),
     };
-    if (confirmMeal)
-      updatedFasting.takenMeals.push(new Date(input.lastTakenMeal));
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
     const savedFasting = await this.repository.save(updatedFasting);
