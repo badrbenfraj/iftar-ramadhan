@@ -34,7 +34,7 @@ export class CreateFastingInput {
   comment: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @ApiProperty()
   phone: string;
 
@@ -81,7 +81,7 @@ export class UpdateFastingInput {
   comment: string;
 
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   @ApiProperty()
   phone: string;
 
