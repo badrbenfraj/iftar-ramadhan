@@ -34,8 +34,8 @@ export class Fasting {
   @Column({ name: 'lastTakenMeal' })
   lastTakenMeal: Date;
 
-  @Column("date", { array: true })
-  takenMeals: Date[];
+  @Column({ type: 'varchar', array: true, default: [] })
+  takenMeals: string[];
 
   @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date;
