@@ -6,7 +6,9 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  Validate,
 } from 'class-validator';
+import { ValidateDateArray } from './validators/array-date';
 
 export class CreateFastingInput {
   @IsNumber()
@@ -39,9 +41,9 @@ export class CreateFastingInput {
   @ApiProperty()
   lastTakenMeal: Date;
 
-  @IsDateString()
   @IsOptional()
   @ApiProperty()
+  @Validate(ValidateDateArray)
   takenMeals: Date[];
 
   @IsBoolean()
@@ -76,8 +78,8 @@ export class UpdateFastingInput {
   @ApiProperty()
   lastTakenMeal: Date;
 
-  @IsDateString()
   @IsOptional()
   @ApiProperty()
+  @Validate(ValidateDateArray)
   takenMeals: Date[];
 }
