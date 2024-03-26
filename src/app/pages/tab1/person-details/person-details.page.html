@@ -47,7 +47,7 @@
       <ion-label>Family meal:</ion-label>
       <ion-label>{{ fastingPerson.familyMeal }} </ion-label>
     </ion-item>
-    <ion-item>
+    <ion-item id="open-modal">
       <ion-label class="meal-label">Meal taken:</ion-label>
       <ion-label [ngClass]="isMealTaken ? 'taken': 'not-taken'">
         {{isMealTaken ? 'خذا':'ما خذاش!'}}
@@ -63,5 +63,29 @@
     >
       Confirm Meal
     </ion-button>
+
+    <ion-modal
+      #modal
+      trigger="open-modal"
+      [initialBreakpoint]="0.4"
+      [breakpoints]="[0, 0.25, 0.5, 0.75]"
+    >
+      <ng-template>
+        <ion-content>
+          <ion-list *ngIf="fastingPerson?.takenMeals?.length > 0; else empty">
+            <h6 class="list-title">
+              List of taken meals for {{ fastingPerson.firstName }} {{
+              fastingPerson.lastName }}
+            </h6>
+            <ion-item *ngFor="let mealDate of fastingPerson.takenMeals">
+              <ion-label> {{ mealDate | date }} </ion-label>
+            </ion-item>
+          </ion-list>
+          <ng-template #empty>
+            <span class="empty">There is no previous takens.</span>
+          </ng-template>
+        </ion-content>
+      </ng-template>
+    </ion-modal>
   </div>
 </ion-content>
