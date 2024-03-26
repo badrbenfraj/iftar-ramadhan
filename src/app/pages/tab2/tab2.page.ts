@@ -49,6 +49,8 @@ export class Tab2Page implements OnInit, OnDestroy {
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
+      phone: [null, []],
+      comment: [null, []],
       cameToday: [true, []],
     });
 

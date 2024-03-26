@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BarcodeScanner } from '@ionic-native/barcode-scanner/ngx';
 import { AlertController, NavController } from '@ionic/angular';
@@ -6,6 +6,7 @@ import { first } from 'rxjs/operators';
 import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 import * as fn from '@app/shared/functions/functions-expression';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-scan',
@@ -23,6 +24,12 @@ export class ScanPage implements OnInit {
 
   emptyCode = false;
 
+  editable = false;
+
+  form: UntypedFormGroup;
+
+  formBuilder = inject(UntypedFormBuilder);
+
   constructor(
     private barcodeScanner: BarcodeScanner,
     private navCtl: NavController,
@@ -32,6 +39,10 @@ export class ScanPage implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.form = this.formBuilder.group({
+      phone: ['', []],
+      comment: ['', []],
+    });
     this.openBarCodeScanner();
   }
 
@@ -64,6 +75,7 @@ export class ScanPage implements OnInit {
       .pipe(first())
       .subscribe({
         next: () => {
+          this.form.reset();
           this.openBarCodeScanner();
         },
         error: (error) => {
@@ -90,6 +102,9 @@ export class ScanPage implements OnInit {
           this.isSubmitted = false;
 
           this.fastingPerson = person?.data as FastingPerson;
+          this.form.patchValue({
+            ...this.fastingPerson,
+          });
           if (Object.keys(person?.data || {}).length === 0) {
             this.emptyCode = true;
           } else {
@@ -109,7 +124,10 @@ export class ScanPage implements OnInit {
     this.loading = true;
     this.isSubmitted = true;
 
-    return this.fastingPersonService.confirmMeal(this.fastingPerson);
+    return this.fastingPersonService.confirmMeal({
+      ...this.fastingPerson,
+      ...this.form.getRawValue(),
+    });
   }
 
   async presentAlert() {

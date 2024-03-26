@@ -34,17 +34,16 @@ export class Tab3Page implements OnInit {
 
   showFrom = false;
 
-  formattedTo = '';
-
-  formattedFrom = '';
-
   constructor(private fastingPersonService: FastingPersonService) {}
 
   ngOnInit(): void {
-    this.form = this.formBuilder.group({
-      fromDate: [null, [Validators.required]],
-      toDate: ['', [Validators.required]],
-    });
+    this.form = this.formBuilder.group(
+      {
+        fromDate: [new Date().toISOString(), [Validators.required]],
+        toDate: [new Date().toISOString(), [Validators.required]],
+      },
+      { validators: this.dateRangeValidator }
+    );
   }
 
   toDateChanged() {
@@ -95,7 +94,61 @@ export class Tab3Page implements OnInit {
   }
 
   validateReadOnly() {
-    return !this.form.value.fromDate || !this.form.value.toDate;
+    return (
+      !this.form.value.fromDate || !this.form.value.toDate || this.form.invalid
+    );
+  }
+
+  selectionChanged(selected) {
+    switch (selected.detail.value) {
+      case 'daily':
+        this.form.patchValue({
+          fromDate: new Date().toISOString(),
+          toDate: new Date().toISOString(),
+        });
+        break;
+      case 'weekly':
+        const curr = new Date();
+        const currDate = new Date(
+          curr.getFullYear(),
+          curr.getMonth(),
+          curr.getDate()
+        );
+
+        const firstDayOfWeek = currDate.getDate() - currDate.getDay();
+        const lastDayOfWeek = firstDayOfWeek + 6;
+        const startDateOfWeek = new Date(currDate);
+        startDateOfWeek.setDate(firstDayOfWeek);
+        const endDateOfWeek = new Date(currDate);
+        endDateOfWeek.setDate(lastDayOfWeek);
+
+        this.form.patchValue({
+          fromDate: startDateOfWeek.toISOString(),
+          toDate: endDateOfWeek.toISOString(),
+        });
+        break;
+      case 'monthly':
+        const current = new Date();
+
+        const firstDayOfMonth = new Date(
+          current.getFullYear(),
+          current.getMonth(),
+          1
+        );
+        const lastDayOfMonth = new Date(
+          current.getFullYear(),
+          current.getMonth() + 1,
+          0
+        );
+
+        this.form.patchValue({
+          fromDate: firstDayOfMonth.toISOString(),
+          toDate: lastDayOfMonth.toISOString(),
+        });
+        break;
+      case 'custom':
+        break;
+    }
   }
 
   getWeeklyStats() {
@@ -154,5 +207,15 @@ export class Tab3Page implements OnInit {
     } else {
       return 'Choose a Date';
     }
+  }
+
+  dateRangeValidator(formGroup: UntypedFormGroup) {
+    const fromDate = formGroup.get('fromDate').value;
+    const toDate = formGroup.get('toDate').value;
+
+    if (fromDate && toDate) {
+      return fromDate <= toDate ? null : { rangeInvalid: true };
+    }
+    return null;
   }
 }

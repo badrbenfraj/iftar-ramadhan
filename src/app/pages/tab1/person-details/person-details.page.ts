@@ -1,9 +1,10 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { first } from 'rxjs/operators';
 import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 import * as fn from '@app/shared/functions/functions-expression';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-person-details',
@@ -12,13 +13,26 @@ import * as fn from '@app/shared/functions/functions-expression';
 })
 export class PersonDetailsPage implements OnInit {
   fastingPerson: FastingPerson;
+
   isMealTaken = false;
+
+  editable = false;
+
+  form: UntypedFormGroup;
+
+  formBuilder = inject(UntypedFormBuilder);
+
   constructor(
     private activeRoute: ActivatedRoute,
     private router: Router,
     private fastingPersonService: FastingPersonService
   ) {}
   ngOnInit(): void {
+    this.form = this.formBuilder.group({
+      phone: ['', []],
+      comment: ['', []],
+    });
+
     this.getFastingPerson();
   }
 
@@ -35,10 +49,9 @@ export class PersonDetailsPage implements OnInit {
         .pipe(first())
         .subscribe((person) => {
           this.fastingPerson = person?.data as FastingPerson;
-          console.log(
-            this.getDate(this.fastingPerson.lastTakenMeal),
-            this.getDate()
-          );
+          this.form.patchValue({
+            ...this.fastingPerson,
+          });
           this.isMealTaken =
             this.getDate(this.fastingPerson.lastTakenMeal) === this.getDate();
         });
@@ -46,14 +59,16 @@ export class PersonDetailsPage implements OnInit {
   }
 
   confirmMealTaken() {
-    this.fastingPersonService.confirmMeal(this.fastingPerson).subscribe({
-      next: () => {
-        this.isMealTaken = true;
-      },
-      error: (error) => {
-        this.isMealTaken = false;
-      },
-    });
+    this.fastingPersonService
+      .confirmMeal({ ...this.fastingPerson, ...this.form.getRawValue() })
+      .subscribe({
+        next: () => {
+          this.isMealTaken = true;
+        },
+        error: (error) => {
+          this.isMealTaken = false;
+        },
+      });
   }
 
   getDate(date?) {

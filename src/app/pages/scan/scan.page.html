@@ -24,40 +24,78 @@
     color="tertiary"
   ></ion-spinner>
   <div *ngIf="fastingPerson && !emptyCode">
-    <ion-item>
-      <ion-label>Identifier:</ion-label>
-      <ion-label>{{ fastingPerson.id }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>First Name:</ion-label>
-      <ion-label>{{ fastingPerson.firstName }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Last Name:</ion-label>
-      <ion-label>{{ fastingPerson.lastName }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Phone Number:</ion-label>
-      <ion-label>{{ fastingPerson.phone }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Single meal:</ion-label>
-      <ion-label>{{ fastingPerson.singleMeal }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Family meal:</ion-label>
-      <ion-label>{{ fastingPerson.familyMeal }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Comments:</ion-label>
-      <ion-label>{{ fastingPerson.comment }} </ion-label>
-    </ion-item>
-    <ion-item id="open-modal">
-      <ion-label class="meal-label">Meal taken:</ion-label>
-      <ion-label [ngClass]="isMealTaken ? 'taken': 'not-taken'">
-        {{isMealTaken ? 'خذا!':'ما خذاش'}}
-      </ion-label>
-    </ion-item>
+    <form [formGroup]="form" novalidate>
+      <ion-item>
+        <ion-label>Identifier:</ion-label>
+        <ion-label>{{ fastingPerson.id }} </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>First Name:</ion-label>
+        <ion-label>{{ fastingPerson.firstName }} </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>Last Name:</ion-label>
+        <ion-label>{{ fastingPerson.lastName }} </ion-label>
+      </ion-item>
+      <ion-item *ngIf="!editable">
+        <ion-label>Phone Number:</ion-label>
+        <ion-label>{{ fastingPerson.phone }} </ion-label>
+        <ion-button
+          *ngIf="!isMealTaken"
+          fill="clear"
+          (click)="editable = !editable"
+        >
+          <ion-icon slot="end" name="pencil-sharp"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item *ngIf="editable">
+        <ion-input
+          label="Phone Number:"
+          labelPlacement="floating"
+          type="text"
+          formControlName="phone"
+        ></ion-input>
+        <ion-button
+          *ngIf="!isMealTaken"
+          fill="clear"
+          (click)="editable = !editable"
+        >
+          <ion-icon slot="end" name="eye"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item>
+        <ion-label>Single meal:</ion-label>
+        <ion-label>{{ fastingPerson.singleMeal }} </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>Family meal:</ion-label>
+        <ion-label>{{ fastingPerson.familyMeal }} </ion-label>
+      </ion-item>
+      <ion-item *ngIf="!editable">
+        <ion-label>Comments:</ion-label>
+        <ion-label> {{ fastingPerson.comment }} </ion-label>
+        <ion-button fill="clear" (click)="editable = !editable">
+          <ion-icon slot="end" name="pencil-sharp"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item *ngIf="editable">
+        <ion-input
+          label="Comments:"
+          labelPlacement="floating"
+          type="text"
+          formControlName="comment"
+        ></ion-input>
+        <ion-button fill="clear" (click)="editable = !editable">
+          <ion-icon slot="end" name="eye"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item id="open-modal">
+        <ion-label class="meal-label">Meal taken:</ion-label>
+        <ion-label [ngClass]="isMealTaken ? 'taken': 'not-taken'">
+          {{isMealTaken ? 'خذا!':'ما خذاش'}}
+        </ion-label>
+      </ion-item>
+    </form>
   </div>
   <div *ngIf="emptyCode" class="empty-code">
     <span>Invalid qr code</span>

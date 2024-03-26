@@ -43,7 +43,7 @@ export class EditPersonDetailsPage implements OnInit {
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
       phone: ['', []],
-      comments: ['', []],
+      comment: ['', []],
     });
     this.getFastingPerson();
   }

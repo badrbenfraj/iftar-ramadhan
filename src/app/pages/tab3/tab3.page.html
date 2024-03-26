@@ -5,7 +5,11 @@
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-refresher slot="fixed" (ionRefresh)="refreshStats($event)">
+  <ion-refresher
+    *ngIf="isDataLoaded"
+    slot="fixed"
+    (ionRefresh)="refreshStats($event)"
+  >
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   <div *ngIf="loading" class="empty">
@@ -45,7 +49,19 @@
     </div>
   </div>
 
-  <div *ngIf="!isDataLoaded" class="group" [formGroup]="form" novalidate>
+  <div *ngIf="!isDataLoaded" class="group" [formGroup]="form">
+    <ion-select
+      justify="space-between"
+      label="Choose a period:"
+      placeholder="Daily"
+      interface="popover"
+      (ionChange)="selectionChanged($event)"
+    >
+      <ion-select-option value="daily">Daily</ion-select-option>
+      <ion-select-option value="weekly">Weekly</ion-select-option>
+      <ion-select-option value="monthly">Monthly</ion-select-option>
+      <ion-select-option value="custom">Custom</ion-select-option>
+    </ion-select>
     <ion-item (click)="visibilityFrom()">
       <ion-label> From </ion-label>
       <ion-text slot="end">{{ getFromDate() }}</ion-text>
@@ -73,6 +89,12 @@
       (ionChange)="toDateChanged()"
     >
     </ion-datetime>
+    <div *ngIf="form?.errors?.rangeInvalid">
+      <span class="is-invalid ion-padding">
+        <strong>From</strong> date should be greater than
+        <strong>to</strong> date.
+      </span>
+    </div>
     <ion-button
       *ngIf="!loading"
       expand="block"
