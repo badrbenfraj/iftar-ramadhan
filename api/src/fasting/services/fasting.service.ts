@@ -166,7 +166,8 @@ export class FastingService {
       ...fasting,
       ...plainToClass(Fasting, input),
     };
-    if (confirmMeal) updatedFasting.takenMeals.push(input.lastTakenMeal);
+    if (confirmMeal)
+      updatedFasting.takenMeals.push(new Date(input.lastTakenMeal));
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
     const savedFasting = await this.repository.save(updatedFasting);
