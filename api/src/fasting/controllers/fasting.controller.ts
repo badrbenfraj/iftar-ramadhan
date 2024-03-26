@@ -47,6 +47,85 @@ export class FastingController {
     this.logger.setContext(FastingController.name);
   }
 
+  @Get('statistics/:region')
+  @ApiOperation({
+    summary: 'Get statistics fastings by region API',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([FastingOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async getFastingsStatisticsByRegion(
+    @ReqContext() ctx: RequestContext,
+    @Param('region') region: Region,
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ): Promise<BaseApiResponse<any>> {
+    this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
+
+    const { fastings, count } = await this.fastingService.getFastingsByRegion(
+      ctx,
+      region,
+      Number.MAX_SAFE_INTEGER,
+      0,
+    );
+
+    const startDate = new Date(start);
+    const endDate = new Date(end);
+
+    const statisticsByDay = {};
+
+    // Iterate over the range of dates and initialize statistics for each day
+    for (
+      let currentDate = new Date(startDate);
+      currentDate <= endDate;
+      currentDate.setDate(currentDate.getDate() + 1)
+    ) {
+      statisticsByDay[currentDate.toDateString()] = {
+        totalPersons: 0,
+        persons: 0,
+        singleMeal: 0,
+        familyMeal: 0,
+        totalMeals: 0,
+      };
+    }
+
+    // Iterate over the fasting data and update statistics for each day
+    fastings.forEach((person) => {
+      person.takenMeals.forEach((takenMealDate) => {
+        const mealDate = new Date(takenMealDate).getTime();
+        if (mealDate >= startDate.getTime() && mealDate <= endDate.getTime()) {
+          const date = new Date(mealDate).toDateString();
+          const statistics = statisticsByDay[date];
+          if (statistics) {
+            statistics.totalPersons = count;
+            statistics.persons += 1;
+            statistics.singleMeal += person?.singleMeal || 0;
+            statistics.familyMeal += person?.familyMeal * 4 || 0;
+            statistics.totalMeals +=
+              (person?.singleMeal || 0) + (person?.familyMeal * 4 || 0);
+          }
+        }
+      });
+    });
+
+    // Convert statisticsByDay object to array format
+    const statisticsArray = Object.entries(statisticsByDay).map(
+      ([date, statistics]) => ({
+        date,
+        statistics,
+      }),
+    );
+
+    return {
+      data: statisticsArray,
+      meta: {},
+    };
+  }
+
   @Post(':region')
   @ApiOperation({
     summary: 'Create fasting API',
@@ -228,105 +307,5 @@ export class FastingController {
     this.logger.log(ctx, `${this.deleteFasting.name} was called`);
 
     return this.fastingService.deleteFasting(ctx, id, region);
-  }
-
-  @Get('statistics/:region')
-  @ApiOperation({
-    summary: 'Get statistics fastings by region API',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: SwaggerBaseApiResponse([FastingOutput]),
-  })
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async getFastingsStatisticsByRegion(
-    @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
-    @Query('start') start: string,
-    @Query('end') end: string,
-  ): Promise<BaseApiResponse<any>> {
-    this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
-
-    const { fastings, count } = await this.fastingService.getFastingsByRegion(
-      ctx,
-      region,
-      Number.MAX_SAFE_INTEGER,
-      0,
-    );
-
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-
-    const statisticsByDay = {};
-
-    // Iterate over the range of dates and initialize statistics for each day
-    for (
-      let currentDate = new Date(startDate);
-      currentDate <= endDate;
-      currentDate.setDate(currentDate.getDate() + 1)
-    ) {
-      statisticsByDay[currentDate.toDateString()] = {
-        totalPersons: 0,
-        persons: 0,
-        singleMeal: 0,
-        familyMeal: 0,
-        totalMeals: 0,
-      };
-    }
-
-    // Iterate over the fasting data and update statistics for each day
-    fastings.forEach((person) => {
-      person.takenMeals.forEach((takenMealDate) => {
-        const mealDate = new Date(takenMealDate).getTime();
-        if (mealDate >= startDate.getTime() && mealDate <= endDate.getTime()) {
-          const date = new Date(mealDate).toDateString();
-          const statistics = statisticsByDay[date];
-          if (statistics) {
-            statistics.totalPersons = count;
-            statistics.persons += 1;
-            statistics.singleMeal += person?.singleMeal || 0;
-            statistics.familyMeal += person?.familyMeal * 4 || 0;
-            statistics.totalMeals +=
-              (person?.singleMeal || 0) + (person?.familyMeal * 4 || 0);
-          }
-        }
-      });
-    });
-
-    // Convert statisticsByDay object to array format
-    const statisticsArray = Object.entries(statisticsByDay).map(
-      ([date, statistics]) => ({
-        date,
-        statistics,
-      }),
-    );
-
-    return {
-      data: statisticsArray,
-      meta: {},
-    };
-  }
-
-  @Get('daily/statistics/:region/download')
-  @ApiOperation({
-    summary: 'Get daily statistics fastings by region API',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: SwaggerBaseApiResponse([FastingOutput]),
-  })
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async downloadFastingsStatisticsByRegion(
-    @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
-    @Query() query: PaginationParamsDto,
-  ): Promise<BaseApiResponse<any>> {
-    this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
-
-    return;
   }
 }
