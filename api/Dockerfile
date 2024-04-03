@@ -17,13 +17,6 @@ RUN npm run build
 
 RUN npm prune
 
-# Copy privkey2.pem
-COPY /etc/letsencrypt/archive/vps-906ab37a.vps.ovh.net/privkey2.pem /usr/src/app/
-
-# Copy fullchain2.pem
-COPY /etc/letsencrypt/archive/vps-906ab37a.vps.ovh.net/fullchain2.pem /usr/src/app/
-
-
 FROM node:lts-hydrogen
 
 ARG APP_ENV=development
