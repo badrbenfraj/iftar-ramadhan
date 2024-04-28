@@ -1,10 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { BarcodeScanner } from '@ionic-native/barcode-scanner/ngx';
 import { AlertController, NavController } from '@ionic/angular';
 import { first } from 'rxjs/operators';
 import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
+import * as fn from '@app/shared/functions/functions-expression';
+import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 @Component({
   selector: 'app-scan',
@@ -13,7 +15,20 @@ import { FastingPersonService } from 'src/app/core/service/fasting-person.servic
 })
 export class ScanPage implements OnInit {
   fastingPerson;
+
+  isSubmitted = false;
+
   isMealTaken = false;
+
+  loading = false;
+
+  emptyCode = false;
+
+  editable = false;
+
+  form: UntypedFormGroup;
+
+  formBuilder = inject(UntypedFormBuilder);
 
   constructor(
     private barcodeScanner: BarcodeScanner,
@@ -24,83 +39,101 @@ export class ScanPage implements OnInit {
   ) {}
 
   ngOnInit(): void {
+    this.form = this.formBuilder.group({
+      phone: ['', []],
+      comment: ['', []],
+    });
     this.openBarCodeScanner();
   }
 
-  openBarCodeScanner(confirm?) {
-    this.barcodeScanner
+  async openBarCodeScanner() {
+    await this.barcodeScanner
       .scan({
         disableSuccessBeep: true,
         resultDisplayDuration: 0,
         formats: 'QR_CODE',
       })
       .then((barcodeData) => {
-        // Barcode data {"cancelled":0,"text":"8413384010008","format":"EAN_13"}
         if (barcodeData) {
           const scanCode = barcodeData.text;
           if (scanCode) {
             this.getFastingPerson(scanCode);
           }
         } else {
+          this.emptyCode = true;
           this.presentAlert();
         }
       })
       .catch((err) => {
         this.presentAlert();
       });
+    this.loading = false;
+    this.isSubmitted = false;
   }
   confirmAndOpenBarCodeScanner() {
-    this.confirmMealTaken().then(() => {
-      this.barcodeScanner
-        .scan({
-          disableSuccessBeep: true,
-          resultDisplayDuration: 0,
-          formats: 'QR_CODE',
-        })
-        .then((barcodeData) => {
-          if (barcodeData) {
-            const scanCode = barcodeData.text;
-            if (scanCode) {
-              this.getFastingPerson(scanCode);
-            }
-          } else {
-            this.presentAlert();
-          }
-        })
-        .catch((err) => {
-          this.presentAlert();
-        });
-    });
+    this.confirmMealTaken()
+      .pipe(first())
+      .subscribe({
+        next: () => {
+          this.form.reset();
+          this.openBarCodeScanner();
+        },
+        error: (error) => {
+          this.loading = false;
+          this.isSubmitted = false;
+        },
+      });
   }
 
   stopScan() {
     this.navCtl.back();
   }
 
-  async getFastingPerson(code) {
+  getFastingPerson(id) {
+    this.emptyCode = false;
+    this.loading = true;
+    this.isSubmitted = true;
     this.fastingPersonService
-      .getFastingPersonById(code)
+      .getFastingPersonById(id)
       .pipe(first())
-      .subscribe((person) => {
-        this.fastingPerson = person.length
-          ? (person[0] as FastingPerson)
-          : undefined;
-        this.isMealTaken =
-          new Date(this.fastingPerson.lastTakenMeal).setHours(0, 0, 0, 0) ===
-          new Date().setHours(0, 0, 0, 0);
+      .subscribe({
+        next: (person) => {
+          this.loading = false;
+          this.isSubmitted = false;
+
+          this.fastingPerson = person?.data as FastingPerson;
+          this.form.patchValue({
+            ...this.fastingPerson,
+          });
+          if (Object.keys(person?.data || {}).length === 0) {
+            this.emptyCode = true;
+          } else {
+            this.isMealTaken =
+              fn.getDate(this.fastingPerson.lastTakenMeal) === fn.getDate();
+          }
+        },
+        error: (error) => {
+          this.emptyCode = true;
+          this.isSubmitted = false;
+          this.loading = false;
+        },
       });
   }
 
-  async confirmMealTaken() {
-    if (this.fastingPerson) {
-      this.fastingPerson.lastTakenMeal = new Date().toISOString();
-      return await this.fastingPersonService.updateFastingPerson(
-        this.fastingPerson
-      );
-    }
+  confirmMealTaken() {
+    this.loading = true;
+    this.isSubmitted = true;
+
+    return this.fastingPersonService.confirmMeal({
+      ...this.fastingPerson,
+      ...this.form.getRawValue(),
+    });
   }
 
   async presentAlert() {
+    this.loading = false;
+    this.isSubmitted = false;
+
     const alert = await this.alertController.create({
       header: 'Warning',
       message: 'Please enter a valid qr code.',
@@ -110,6 +143,6 @@ export class ScanPage implements OnInit {
   }
 
   editPersonDetails(person) {
-    this.router.navigate(['/pages/person/edit', person.code]);
+    this.router.navigate(['/pages/person/edit', person.id]);
   }
 }

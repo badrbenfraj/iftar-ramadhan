@@ -1,9 +1,14 @@
+import { Region } from "../enums/regions.enum";
+
 export interface FastingPerson {
-  id?: string;
-  code: number;
+  id: number;
   firstName: string;
   lastName: string;
+  phone: string;
+  comment: string;
+  region?: Region;
   singleMeal: number;
   familyMeal: number;
-  lastTakenMeal: string;
+  lastTakenMeal?: Date;
+  takenMeals: Date[];
 }

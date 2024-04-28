@@ -19,4 +19,7 @@ export class VerifyEmailPage implements OnInit {
       this.navController.navigateRoot(['/pages/list']);
     }
   }
+  sendVerificationMail() {
+    // this.authService.sendVerificationMail()
+  }
 }

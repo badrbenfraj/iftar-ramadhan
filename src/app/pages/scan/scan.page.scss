@@ -21,3 +21,28 @@
   font-weight: bold;
   max-width: fit-content;
 }
+
+.empty-code {
+  span {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    font-size: 18px;
+    color: red;
+    height: 50px;
+    align-items: center;
+  }
+}
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px;
+}
+
+.list-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

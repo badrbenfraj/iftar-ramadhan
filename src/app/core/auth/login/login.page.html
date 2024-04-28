@@ -14,7 +14,7 @@
     <img src="assets/ramadan.png" alt="ramadan" />
   </div>
   <form [formGroup]="loginForm" id="form" (ngSubmit)="onSubmit()" novalidate>
-    <ion-item
+    <!-- <ion-item
       class="ion-margin-bottom"
       [ngClass]="{ 'is-invalid': isSubmitted && form.password.errors }"
     >
@@ -33,6 +33,24 @@
       </span>
       <span class="is-invalid" *ngIf="isSubmitted && form.email.errors?.email">
         Should be a valid email.
+      </span>
+    </div> -->
+    <ion-item
+      class="ion-margin-bottom"
+      [ngClass]="{ 'is-invalid': isSubmitted && form.username.errors }"
+    >
+      <ion-input
+        formControlName="username"
+        type="text"
+        placeholder="Username"
+      ></ion-input>
+    </ion-item>
+    <div *ngIf="isSubmitted && form.username.errors">
+      <span
+        class="is-invalid"
+        *ngIf="isSubmitted && form.username.errors?.required"
+      >
+        Username is <strong>required</strong>.
       </span>
     </div>
     <ion-item
@@ -64,7 +82,7 @@
       type="submit"
       expand="block"
       shape="round"
-      >Login</ion-button
-    >
+      >Login <ion-spinner *ngIf="isSubmitted"></ion-spinner
+    ></ion-button>
   </form>
 </ion-content>

@@ -1,86 +1,136 @@
-import { Injectable } from '@angular/core';
-import { AngularFirestore } from '@angular/fire/compat/firestore';
+import { Injectable, inject } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 
 import { Observable } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { concatMap, map, shareReplay, tap } from 'rxjs/operators';
 import { FastingPerson } from '../model/fasting-person.model';
+import { environment } from '@env/environment';
+import { AuthenticationService } from '../auth/authentication.service';
 
-const COLLECTION_NAME = 'fasting-person';
-const COLLECTION_BULK_NAME = 'bulk-meals';
+const BASE_PATH = environment.basePath;
 
 @Injectable({
   providedIn: 'root',
 })
 export class FastingPersonService {
-  constructor(private firestore: AngularFirestore) {}
+  authenticationService = inject(AuthenticationService);
 
-  getFastingPersons(): Observable<any[]> {
-    return this.firestore
-      .collection(COLLECTION_NAME)
-      .valueChanges({ idField: 'id' });
+  fastingPeople$: Observable<{ data: any[]; meta: any }>;
+
+  constructor(private httpClient: HttpClient) {}
+
+  getFastingPersons(
+    limit = 1000,
+    offset = 0
+  ): Observable<{ data: any[]; meta: any }> {
+    const params = {};
+    const currentUser = this.authenticationService.currentUser;
+
+    const isNumber = (value) => typeof value === 'number' && isFinite(value);
+
+    if (limit > 0 && isNumber(limit)) {
+      params['limit'] = limit;
+    }
+
+    if (isNumber(offset)) {
+      params['offset'] = offset;
+    }
+
+    this.fastingPeople$ = this.httpClient
+      .get<any>(`${BASE_PATH}/fastings/${currentUser?.region}`, { params })
+      .pipe(
+        map((items: any) => items?.data?.sort((a, b) => a.id - b.id)),
+        shareReplay(1)
+      );
+    return this.fastingPeople$;
   }
 
-  getFastingPersonById(code: string): Observable<any> {
-    return this.getFastingPersons().pipe(
-      map((items) =>
-        items.filter((item) => Number(item?.code) === Number(code))
-      )
+  getFastingPersonById(id: string): Observable<any> {
+    const currentUser = this.authenticationService.currentUser;
+
+    return this.httpClient.get<any>(
+      `${BASE_PATH}/fastings/${currentUser?.region}/${id}`
     );
   }
 
-  getFastingPersonsCount() {
-    return this.firestore
-      .collection('ir-db-settings')
-      .doc('LpZJuN6mvCNmlVKbiaBc')
-      .valueChanges();
-  }
+  addFastingPerson(body: FastingPerson) {
+    const currentUser = this.authenticationService.currentUser;
 
-  updateFastingPersonCount(count) {
-    return this.firestore
-      .collection('ir-db-settings')
-      .doc('LpZJuN6mvCNmlVKbiaBc')
-      .update(count);
-  }
-
-  addFastingPerson(fastingPerson: FastingPerson) {
-    return this.firestore.collection(COLLECTION_NAME).add(fastingPerson);
+    return this.httpClient
+      .post(`${BASE_PATH}/fastings/${currentUser?.region}`, body)
+      .pipe(concatMap(() => this.getFastingPersons()));
   }
 
   deleteFastingPersonsList() {
-    return this.getFastingPersons().pipe(
-      tap((items) => this.deleteItems(items))
-    );
+    const currentUser = this.authenticationService.currentUser;
+
+    return this.httpClient
+      .delete<any>(`${BASE_PATH}/fastings/${currentUser?.region}/all`)
+      .pipe(concatMap(() => this.getFastingPersons()));
   }
 
   deleteFastingPerson(fastingPerson: FastingPerson) {
-    return this.firestore
-      .doc(COLLECTION_NAME + '/' + fastingPerson.id)
-      .delete();
+    const currentUser = this.authenticationService.currentUser;
+    return this.httpClient
+      .delete<any>(
+        `${BASE_PATH}/fastings/${currentUser?.region}/${fastingPerson?.id}`
+      )
+      .pipe(concatMap(() => this.getFastingPersons()));
   }
 
-  updateFastingPerson(fastingPerson: FastingPerson) {
-    return this.firestore
-      .collection(COLLECTION_NAME)
-      .doc(fastingPerson.id)
-      .update(fastingPerson);
+  updateFastingPerson(body: FastingPerson) {
+    const currentUser = this.authenticationService.currentUser;
+
+    return this.httpClient
+      .patch<any>(
+        `${BASE_PATH}/fastings/${currentUser?.region}/${body?.id}`,
+        body
+      )
+      .pipe(concatMap(() => this.getFastingPersons()));
+  }
+
+  confirmMeal(body: FastingPerson) {
+    const currentUser = this.authenticationService.currentUser;
+
+    return this.httpClient
+      .patch<any>(
+        `${BASE_PATH}/fastings/confirm/${currentUser?.region}/${body?.id}`,
+        body
+      )
+      .pipe(concatMap(() => this.getFastingPersons()));
   }
 
   addBulkMeals(meals) {
-    return this.firestore.collection(COLLECTION_BULK_NAME).add(meals);
+    const currentUser = this.authenticationService.currentUser;
+
+    return this.httpClient.get<any>(
+      `${BASE_PATH}/fastings/statistics/${currentUser?.region}`
+    );
   }
 
-  getStatisticsByDate(creationDate: Date): Observable<any[]> {
-    return this.firestore
-      .collection(COLLECTION_BULK_NAME, (ref) =>
-        ref.where('creationDate', '==', creationDate)
-      )
-      .valueChanges({ idField: 'id' });
+  getStatistics({ fromDate, toDate }): Observable<any> {
+    const currentUser = this.authenticationService.currentUser;
+    const params = {};
+
+    if (fromDate) {
+      params['start'] = new Date(fromDate).toDateString();
+    }
+
+    if (toDate) {
+      params['end'] = new Date(toDate).toDateString();
+    }
+
+    return this.httpClient.get<any>(
+      `${BASE_PATH}/fastings/statistics/${currentUser?.region}`,
+      { params }
+    );
   }
 
-  private async deleteItems(items) {
-    items.forEach(async (item) => {
-      await this.deleteFastingPerson(item);
-    });
-    this.updateFastingPersonCount(0);
+  downloadDailyStatistics(): Observable<any> {
+    const currentUser = this.authenticationService.currentUser;
+
+    return this.httpClient.get<any>(
+      `${BASE_PATH}/fastings/daily/statistics/${currentUser?.region}/download`
+    );
   }
 }

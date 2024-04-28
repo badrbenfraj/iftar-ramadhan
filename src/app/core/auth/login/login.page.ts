@@ -6,9 +6,13 @@ import {
   LoadingController,
   NavController,
 } from '@ionic/angular';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  Validators,
+} from '@angular/forms';
 import { Subject } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
+import { concatMap, takeUntil } from 'rxjs/operators';
 
 @Component({
   selector: 'app-login',
@@ -41,7 +45,8 @@ export class LoginPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.loginForm = this.formBuilder.group({
-      email: ['', [Validators.required, Validators.email]],
+      username: ['', [Validators.required]],
+      // email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(3)]],
     });
   }
@@ -54,37 +59,44 @@ export class LoginPage implements OnInit, OnDestroy {
     // stop here if form is invalid
     if (this.loginForm.invalid) {
       await loading.dismiss();
+      this.isSubmitted = false;
 
       return;
     }
 
     this.authService
-      .signIn(this.form.email.value, this.form.password.value)
-      .then((res) => {
-        this.authService
-          .getAuthState()
-          .pipe(takeUntil(this.destroy$))
-          .subscribe((user) => {
-            if (user) {
-              localStorage.setItem('user', JSON.stringify(user));
-              JSON.parse(localStorage.getItem('user'));
-            } else {
-              localStorage.setItem('user', null);
-              JSON.parse(localStorage.getItem('user'));
-            }
+      .signIn(this.form.username.value, this.form.password.value)
+      .pipe(
+        concatMap((token) => {
+          const accessToken = token?.data?.accessToken;
+          localStorage.setItem('token', JSON.stringify(accessToken));
 
-            if (this.authService.isEmailVerified) {
-              this.navController.navigateRoot(['pages']);
-            } else {
-              this.showAlert('Email is not verified');
-              return false;
-            }
-            this.isSubmitted = false;
-          });
-      })
-      .catch((error) => {
-        this.showAlert(error.message);
+          return this.authService.getCurrentUser();
+        })
+      )
+      .subscribe({
+        next: (user) => {
+          if (user?.data) {
+            localStorage.setItem('user', JSON.stringify(user?.data));
+          } else {
+            localStorage.setItem('user', null);
+          }
+          JSON.parse(localStorage.getItem('user'));
+
+          if (!user?.data?.isAccountDisabled) {
+            this.navController.navigateRoot(['pages']);
+          } else {
+            this.showAlert('Email is not verified');
+            return false;
+          }
+          this.isSubmitted = false;
+        },
+        error: (error) => {
+          this.isSubmitted = false;
+          this.showAlert(error);
+        },
       });
+
     await loading.dismiss();
   }
 

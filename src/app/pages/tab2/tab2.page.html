@@ -26,12 +26,12 @@
   >
     <ion-item lines="full">
       <ion-label position="floating">Identifier</ion-label>
-      <ion-input type="text" formControlName="code"></ion-input>
+      <ion-input type="number" formControlName="id"></ion-input>
     </ion-item>
-    <div *ngIf="form.code.errors">
+    <div *ngIf="form.id.errors">
       <span
         class="is-invalid ion-padding"
-        *ngIf="isSubmitted && form.code.errors?.required"
+        *ngIf="isSubmitted && form.id.errors?.required"
       >
         Identifier is <strong>required</strong>.
       </span>
@@ -60,6 +60,11 @@
         Last name is <strong>required</strong>.
       </span>
     </div>
+
+    <ion-item lines="full">
+      <ion-label position="floating">Phone Number</ion-label>
+      <ion-input type="text" formControlName="phone"></ion-input>
+    </ion-item>
 
     <ion-item lines="full">
       <ion-label position="floating">Signle meal</ion-label>
@@ -99,6 +104,16 @@
       </span>
     </div>
 
+    <ion-item lines="full">
+      <ion-label position="floating">Comments</ion-label>
+      <ion-input type="text" formControlName="comment"></ion-input>
+    </ion-item>
+
+    <ion-item lines="full">
+      <ion-label>Came today</ion-label>
+      <ion-checkbox formControlName="cameToday"></ion-checkbox>
+    </ion-item>
+
     <ion-row>
       <ion-col>
         <ion-button
@@ -106,8 +121,9 @@
           type="submit"
           shape="round"
           expand="block"
-          >Add new person</ion-button
-        >
+          >Add new person
+          <ion-spinner *ngIf="isSubmitted"></ion-spinner>
+        </ion-button>
       </ion-col>
     </ion-row>
   </form>
@@ -162,8 +178,9 @@
           type="submit"
           shape="round"
           expand="block"
-          >Add meals</ion-button
-        >
+          >Add meals
+          <ion-spinner *ngIf="isSubmitted"></ion-spinner>
+        </ion-button>
       </ion-col>
     </ion-row>
   </form>

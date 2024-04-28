@@ -1,7 +1,11 @@
+import { Region } from "@app/core/enums/regions.enum";
+
 export interface User {
-  uid: string;
   email: string;
-  displayName: string;
-  photoURL: string;
-  emailVerified: boolean;
+  name: string;
+  region: Region
+  username: string;
+  password: string;
+  roles: string[];
+  isAccountDisabled: boolean;
 }

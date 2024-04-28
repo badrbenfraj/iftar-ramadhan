@@ -17,45 +17,132 @@
 </ion-header>
 
 <ion-content>
-  <div *ngIf="fastingPerson">
-    <ion-item>
-      <ion-label>Identifier:</ion-label>
-      <ion-label>{{ fastingPerson.code }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>First Name:</ion-label>
-      <ion-label>{{ fastingPerson.firstName }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Last Name:</ion-label>
-      <ion-label>{{ fastingPerson.lastName }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Single meal:</ion-label>
-      <ion-label>{{ fastingPerson.singleMeal }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Family meal:</ion-label>
-      <ion-label>{{ fastingPerson.familyMeal }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label class="meal-label">Meal taken:</ion-label>
-      <ion-label [ngClass]="isMealTaken ? 'taken': 'not-taken'">
-        {{isMealTaken ? 'خذا':'ما خذاش!'}}
-      </ion-label>
-    </ion-item>
+  <ion-spinner
+    *ngIf="!fastingPerson && loading"
+    class="spinner"
+    name="bubbles"
+    color="tertiary"
+  ></ion-spinner>
+  <div *ngIf="fastingPerson && !emptyCode">
+    <form [formGroup]="form" novalidate>
+      <ion-item>
+        <ion-label>Identifier:</ion-label>
+        <ion-label>{{ fastingPerson.id }} </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>First Name:</ion-label>
+        <ion-label>{{ fastingPerson.firstName }} </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>Last Name:</ion-label>
+        <ion-label>{{ fastingPerson.lastName }} </ion-label>
+      </ion-item>
+      <ion-item *ngIf="!editable">
+        <ion-label>Phone Number:</ion-label>
+        <ion-label>{{ fastingPerson.phone }} </ion-label>
+        <ion-button
+          *ngIf="!isMealTaken"
+          fill="clear"
+          (click)="editable = !editable"
+        >
+          <ion-icon slot="end" name="pencil-sharp"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item *ngIf="editable">
+        <ion-input
+          label="Phone Number:"
+          labelPlacement="floating"
+          type="text"
+          formControlName="phone"
+        ></ion-input>
+        <ion-button
+          *ngIf="!isMealTaken"
+          fill="clear"
+          (click)="editable = !editable"
+        >
+          <ion-icon slot="end" name="eye"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item>
+        <ion-label>Single meal:</ion-label>
+        <ion-label>{{ fastingPerson.singleMeal }} </ion-label>
+      </ion-item>
+      <ion-item>
+        <ion-label>Family meal:</ion-label>
+        <ion-label>{{ fastingPerson.familyMeal }} </ion-label>
+      </ion-item>
+      <ion-item *ngIf="!editable">
+        <ion-label>Comments:</ion-label>
+        <ion-label> {{ fastingPerson.comment }} </ion-label>
+        <ion-button fill="clear" (click)="editable = !editable">
+          <ion-icon slot="end" name="pencil-sharp"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item *ngIf="editable">
+        <ion-input
+          label="Comments:"
+          labelPlacement="floating"
+          type="text"
+          formControlName="comment"
+        ></ion-input>
+        <ion-button fill="clear" (click)="editable = !editable">
+          <ion-icon slot="end" name="eye"></ion-icon>
+        </ion-button>
+      </ion-item>
+      <ion-item id="open-modal">
+        <ion-label class="meal-label">Meal taken:</ion-label>
+        <ion-label [ngClass]="isMealTaken ? 'taken': 'not-taken'">
+          {{isMealTaken ? 'خذا!':'ما خذاش'}}
+        </ion-label>
+      </ion-item>
+    </form>
+  </div>
+  <div *ngIf="emptyCode" class="empty-code">
+    <span>Invalid qr code</span>
   </div>
   <ion-button
+    *ngIf="fastingPerson && !isMealTaken && !emptyCode"
     color="primary"
     expand="full"
     shape="round"
+    [disabled]="isSubmitted"
     (click)="confirmAndOpenBarCodeScanner()"
   >
-    <span *ngIf="fastingPerson && !isMealTaken" style="padding: 5px">
-      Confirm and
-    </span>
-    Scan
-    <span *ngIf="fastingPerson" style="padding: 5px"> another </span>
-    code</ion-button
+    Confirm and scan another code
+    <ion-spinner *ngIf="isSubmitted"> </ion-spinner>
+  </ion-button>
+  <ion-button
+    *ngIf="(fastingPerson && isMealTaken) || emptyCode"
+    color="primary"
+    expand="full"
+    shape="round"
+    [disabled]="isSubmitted"
+    (click)="openBarCodeScanner()"
   >
+    Scan another code
+    <ion-spinner *ngIf="isSubmitted"> </ion-spinner>
+  </ion-button>
+  <ion-modal
+    #modal
+    trigger="open-modal"
+    [initialBreakpoint]="0.4"
+    [breakpoints]="[0, 0.25, 0.5, 0.75]"
+  >
+    <ng-template>
+      <ion-content>
+        <ion-list *ngIf="fastingPerson?.takenMeals?.length > 0; else empty">
+          <h6 class="list-title">
+            List of taken meals for {{ fastingPerson.firstName }} {{
+            fastingPerson.lastName }}
+          </h6>
+          <ion-item *ngFor="let mealDate of fastingPerson.takenMeals">
+            <ion-label> {{ mealDate | date }} </ion-label>
+          </ion-item>
+        </ion-list>
+        <ng-template #empty>
+          <span class="empty">There is no previous takens.</span>
+        </ng-template>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 </ion-content>

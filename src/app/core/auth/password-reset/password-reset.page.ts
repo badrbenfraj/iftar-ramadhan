@@ -10,11 +10,15 @@ import { AuthenticationService } from '../authentication.service';
 export class PasswordResetPage implements OnInit {
   constructor(
     private navController: NavController,
-    public authService: AuthenticationService) {}
+    public authService: AuthenticationService
+  ) {}
 
   ngOnInit() {
     if (this.authService.isLoggedIn) {
       this.navController.navigateRoot(['/pages/list']);
     }
+  }
+  passwordRecover(email) {
+    // this.authService.passwordRecover(email)
   }
 }

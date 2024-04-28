@@ -1,5 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { UntypedFormBuilder, UntypedFormGroup, Validators } from '@angular/forms';
+import {
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  Validators,
+} from '@angular/forms';
 import {
   AlertController,
   LoadingController,
@@ -7,6 +11,7 @@ import {
 } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { AuthenticationService } from '../authentication.service';
+import { HttpStatusCode } from '@angular/common/http';
 
 @Component({
   selector: 'app-registration',
@@ -38,6 +43,9 @@ export class RegistrationPage implements OnInit, OnDestroy {
 
   ngOnInit() {
     this.registerForm = this.formBuilder.group({
+      name: ['', [Validators.required]],
+      username: ['', [Validators.required]],
+      region: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(3)]],
     });
@@ -50,22 +58,26 @@ export class RegistrationPage implements OnInit, OnDestroy {
 
     // stop here if form is invalid
     if (this.registerForm.invalid) {
+      this.isSubmitted = false;
       await loading.dismiss();
 
       return;
     }
-    this.authService
-      .registerUser(
-        this.form.email.value,
-        this.form.password.value
-      )
-      .then((res) => {
-        // Do something here
-        this.authService.sendVerificationMail();
-      })
-      .catch((error) => {
-        this.showAlert(error.message);
-      });
+    this.authService.registerUser(this.registerForm.getRawValue()).subscribe({
+      next: (res) => {
+        // this.authService.sendVerificationMail();
+        this.navController.navigateRoot(['login']);
+        this.isSubmitted = false;
+      },
+      error: (error) => {
+        this.isSubmitted = false;
+        if (error === 'Conflict') {
+          this.showAlert('Username or email is already in use');
+        } else {
+          this.showAlert(error);
+        }
+      },
+    });
     await loading.dismiss();
   }
 

@@ -15,12 +15,12 @@
     <form [formGroup]="fastingPersonForm" (ngSubmit)="onSubmit()" novalidate>
       <ion-item lines="full">
         <ion-label position="floating">Identifier</ion-label>
-        <ion-input type="text" formControlName="code"></ion-input>
+        <ion-input type="number" formControlName="id"></ion-input>
       </ion-item>
-      <div *ngIf="form.code.errors">
+      <div *ngIf="form.id.errors">
         <span
           class="is-invalid ion-padding"
-          *ngIf="isSubmitted && form.code.errors?.required"
+          *ngIf="isSubmitted && form.id.errors?.required"
         >
           Identifier is <strong>required</strong>.
         </span>
@@ -49,6 +49,11 @@
           Last name is <strong>required</strong>.
         </span>
       </div>
+
+      <ion-item lines="full">
+        <ion-label position="floating">Phone Number</ion-label>
+        <ion-input type="text" formControlName="phone"></ion-input>
+      </ion-item>
 
       <ion-item lines="full">
         <ion-label position="floating">Signle meal</ion-label>
@@ -87,6 +92,10 @@
           Single meal or Family meal should be <strong>greater than 0</strong>.
         </span>
       </div>
+      <ion-item lines="full">
+        <ion-label position="floating">Comments</ion-label>
+        <ion-input type="text" formControlName="comment"></ion-input>
+      </ion-item>
 
       <ion-row>
         <ion-col>

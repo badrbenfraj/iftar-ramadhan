@@ -1,28 +1,108 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title> Daily Statistics </ion-title>
+    <ion-title> Statistics </ion-title>
   </ion-toolbar>
 </ion-header>
 
 <ion-content [fullscreen]="true">
-  <ion-refresher slot="fixed" (ionRefresh)="refreshStats($event)">
+  <ion-refresher
+    *ngIf="isDataLoaded"
+    slot="fixed"
+    (ionRefresh)="refreshStats($event)"
+  >
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
-  <div #content id="PrintStats">
-    <ion-item>
-      <ion-label>Number of Family meals:</ion-label>
-      <ion-label>{{ getFamilyMealsNumber() }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Number of Single meals:</ion-label>
-      <ion-label>{{ getSingleMealsNumber() }} </ion-label>
-    </ion-item>
-    <ion-item>
-      <ion-label>Number of meals:</ion-label>
-      <ion-label>{{ getMealsNumber() }} </ion-label>
-    </ion-item>
+  <div *ngIf="loading" class="empty">
+    <ion-spinner class="spinner" name="bubbles" color="tertiary"></ion-spinner>
+    <span>Fetching data</span>
   </div>
-  <ion-button expand="block" shape="round" (click)="downloadPDF()">
-    Download Daily Statistics
-  </ion-button>
+  <div
+    *ngIf="!loading && form.value.fromDate && form.value.toDate && isDataLoaded"
+    class="retry"
+    (click)="retry()"
+  >
+    <span>Choose another period</span>
+  </div>
+
+  <div>
+    <div *ngFor="let stats of data" class="statistics">
+      <span class="title-date"> {{ stats.date }} </span>
+      <ion-item>
+        <ion-label> Number of served persons: </ion-label>
+        <ion-text slot="end"
+          >{{ stats.statistics.persons }} / {{ stats.statistics.totalPersons
+          }}</ion-text
+        >
+      </ion-item>
+      <ion-item>
+        <ion-label> Family meals: </ion-label>
+        <ion-text slot="end">{{ stats.statistics.familyMeal }}</ion-text>
+      </ion-item>
+      <ion-item>
+        <ion-label> Single meals: </ion-label>
+        <ion-text slot="end">{{ stats.statistics.singleMeal }}</ion-text>
+      </ion-item>
+      <ion-item>
+        <ion-label>Total of served meals:</ion-label>
+        <ion-label slot="end">{{ stats.statistics.totalMeals }} </ion-label>
+      </ion-item>
+    </div>
+  </div>
+
+  <div *ngIf="!isDataLoaded" class="group" [formGroup]="form">
+    <ion-select
+      justify="space-between"
+      label="Choose a period:"
+      placeholder="Daily"
+      interface="popover"
+      (ionChange)="selectionChanged($event)"
+    >
+      <ion-select-option value="daily">Daily</ion-select-option>
+      <ion-select-option value="weekly">Weekly</ion-select-option>
+      <ion-select-option value="monthly">Monthly</ion-select-option>
+      <ion-select-option value="custom">Custom</ion-select-option>
+    </ion-select>
+    <ion-item (click)="visibilityFrom()">
+      <ion-label> From </ion-label>
+      <ion-text slot="end">{{ getFromDate() }}</ion-text>
+    </ion-item>
+    <ion-datetime
+      #end
+      *ngIf="showFrom"
+      class="from-date"
+      presentation="date"
+      formControlName="fromDate"
+      (ionChange)="fromDateChanged()"
+    >
+    </ion-datetime>
+
+    <ion-item (click)="visibilityTo()">
+      <ion-label> To </ion-label>
+      <ion-text slot="end">{{ getToDate() }}</ion-text>
+    </ion-item>
+    <ion-datetime
+      #start
+      *ngIf="showTo"
+      class="to-date"
+      presentation="date"
+      formControlName="toDate"
+      (ionChange)="toDateChanged()"
+    >
+    </ion-datetime>
+    <div *ngIf="form?.errors?.rangeInvalid">
+      <span class="is-invalid ion-padding">
+        <strong>From</strong> date should be greater than
+        <strong>to</strong> date.
+      </span>
+    </div>
+    <ion-button
+      *ngIf="!loading"
+      expand="block"
+      shape="round"
+      [disabled]="validateReadOnly()"
+      (click)="validate()"
+    >
+      Validate Period
+    </ion-button>
+  </div>
 </ion-content>

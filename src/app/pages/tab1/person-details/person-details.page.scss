@@ -21,3 +21,16 @@
   font-weight: bold;
   max-width: fit-content;
 }
+
+.empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px;
+}
+
+.list-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

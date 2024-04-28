@@ -47,6 +47,34 @@ ion-spinner {
   margin-left: 10px;
 }
 
+.spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px auto;
+  height: 40px;
+  width: 40px;
+  --ion-color-base: #43cebb !important;
+}
+
 .alert-button.sc-ion-alert-md.ion-color-danger.alert-button-role-cancel {
   color: var(--ion-color-danger, #eb445a) !important;
+}
+.alert-head.sc-ion-alert-md + .alert-message.sc-ion-alert-md {
+  padding: 5px 20px;
+}
+
+.empty {
+  span {
+    display: flex;
+    width: 100%;
+    justify-content: center;
+    font-size: 14px;
+    color: #43cebb;
+  }
+}
+
+:host {
+  max-width: unset;
+  --background: unset;
 }

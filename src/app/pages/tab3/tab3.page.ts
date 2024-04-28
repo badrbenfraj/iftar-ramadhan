@@ -1,91 +1,154 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { first, map } from 'rxjs/operators';
-import { FastingPerson } from 'src/app/core/model/fasting-person.model';
 import { FastingPersonService } from 'src/app/core/service/fasting-person.service';
 import { Bulk } from '@app/core/model/bulk.model';
+import {
+  UntypedFormBuilder,
+  UntypedFormGroup,
+  Validators,
+} from '@angular/forms';
+import { DatePipe } from '@angular/common';
 
 @Component({
   selector: 'app-tab3',
   templateUrl: 'tab3.page.html',
   styleUrls: ['tab3.page.scss'],
+  providers: [DatePipe],
 })
 export class Tab3Page implements OnInit {
+  form: UntypedFormGroup;
+
+  formBuilder = inject(UntypedFormBuilder);
+
+  datePipe = inject(DatePipe);
+
   content: string;
 
-  fastingPersonsList: FastingPerson[] = [];
+  loading: boolean = false;
 
-  bulkData: Bulk[] = [];
+  isDataLoaded: boolean = false;
 
-  constructor(
-    private fastingPersonService: FastingPersonService,
-  ) {}
+  data: any;
+
+  showTo = false;
+
+  showFrom = false;
+
+  constructor(private fastingPersonService: FastingPersonService) {}
 
   ngOnInit(): void {
-    this.getFastionsPersonsList();
-    this.fastingPersonService
-      .getStatisticsByDate(new Date(new Date().setHours(0, 0, 0, 0)))
-      .pipe(first())
-      .subscribe((data) => (this.bulkData = data));
-  }
-
-  getFastionsPersonsList() {
-    this.fastingPersonService
-      .getFastingPersons()
-      .pipe(
-        map((items) =>
-          items.filter(
-            (item: FastingPerson) =>
-              new Date(item.lastTakenMeal).setHours(0, 0, 0, 0) ===
-              new Date().setHours(0, 0, 0, 0)
-          )
-        ),
-        first()
-      )
-      .subscribe((items) => (this.fastingPersonsList = items));
-  }
-
-  getMealsNumber() {
-    let fastingPeople = 0;
-    for (const person of this.fastingPersonsList) {
-      fastingPeople += person?.singleMeal + person?.familyMeal * 4;
-    }
-    return (
-      fastingPeople +
-      this.getSingleBulkMealsNumber() +
-      this.getFamilyBulkMealsNumber()
+    this.form = this.formBuilder.group(
+      {
+        fromDate: [new Date().toISOString(), [Validators.required]],
+        toDate: [new Date().toISOString(), [Validators.required]],
+      },
+      { validators: this.dateRangeValidator }
     );
   }
 
-  getSingleMealsNumber() {
-    let fastingPeople = 0;
-    for (const person of this.fastingPersonsList) {
-      fastingPeople += person?.singleMeal;
-    }
-    return fastingPeople + this.getSingleBulkMealsNumber();
+  toDateChanged() {
+    console.log(this.form);
+    setTimeout(() => {
+      this.showTo = false;
+    }, 150);
   }
 
-  getFamilyMealsNumber() {
-    let fastingPeople = 0;
-    for (const person of this.fastingPersonsList) {
-      fastingPeople += person?.familyMeal * 4;
-    }
-    return fastingPeople + this.getFamilyBulkMealsNumber();
+  fromDateChanged() {
+    setTimeout(() => {
+      this.showFrom = false;
+    }, 150);
   }
 
-  getSingleBulkMealsNumber() {
-    let fastingPeople = 0;
-    for (const bulk of this.bulkData) {
-      fastingPeople += bulk?.singleMeal;
-    }
-    return fastingPeople;
+  retry() {
+    this.form.reset();
+    this.data = [];
+    this.isDataLoaded = false;
   }
 
-  getFamilyBulkMealsNumber() {
-    let fastingPeople = 0;
-    for (const bulk of this.bulkData) {
-      fastingPeople += bulk?.familyMeal * 4;
+  validate() {
+    this.loading = true;
+    this.fastingPersonService
+      .getStatistics(this.form.getRawValue())
+      .pipe(first())
+      .subscribe({
+        next: (data) => {
+          this.data = data?.data;
+          this.loading = false;
+          this.isDataLoaded = true;
+        },
+        error: () => {
+          this.loading = false;
+          this.isDataLoaded = false;
+        },
+      });
+  }
+
+  visibilityTo() {
+    this.showTo = !this.showTo;
+    this.showFrom = false;
+  }
+
+  visibilityFrom() {
+    this.showFrom = !this.showFrom;
+    this.showTo = false;
+  }
+
+  validateReadOnly() {
+    return (
+      !this.form.value.fromDate || !this.form.value.toDate || this.form.invalid
+    );
+  }
+
+  selectionChanged(selected) {
+    switch (selected.detail.value) {
+      case 'daily':
+        this.form.patchValue({
+          fromDate: new Date().toISOString(),
+          toDate: new Date().toISOString(),
+        });
+        break;
+      case 'weekly':
+        const curr = new Date();
+        const currDate = new Date(
+          curr.getFullYear(),
+          curr.getMonth(),
+          curr.getDate()
+        );
+
+        const firstDayOfWeek = currDate.getDate() - currDate.getDay();
+        const lastDayOfWeek = firstDayOfWeek + 6;
+        const startDateOfWeek = new Date(currDate);
+        startDateOfWeek.setDate(firstDayOfWeek);
+        const endDateOfWeek = new Date(currDate);
+        endDateOfWeek.setDate(lastDayOfWeek);
+
+        this.form.patchValue({
+          fromDate: startDateOfWeek.toISOString(),
+          toDate: endDateOfWeek.toISOString(),
+        });
+        break;
+      case 'monthly':
+        const current = new Date();
+
+        const firstDayOfMonth = new Date(
+          current.getFullYear(),
+          current.getMonth(),
+          1
+        );
+        const lastDayOfMonth = new Date(
+          current.getFullYear(),
+          current.getMonth() + 1,
+          0
+        );
+
+        this.form.patchValue({
+          fromDate: firstDayOfMonth.toISOString(),
+          toDate: lastDayOfMonth.toISOString(),
+        });
+        break;
+      case 'custom':
+        break;
     }
-    return fastingPeople;
   }
 
   getWeeklyStats() {
@@ -103,7 +166,7 @@ export class Tab3Page implements OnInit {
     const date = new Date().getDate();
     const month = new Date().getMonth();
     const year = new Date().getFullYear();
-
+    this.fastingPersonService.downloadDailyStatistics().subscribe();
     const options = {
       type: 'share',
       fileName: `statistics_${date}_${month}_${year}.pdf`,
@@ -111,13 +174,48 @@ export class Tab3Page implements OnInit {
   }
 
   refreshStats(event) {
-    this.getFastionsPersonsList();
+    this.loading = true;
     this.fastingPersonService
-      .getStatisticsByDate(new Date(new Date().setHours(0, 0, 0, 0)))
+      .getStatistics(this.form.getRawValue())
       .pipe(first())
-      .subscribe((data) => {
-        this.bulkData = data;
-        event.target.complete();
+      .subscribe({
+        next: (data) => {
+          this.data = data?.data;
+          this.loading = false;
+          this.isDataLoaded = true;
+          event.target.complete();
+        },
+        error: () => {
+          this.loading = false;
+          this.isDataLoaded = false;
+          event.target.complete();
+        },
       });
+  }
+
+  getFromDate() {
+    if (this.form.get('fromDate').value) {
+      return this.datePipe.transform(this.form.get('fromDate').value);
+    } else {
+      return 'Choose a Date';
+    }
+  }
+
+  getToDate() {
+    if (this.form.get('toDate').value) {
+      return this.datePipe.transform(this.form.get('toDate').value);
+    } else {
+      return 'Choose a Date';
+    }
+  }
+
+  dateRangeValidator(formGroup: UntypedFormGroup) {
+    const fromDate = formGroup.get('fromDate').value;
+    const toDate = formGroup.get('toDate').value;
+
+    if (fromDate && toDate) {
+      return fromDate <= toDate ? null : { rangeInvalid: true };
+    }
+    return null;
   }
 }
