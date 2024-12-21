@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsEnum,
@@ -8,8 +8,8 @@ import {
   MaxLength,
 } from 'class-validator';
 
-import { ROLE } from '../constants/role.constant';
 import { Region } from '../../fasting/enums/regions.enum';
+import { ROLE } from '../constants/role.constant';
 
 export class RegisterInput {
   @ApiProperty()

@@ -34,8 +34,8 @@ import {
   UpdateFastingInput,
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
-import { FastingService } from '../services/fasting.service';
 import { Region } from '../enums/regions.enum';
+import { FastingService } from '../services/fasting.service';
 
 @ApiTags('fastings')
 @Controller('fastings')
@@ -279,7 +279,6 @@ export class FastingController {
     @Body() input: UpdateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
     input.lastTakenMeal = new Date();
-    console.log('input: ', input);
     const fasting = await this.fastingService.updateFasting(
       ctx,
       fastingId,

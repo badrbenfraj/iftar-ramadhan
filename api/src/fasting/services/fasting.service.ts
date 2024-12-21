@@ -17,9 +17,9 @@ import {
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
 import { Fasting } from '../entities/fasting.entity';
+import { Region } from '../enums/regions.enum';
 import { FastingRepository } from '../repositories/fasting.repository';
 import { FastingAclService } from './fasting-acl.service';
-import { Region } from '../enums/regions.enum';
 
 @Injectable()
 export class FastingService {

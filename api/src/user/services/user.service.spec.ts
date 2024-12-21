@@ -3,13 +3,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
 
 import { ROLE } from '../../auth/constants/role.constant';
+import { Region } from '../../fasting/enums/regions.enum';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { UpdateUserInput } from '../dtos/user-update-input.dto';
 import { User } from '../entities/user.entity';
 import { UserRepository } from '../repositories/user.repository';
 import { UserService } from './user.service';
-import { Region } from 'api/src/fasting/enums/regions.enum';
 
 describe('UserService', () => {
   let service: UserService;

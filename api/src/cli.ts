@@ -3,10 +3,10 @@ import { NestFactory } from '@nestjs/core';
 
 import { AppModule } from './app.module';
 import { ROLE } from './auth/constants/role.constant';
+import { Region } from './fasting/enums/regions.enum';
 import { RequestContext } from './shared/request-context/request-context.dto';
 import { CreateUserInput } from './user/dtos/user-create-input.dto';
 import { UserService } from './user/services/user.service';
-import { Region } from './fasting/enums/regions.enum';
 
 async function bootstrap() {
   const app = await NestFactory.createApplicationContext(AppModule);

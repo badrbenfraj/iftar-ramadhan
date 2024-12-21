@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
-import { ROLE } from '../constants/role.constant';
 import { Region } from '../../fasting/enums/regions.enum';
+import { ROLE } from '../constants/role.constant';
 
 export class RegisterOutput {
   @Expose()
