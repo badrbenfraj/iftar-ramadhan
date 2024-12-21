@@ -7,15 +7,15 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 
+import { Region } from '../../region/entities/region.entity';
 import { User } from '../../user/entities/user.entity';
-import { Region } from '../enums/regions.enum';
 
 @Entity('fastings')
 export class Fasting {
   @PrimaryColumn()
   id: number;
 
-  @PrimaryColumn({ type: 'enum', enum: Region })
+  @ManyToOne(() => Region, (region) => region.fastingPeople)
   region: Region;
 
   @Column()

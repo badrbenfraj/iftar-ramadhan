@@ -1,17 +1,55 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { RegionRepository } from 'src/region/repositories/region.repository';
 import { DataSource, Repository } from 'typeorm';
 
 import { Fasting } from '../entities/fasting.entity';
-import { Region } from '../enums/regions.enum';
 
 @Injectable()
 export class FastingRepository extends Repository<Fasting> {
-  constructor(private dataSource: DataSource) {
+  constructor(
+    private dataSource: DataSource,
+    private regionRepository: RegionRepository,
+  ) {
     super(Fasting, dataSource.createEntityManager());
   }
 
-  async getByIdAndRegion(id: number, region: Region): Promise<Fasting> {
-    const fasting = await this.findOne({ where: { id, region } });
+  async getFastingsByRegion(
+    regionId: number,
+    limit: number,
+    offset: number,
+  ): Promise<[Fasting[], number]> {
+    const region = await this.regionRepository.getRegionById(regionId);
+
+    if (!region) {
+      throw new NotFoundException(`Region id: ${regionId} not found`);
+    }
+    const fasting = await this.findAndCount({
+      where: {
+        region,
+      },
+      relations: ['region'],
+      take: limit,
+      skip: offset,
+    });
+
+    if (!fasting) {
+      throw new NotFoundException();
+    }
+
+    return fasting;
+  }
+
+  async getByIdAndRegion(id: number, regionId: number): Promise<Fasting> {
+    const region = await this.regionRepository.getRegionById(regionId);
+
+    if (!region) {
+      throw new NotFoundException(`Region id: ${regionId} not found`);
+    }
+    const fasting = await this.findOne({
+      where: { id, region },
+      relations: ['region'],
+    });
+
     if (!fasting) {
       throw new NotFoundException();
     }

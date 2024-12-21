@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
+import { Region } from 'src/region/entities/region.entity';
 
-import { Region } from '../../fasting/enums/regions.enum';
 import { ROLE } from '../constants/role.constant';
 
 export class RegisterOutput {
@@ -18,7 +18,7 @@ export class RegisterOutput {
   username: string;
 
   @Expose()
-  @ApiProperty({ example: [Region.SOKRA] })
+  @ApiProperty()
   region: Region;
 
   @Expose()

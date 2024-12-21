@@ -3,12 +3,14 @@ import { Type } from 'class-transformer';
 import {
   IsBoolean,
   IsDateString,
+  IsDefined,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   ValidateNested,
 } from 'class-validator';
+import { Region } from 'src/region/entities/region.entity';
 
 export class CreateFastingInput {
   @IsNumber()
@@ -25,6 +27,11 @@ export class CreateFastingInput {
   @IsNotEmpty()
   @ApiProperty()
   lastName: string;
+
+  @ApiProperty()
+  @IsDefined()
+  @ValidateNested()
+  region: Region;
 
   @IsString()
   @IsOptional()
@@ -72,6 +79,11 @@ export class UpdateFastingInput {
   @IsNotEmpty()
   @ApiProperty()
   lastName: string;
+
+  @ApiProperty()
+  @IsDefined()
+  @ValidateNested()
+  region: Region;
 
   @IsString()
   @IsOptional()

@@ -56,8 +56,10 @@ export class FastingPersonService {
   addFastingPerson(body: FastingPerson) {
     const currentUser = this.authenticationService.currentUser;
 
+    body['region'] = currentUser.region
+
     return this.httpClient
-      .post(`${BASE_PATH}/fastings/${currentUser?.region}`, body)
+      .post(`${BASE_PATH}/fastings`, body)
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 

@@ -4,6 +4,7 @@ import {
   IsAlphanumeric,
   IsArray,
   IsBoolean,
+  IsDefined,
   IsEmail,
   IsEnum,
   IsNotEmpty,
@@ -11,10 +12,11 @@ import {
   IsString,
   Length,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
+import { Region } from 'src/region/entities/region.entity';
 
 import { ROLE } from '../../auth/constants/role.constant';
-import { Region } from '../../fasting/enums/regions.enum';
 
 export class CreateUserInput {
   @ApiPropertyOptional()
@@ -24,8 +26,8 @@ export class CreateUserInput {
   name: string;
 
   @ApiProperty()
-  @IsNotEmpty()
-  @IsEnum(Region)
+  @IsDefined()
+  @ValidateNested()
   region: Region;
 
   @ApiProperty()

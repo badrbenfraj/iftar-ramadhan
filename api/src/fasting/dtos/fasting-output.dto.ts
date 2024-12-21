@@ -1,7 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-
-import { Region } from '../enums/regions.enum';
+import { Region } from 'src/region/entities/region.entity';
 
 export class FastingOutput {
   @Expose()

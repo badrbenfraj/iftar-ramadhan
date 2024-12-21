@@ -1,14 +1,15 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
+  IsDefined,
   IsEmail,
-  IsEnum,
   IsNotEmpty,
   IsString,
   Length,
   MaxLength,
+  ValidateNested,
 } from 'class-validator';
+import { Region } from 'src/region/entities/region.entity';
 
-import { Region } from '../../fasting/enums/regions.enum';
 import { ROLE } from '../constants/role.constant';
 
 export class RegisterInput {
@@ -24,8 +25,8 @@ export class RegisterInput {
   username: string;
 
   @ApiProperty()
-  @IsNotEmpty()
-  @IsEnum(Region)
+  @IsDefined()
+  @ValidateNested()
   region: Region;
 
   @ApiProperty()
