@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsDefined,
   IsEmail,
+  IsInstance,
   IsNotEmpty,
   IsString,
   Length,
@@ -27,6 +28,7 @@ export class RegisterInput {
   @ApiProperty()
   @IsDefined()
   @ValidateNested()
+  @IsInstance(Region)
   region: Region;
 
   @ApiProperty()

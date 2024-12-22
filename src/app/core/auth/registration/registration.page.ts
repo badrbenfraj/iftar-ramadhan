@@ -11,7 +11,7 @@ import {
 } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { AuthenticationService } from '../authentication.service';
-import { HttpStatusCode } from '@angular/common/http';
+import { RegionService } from '@app/core/service/region.service';
 
 @Component({
   selector: 'app-registration',
@@ -27,6 +27,7 @@ export class RegistrationPage implements OnInit, OnDestroy {
 
   constructor(
     public authService: AuthenticationService,
+    public regionService: RegionService,
     private navController: NavController,
     private alertController: AlertController,
     private loadingController: LoadingController,
@@ -49,6 +50,10 @@ export class RegistrationPage implements OnInit, OnDestroy {
       email: ['', [Validators.required, Validators.email]],
       password: ['', [Validators.required, Validators.minLength(3)]],
     });
+  }
+
+  getRegions() {
+    return this.regionService.getRegions();
   }
 
   async onSubmit() {

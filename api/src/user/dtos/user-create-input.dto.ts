@@ -7,6 +7,7 @@ import {
   IsDefined,
   IsEmail,
   IsEnum,
+  IsInstance,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -28,6 +29,7 @@ export class CreateUserInput {
   @ApiProperty()
   @IsDefined()
   @ValidateNested()
+  @IsInstance(Region)
   region: Region;
 
   @ApiProperty()

@@ -4,6 +4,7 @@ import {
   IsBoolean,
   IsDateString,
   IsDefined,
+  IsInstance,
   IsNotEmpty,
   IsNumber,
   IsOptional,
@@ -31,6 +32,7 @@ export class CreateFastingInput {
   @ApiProperty()
   @IsDefined()
   @ValidateNested()
+  @IsInstance(Region)
   region: Region;
 
   @IsString()
@@ -83,6 +85,7 @@ export class UpdateFastingInput {
   @ApiProperty()
   @IsDefined()
   @ValidateNested()
+  @IsInstance(Region)
   region: Region;
 
   @IsString()
