@@ -11,7 +11,7 @@ import {
 } from '@ionic/angular';
 import { Subject } from 'rxjs';
 import { AuthenticationService } from '../authentication.service';
-import { HttpStatusCode } from '@angular/common/http';
+import { RegionService } from '@app/core/service/region.service';
 
 @Component({
   selector: 'app-registration',
@@ -23,10 +23,13 @@ export class RegistrationPage implements OnInit, OnDestroy {
 
   isSubmitted = false;
 
+  regions$ = this.regionService.getRegions();
+
   private destroy$ = new Subject();
 
   constructor(
     public authService: AuthenticationService,
+    public regionService: RegionService,
     private navController: NavController,
     private alertController: AlertController,
     private loadingController: LoadingController,
@@ -52,33 +55,38 @@ export class RegistrationPage implements OnInit, OnDestroy {
   }
 
   async onSubmit() {
-    this.isSubmitted = true;
-    const loading = await this.loadingController.create();
-    await loading.present();
-
-    // stop here if form is invalid
     if (this.registerForm.invalid) {
-      this.isSubmitted = false;
-      await loading.dismiss();
-
+      this.showAlert('Please fill all required fields correctly');
       return;
     }
-    this.authService.registerUser(this.registerForm.getRawValue()).subscribe({
-      next: (res) => {
-        // this.authService.sendVerificationMail();
-        this.navController.navigateRoot(['login']);
-        this.isSubmitted = false;
-      },
-      error: (error) => {
-        this.isSubmitted = false;
-        if (error === 'Conflict') {
-          this.showAlert('Username or email is already in use');
-        } else {
-          this.showAlert(error);
-        }
-      },
+
+    this.isSubmitted = true;
+    const loading = await this.loadingController.create({
+      message: 'Registering...',
     });
-    await loading.dismiss();
+
+    try {
+      await loading.present();
+
+      const formData = this.registerForm.getRawValue();
+      const payload = {
+        ...formData,
+        region: { id: formData.region },
+      };
+
+      await this.authService.registerUser(payload).toPromise();
+      await this.navController.navigateRoot(['login']);
+    } catch (error) {
+      const errorMessage =
+        error === 'Conflict'
+          ? 'Username or email is already in use'
+          : 'Registration failed. Please try again.';
+
+      await this.showAlert(errorMessage);
+    } finally {
+      this.isSubmitted = false;
+      await loading.dismiss();
+    }
   }
 
   async showAlert(message) {

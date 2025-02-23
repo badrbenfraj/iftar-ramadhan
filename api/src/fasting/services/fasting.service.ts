@@ -3,8 +3,9 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { plainToClass } from 'class-transformer';
+import { plainToClass, plainToInstance } from 'class-transformer';
 
+import { Region } from '../../region/entities/region.entity';
 import { Action } from '../../shared/acl/action.constant';
 import { Actor } from '../../shared/acl/actor.constant';
 import { AppLogger } from '../../shared/logger/logger.service';
@@ -19,13 +20,13 @@ import { FastingOutput } from '../dtos/fasting-output.dto';
 import { Fasting } from '../entities/fasting.entity';
 import { FastingRepository } from '../repositories/fasting.repository';
 import { FastingAclService } from './fasting-acl.service';
-import { Region } from '../enums/regions.enum';
 
 @Injectable()
 export class FastingService {
   constructor(
     private repository: FastingRepository,
     private userService: UserService,
+
     private aclService: FastingAclService,
     private readonly logger: AppLogger,
   ) {
@@ -34,11 +35,9 @@ export class FastingService {
 
   async createFasting(
     ctx: RequestContext,
-    region: Region,
     input: CreateFastingInput,
   ): Promise<FastingOutput> {
     this.logger.log(ctx, `${this.createFasting.name} was called`);
-    input['region'] = region;
     const fasting = plainToClass(Fasting, input);
 
     const actor: Actor = ctx.user;
@@ -53,18 +52,17 @@ export class FastingService {
     }
 
     fasting.createdBy = plainToClass(User, user);
+    fasting.region = plainToClass(Region, user.region);
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
     const savedFasting = await this.repository.save(fasting);
 
-    return plainToClass(FastingOutput, savedFasting, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(FastingOutput, savedFasting);
   }
 
   async getFastingsByRegion(
     ctx: RequestContext,
-    region: Region,
+    region: number,
     limit: number,
     offset: number,
   ): Promise<{ fastings: FastingOutput[]; count: number }> {
@@ -78,17 +76,14 @@ export class FastingService {
     }
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.findAndCount`);
-    const [fastings, count] = await this.repository.findAndCount({
-      where: {
-        region,
-      },
-      take: limit,
-      skip: offset,
-    });
 
-    const fastingsOutput = plainToClass(FastingOutput, fastings, {
-      excludeExtraneousValues: true,
-    });
+    const [fastings, count] = await this.repository.getFastingsByRegion(
+      region,
+      limit,
+      offset,
+    );
+
+    const fastingsOutput = plainToInstance(FastingOutput, fastings);
 
     return { fastings: fastingsOutput, count };
   }
@@ -114,9 +109,7 @@ export class FastingService {
       skip: offset,
     });
 
-    const fastingsOutput = plainToClass(FastingOutput, fastings, {
-      excludeExtraneousValues: true,
-    });
+    const fastingsOutput = plainToClass(FastingOutput, fastings);
 
     return { fastings: fastingsOutput, count };
   }
@@ -124,7 +117,7 @@ export class FastingService {
   async getFastingById(
     ctx: RequestContext,
     id: number,
-    region: Region,
+    region: number,
   ): Promise<FastingOutput> {
     this.logger.log(ctx, `${this.getFastingById.name} was called`);
 
@@ -140,15 +133,13 @@ export class FastingService {
       throw new UnauthorizedException();
     }
 
-    return plainToClass(FastingOutput, fasting, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(FastingOutput, fasting);
   }
 
   async updateFasting(
     ctx: RequestContext,
     fastingId: number,
-    region: Region,
+    region: number,
     input: UpdateFastingInput,
     confirmMeal: boolean = false,
   ): Promise<FastingOutput> {
@@ -190,15 +181,13 @@ export class FastingService {
     this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
     const savedFasting = await this.repository.save(updatedFasting);
 
-    return plainToClass(FastingOutput, savedFasting, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(FastingOutput, savedFasting);
   }
 
   async deleteFasting(
     ctx: RequestContext,
     id: number,
-    region: Region,
+    region: number,
   ): Promise<void> {
     this.logger.log(ctx, `${this.deleteFasting.name} was called`);
 

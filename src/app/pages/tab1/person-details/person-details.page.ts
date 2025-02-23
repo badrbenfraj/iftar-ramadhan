@@ -29,6 +29,7 @@ export class PersonDetailsPage implements OnInit {
   ) {}
   ngOnInit(): void {
     this.form = this.formBuilder.group({
+      region: [null, []],
       phone: ['', []],
       comment: ['', []],
     });

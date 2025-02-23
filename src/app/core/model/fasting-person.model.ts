@@ -1,4 +1,4 @@
-import { Region } from "../enums/regions.enum";
+import { Region } from "./region.model";
 
 export interface FastingPerson {
   id: number;
@@ -6,7 +6,7 @@ export interface FastingPerson {
   lastName: string;
   phone: string;
   comment: string;
-  region?: Region;
+  region: Region;
   singleMeal: number;
   familyMeal: number;
   lastTakenMeal?: Date;

@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
@@ -10,7 +11,6 @@ import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { CreateUserInput } from '../dtos/user-create-input.dto';
 import { UserOutput } from '../dtos/user-output.dto';
-import { UpdateUserInput } from '../dtos/user-update-input.dto';
 import { User } from '../entities/user.entity';
 import { UserRepository } from '../repositories/user.repository';
 
@@ -43,9 +43,7 @@ export class UserService {
     this.logger.log(ctx, `calling ${UserRepository.name}.saveUser`);
     await this.repository.save(user);
 
-    return plainToClass(UserOutput, user, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(UserOutput, user);
   }
 
   async validateUsernamePassword(
@@ -62,9 +60,7 @@ export class UserService {
     const match = await compare(pass, user.password);
     if (!match) throw new UnauthorizedException();
 
-    return plainToClass(UserOutput, user, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(UserOutput, user);
   }
 
   async getUsers(
@@ -81,9 +77,7 @@ export class UserService {
       skip: offset,
     });
 
-    const usersOutput = plainToClass(UserOutput, users, {
-      excludeExtraneousValues: true,
-    });
+    const usersOutput = plainToClass(UserOutput, users);
 
     return { users: usersOutput, count };
   }
@@ -92,11 +86,16 @@ export class UserService {
     this.logger.log(ctx, `${this.findById.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ where: { id } });
-
-    return plainToClass(UserOutput, user, {
-      excludeExtraneousValues: true,
+    const user = await this.repository.findOne({
+      where: { id },
+      relations: ['region'],
     });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return plainToClass(UserOutput, user);
   }
 
   async getUserById(ctx: RequestContext, id: number): Promise<UserOutput> {
@@ -105,9 +104,7 @@ export class UserService {
     this.logger.log(ctx, `calling ${UserRepository.name}.getById`);
     const user = await this.repository.getById(id);
 
-    return plainToClass(UserOutput, user, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(UserOutput, user);
   }
 
   async findByUsername(
@@ -117,39 +114,30 @@ export class UserService {
     this.logger.log(ctx, `${this.findByUsername.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ where: { username } });
+    const user = await this.repository.findOne({ where: { username },
+      relations: ['region'],
+     });
 
-    return plainToClass(UserOutput, user, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(UserOutput, user);
   }
 
   async updateUser(
     ctx: RequestContext,
     userId: number,
-    input: UpdateUserInput,
+    input: Partial<CreateUserInput>,
   ): Promise<UserOutput> {
     this.logger.log(ctx, `${this.updateUser.name} was called`);
 
-    this.logger.log(ctx, `calling ${UserRepository.name}.getById`);
-    const user = await this.repository.getById(userId);
-
-    // Hash the password if it exists in the input payload.
-    if (input.password) {
-      input.password = await hash(input.password, 10);
+    const user = await this.repository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
 
-    // merges the input (2nd line) to the found user (1st line)
-    const updatedUser: User = {
+    const updated = await this.repository.save({
       ...user,
-      ...plainToClass(User, input),
-    };
-
-    this.logger.log(ctx, `calling ${UserRepository.name}.save`);
-    await this.repository.save(updatedUser);
-
-    return plainToClass(UserOutput, updatedUser, {
-      excludeExtraneousValues: true,
+      ...input,
     });
+
+    return plainToClass(UserOutput, updated);
   }
 }

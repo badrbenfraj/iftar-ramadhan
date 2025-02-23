@@ -2,15 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsBoolean,
-  IsDate,
   IsDateString,
+  IsDefined,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
-  Validate,
   ValidateNested,
 } from 'class-validator';
+import { Region } from 'src/region/entities/region.entity';
 
 export class CreateFastingInput {
   @IsNumber()
@@ -27,6 +27,11 @@ export class CreateFastingInput {
   @IsNotEmpty()
   @ApiProperty()
   lastName: string;
+
+  @IsNumber()
+  @IsNotEmpty()
+  @ApiProperty()
+  region: number;
 
   @IsString()
   @IsOptional()
@@ -74,6 +79,10 @@ export class UpdateFastingInput {
   @IsNotEmpty()
   @ApiProperty()
   lastName: string;
+
+  @ApiProperty()
+  @IsDefined()
+  region: Region;
 
   @IsString()
   @IsOptional()

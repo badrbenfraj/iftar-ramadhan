@@ -1,7 +1,9 @@
+import { Region } from 'src/region/entities/region.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
   Unique,
@@ -9,15 +11,14 @@ import {
 } from 'typeorm';
 
 import { Fasting } from '../../fasting/entities/fasting.entity';
-import { Region } from '../../fasting/enums/regions.enum';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'enum', enum: Region })
-  region: Region;
+  @ManyToOne(() => Region, (region) => region.users, { nullable: true, eager: true })
+  region?: Region;
 
   @Column({ length: 100 })
   name: string;

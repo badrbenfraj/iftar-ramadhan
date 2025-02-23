@@ -1,15 +1,16 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
+import { Region } from 'src/region/entities/region.entity';
 
 import { ROLE } from '../../auth/constants/role.constant';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
+import { CreateUserInput } from '../dtos/user-create-input.dto';
 import { UpdateUserInput } from '../dtos/user-update-input.dto';
 import { User } from '../entities/user.entity';
 import { UserRepository } from '../repositories/user.repository';
 import { UserService } from './user.service';
-import { Region } from 'api/src/fasting/enums/regions.enum';
 
 describe('UserService', () => {
   let service: UserService;
@@ -21,9 +22,20 @@ describe('UserService', () => {
     getById: jest.fn(),
   };
 
+  const region: Region = {
+    id: 0,
+    name: '',
+    active: false,
+    fastingPeople: [],
+    users: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    createdBy: new User(),
+  };
+
   const user = {
     id: 6,
-    region: Region.SOKRA,
+    region,
     username: 'jhon',
     name: 'Jhon doe',
     roles: [ROLE.USER],
@@ -81,6 +93,7 @@ describe('UserService', () => {
     it('should save user with encrypted password', async () => {
       const userInput = {
         name: user.name,
+        region: user.region,
         username: user.username,
         password: 'plain-password',
         roles: [ROLE.USER],
@@ -106,13 +119,14 @@ describe('UserService', () => {
         return input;
       });
 
-      const userInput = {
+      const userInput: CreateUserInput = {
         name: user.name,
         username: user.username,
         password: 'plain-password',
         roles: [ROLE.USER],
         isAccountDisabled: false,
         email: 'randomUser@random.com',
+        region: user.region,
       };
 
       const result = await service.createUser(ctx, userInput);
@@ -308,6 +322,7 @@ describe('UserService', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         fastings: [],
+        region: user.region,
       };
 
       mockedRepository.getById.mockResolvedValue(foundUser);
@@ -323,6 +338,7 @@ describe('UserService', () => {
         createdAt: currentDate,
         updatedAt: currentDate,
         fastings: [],
+        region: user.region,
       };
 
       jest

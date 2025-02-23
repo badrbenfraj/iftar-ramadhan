@@ -2,12 +2,14 @@ import {
   ConflictException,
   HttpStatus,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
 
+import { RegionService } from '../../region/services/region.service';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { UserOutput } from '../../user/dtos/user-output.dto';
@@ -27,6 +29,7 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
     private readonly logger: AppLogger,
+    private readonly regionService: RegionService,
   ) {
     this.logger.setContext(AuthService.name);
   }
@@ -65,9 +68,16 @@ export class AuthService {
   ): Promise<RegisterOutput> {
     this.logger.log(ctx, `${this.register.name} was called`);
     try {
-      // TODO : Setting default role as USER here. Will add option to change this later via ADMIN users.
+      // Fetch region first
+      const region = await this.regionService.getRegionById(ctx, input.region.id);
+      if (!region) {
+        throw new NotFoundException('Region not found');
+      }
+
+      // Set default values and include region
       input.roles = [ROLE.USER];
       input.isAccountDisabled = false;
+      input.region = region;
 
       const registeredUser = await this.userService.createUser(ctx, input);
       return plainToClass(RegisterOutput, registeredUser, {
@@ -114,8 +124,6 @@ export class AuthService {
         { expiresIn: this.configService.get('jwt.accessTokenExpiresInSec') },
       ),
     };
-    return plainToClass(AuthTokenOutput, authToken, {
-      excludeExtraneousValues: true,
-    });
+    return plainToClass(AuthTokenOutput, authToken);
   }
 }

@@ -9,7 +9,7 @@ import { createRequestContext } from '.';
 
 describe('createRequestContext function', () => {
   const user = new UserAccessTokenClaims();
-  const request = ({
+  const request = {
     url: 'someUrl',
     ip: 'someIP',
 
@@ -24,7 +24,7 @@ describe('createRequestContext function', () => {
           break;
       }
     }),
-  } as unknown) as Request;
+  } as unknown as Request;
 
   const expectedOutput = {
     url: 'someUrl',

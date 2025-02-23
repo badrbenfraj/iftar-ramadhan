@@ -1,8 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
+import { Region } from 'src/region/entities/region.entity';
 
 import { ROLE } from '../../auth/constants/role.constant';
-import { Region } from '../../fasting/enums/regions.enum';
 
 export class UserOutput {
   @Expose()
@@ -18,8 +18,12 @@ export class UserOutput {
   username: string;
 
   @Expose()
-  @ApiProperty({ example: Region.SOKRA })
-  region: Region;
+  @ApiProperty()
+  email: string;
+
+  @Expose()
+  @ApiProperty()
+  isAccountDisabled: boolean;
 
   @Expose()
   @ApiProperty({ example: [ROLE.USER] })
@@ -27,11 +31,8 @@ export class UserOutput {
 
   @Expose()
   @ApiProperty()
-  email: string;
-
-  @Expose()
-  @ApiProperty()
-  isAccountDisabled: boolean;
+  @Type(() => Region)
+  region: Region;
 
   @Expose()
   @ApiProperty()

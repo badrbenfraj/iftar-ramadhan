@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { FastingModule } from './fasting/fasting.module';
 import { HealthModule } from './health/health.module';
+import { RegionModule } from './region/region.module';
 import { SharedModule } from './shared/shared.module';
 import { UserModule } from './user/user.module';
 
@@ -18,6 +19,7 @@ import { UserModule } from './user/user.module';
     AuthModule,
     FastingModule,
     HealthModule,
+    RegionModule,
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

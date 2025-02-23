@@ -37,7 +37,7 @@ export class FastingPersonService {
     }
 
     this.fastingPeople$ = this.httpClient
-      .get<any>(`${BASE_PATH}/fastings/${currentUser?.region}`, { params })
+      .get<any>(`${BASE_PATH}/fastings/${currentUser?.region?.id}`, { params })
       .pipe(
         map((items: any) => items?.data?.sort((a, b) => a.id - b.id)),
         shareReplay(1)
@@ -49,15 +49,17 @@ export class FastingPersonService {
     const currentUser = this.authenticationService.currentUser;
 
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/${currentUser?.region}/${id}`
+      `${BASE_PATH}/fastings/${currentUser?.region?.id}/${id}`
     );
   }
 
   addFastingPerson(body: FastingPerson) {
     const currentUser = this.authenticationService.currentUser;
 
+    body['region'] = currentUser.region?.id;
+
     return this.httpClient
-      .post(`${BASE_PATH}/fastings/${currentUser?.region}`, body)
+      .post(`${BASE_PATH}/fastings`, body)
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 
@@ -65,7 +67,7 @@ export class FastingPersonService {
     const currentUser = this.authenticationService.currentUser;
 
     return this.httpClient
-      .delete<any>(`${BASE_PATH}/fastings/${currentUser?.region}/all`)
+      .delete<any>(`${BASE_PATH}/fastings/${currentUser?.region?.id}/all`)
       .pipe(concatMap(() => this.getFastingPersons()));
   }
 
@@ -73,7 +75,7 @@ export class FastingPersonService {
     const currentUser = this.authenticationService.currentUser;
     return this.httpClient
       .delete<any>(
-        `${BASE_PATH}/fastings/${currentUser?.region}/${fastingPerson?.id}`
+        `${BASE_PATH}/fastings/${currentUser?.region?.id}/${fastingPerson?.id}`
       )
       .pipe(concatMap(() => this.getFastingPersons()));
   }
@@ -83,7 +85,7 @@ export class FastingPersonService {
 
     return this.httpClient
       .patch<any>(
-        `${BASE_PATH}/fastings/${currentUser?.region}/${body?.id}`,
+        `${BASE_PATH}/fastings/${currentUser?.region?.id}/${body?.id}`,
         body
       )
       .pipe(concatMap(() => this.getFastingPersons()));
@@ -94,7 +96,7 @@ export class FastingPersonService {
 
     return this.httpClient
       .patch<any>(
-        `${BASE_PATH}/fastings/confirm/${currentUser?.region}/${body?.id}`,
+        `${BASE_PATH}/fastings/confirm/${currentUser?.region?.id}/${body?.id}`,
         body
       )
       .pipe(concatMap(() => this.getFastingPersons()));
@@ -104,7 +106,7 @@ export class FastingPersonService {
     const currentUser = this.authenticationService.currentUser;
 
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/statistics/${currentUser?.region}`
+      `${BASE_PATH}/fastings/statistics/${currentUser?.region?.id}`
     );
   }
 
@@ -121,7 +123,7 @@ export class FastingPersonService {
     }
 
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/statistics/${currentUser?.region}`,
+      `${BASE_PATH}/fastings/statistics/${currentUser?.region?.id}`,
       { params }
     );
   }
@@ -130,7 +132,7 @@ export class FastingPersonService {
     const currentUser = this.authenticationService.currentUser;
 
     return this.httpClient.get<any>(
-      `${BASE_PATH}/fastings/daily/statistics/${currentUser?.region}/download`
+      `${BASE_PATH}/fastings/daily/statistics/${currentUser?.region?.id}/download`
     );
   }
 }

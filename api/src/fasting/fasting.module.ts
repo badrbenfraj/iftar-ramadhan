@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 import { JwtAuthStrategy } from '../auth/strategies/jwt-auth.strategy';
+import { RegionModule } from '../region/region.module';
+import { RegionRepository } from '../region/repositories/region.repository';
 import { SharedModule } from '../shared/shared.module';
 import { UserModule } from '../user/user.module';
 import { FastingController } from './controllers/fasting.controller';
@@ -11,12 +13,18 @@ import { FastingService } from './services/fasting.service';
 import { FastingAclService } from './services/fasting-acl.service';
 
 @Module({
-  imports: [SharedModule, TypeOrmModule.forFeature([Fasting]), UserModule],
+  imports: [
+    SharedModule,
+    TypeOrmModule.forFeature([Fasting]),
+    UserModule,
+    RegionModule
+  ],
   providers: [
     FastingService,
     JwtAuthStrategy,
     FastingAclService,
     FastingRepository,
+    RegionRepository,
   ],
   controllers: [FastingController],
   exports: [FastingService],

@@ -1,10 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
-import { Region } from 'src/region/entities/region.entity';
+import { Fasting } from 'src/fasting/entities/fasting.entity';
+import { User } from 'src/user/entities/user.entity';
 
-import { ROLE } from '../constants/role.constant';
-
-export class RegisterOutput {
+export class RegionOutput {
   @Expose()
   @ApiProperty()
   id: number;
@@ -15,29 +14,25 @@ export class RegisterOutput {
 
   @Expose()
   @ApiProperty()
-  username: string;
+  active: boolean;
 
   @Expose()
   @ApiProperty()
-  region: Region;
-
-  @Expose()
-  @ApiProperty({ example: [ROLE.USER] })
-  roles: ROLE[];
+  fastingPeople: Fasting[];
 
   @Expose()
   @ApiProperty()
-  email: string;
+  users: User[];
 
   @Expose()
   @ApiProperty()
-  isAccountDisabled: boolean;
+  createdAt: Date;
 
   @Expose()
   @ApiProperty()
-  createdAt: string;
+  updatedAt: Date;
 
   @Expose()
   @ApiProperty()
-  updatedAt: string;
+  createdBy: User;
 }

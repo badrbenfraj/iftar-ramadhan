@@ -35,7 +35,6 @@ import {
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
 import { FastingService } from '../services/fasting.service';
-import { Region } from '../enums/regions.enum';
 
 @ApiTags('fastings')
 @Controller('fastings')
@@ -60,7 +59,7 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async getFastingsStatisticsByRegion(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
+    @Param('region') region: number,
     @Query('start') start: string,
     @Query('end') end: string,
   ): Promise<BaseApiResponse<any>> {
@@ -126,7 +125,7 @@ export class FastingController {
     };
   }
 
-  @Post(':region')
+  @Post()
   @ApiOperation({
     summary: 'Create fasting API',
   })
@@ -139,7 +138,6 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async createFasting(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
     @Body() input: CreateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
     const today = new Date();
@@ -152,7 +150,7 @@ export class FastingController {
       input.takenMeals = [today];
     }
 
-    const fasting = await this.fastingService.createFasting(ctx, region, input);
+    const fasting = await this.fastingService.createFasting(ctx, input);
     return { data: fasting, meta: {} };
   }
 
@@ -169,7 +167,7 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async getFastingsByRegion(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
+    @Param('region') region: number,
     @Query() query: PaginationParamsDto,
   ): Promise<BaseApiResponse<FastingOutput[]>> {
     this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
@@ -226,7 +224,7 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async getFasting(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
+    @Param('region') region: number,
     @Param('id') id: number,
   ): Promise<BaseApiResponse<FastingOutput>> {
     this.logger.log(ctx, `${this.getFasting.name} was called`);
@@ -248,7 +246,7 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async updateFasting(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
+    @Param('region') region: number,
     @Param('id') fastingId: number,
     @Body() input: UpdateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
@@ -274,12 +272,11 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async confirmFastingMeal(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
+    @Param('region') region: number,
     @Param('id') fastingId: number,
     @Body() input: UpdateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
     input.lastTakenMeal = new Date();
-    console.log('input: ', input);
     const fasting = await this.fastingService.updateFasting(
       ctx,
       fastingId,
@@ -301,7 +298,7 @@ export class FastingController {
   @UseGuards(JwtAuthGuard)
   async deleteFasting(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: Region,
+    @Param('region') region: number,
     @Param('id') id: number,
   ): Promise<void> {
     this.logger.log(ctx, `${this.deleteFasting.name} was called`);
