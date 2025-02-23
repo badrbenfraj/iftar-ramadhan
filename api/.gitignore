@@ -385,9 +385,14 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-=======
 # Local
 dist
 local/
 documentation
 test-report.xml
+.pnpm-store/
+pnpm-lock.yaml
+
+# Keep Husky configs
+!.husky
+!.huskyrc

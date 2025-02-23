@@ -18,3 +18,11 @@ jarsigner -keystore YOUR_KEYSTORE_PATH -storepass YOUR_KEYSTORE_PASS app-release
 zipalign 4 app-release-unsigned.apk app-release.apk
 
 إفطار صائم
+
+For development:
+docker-compose --env-file .env.development up -d
+
+For production:
+docker-compose --env-file .env.production up -d
+
+npm run migration:generate --name=

@@ -1,51 +1,62 @@
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as path from 'path';
-import * as fs from 'fs';
+import { ThrottlerGuard } from '@nestjs/throttler';
+import compression from 'compression';
+import helmet from 'helmet';
+import { Logger } from 'nestjs-pino';
 
 import { AppModule } from './app.module';
 import { VALIDATION_PIPE_OPTIONS } from './shared/constants';
 import { RequestIdMiddleware } from './shared/middlewares/request-id/request-id.middleware';
 
 async function bootstrap() {
-  try {
-    // Load SSL/TLS certificates
-    const key = fs.readFileSync(path.resolve('privkey2.pem'));
-    const cert = fs.readFileSync(path.resolve('fullchain2.pem'));
+  const app = await NestFactory.create(AppModule, { bufferLogs: true });
 
-    // Create HTTPS server
-    const httpsOptions = {
-      key,
-      cert,
-    };
-    const app = await NestFactory.create(AppModule, {
-      httpsOptions,
-    });
-    app.setGlobalPrefix('api/v1');
+  // Use Pino Logger
+  app.useLogger(app.get(Logger));
 
-    app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
-    app.use(RequestIdMiddleware);
-    app.enableCors();
+  // Security middlewares
+  app.use(helmet());
+  app.use(compression());
 
-    /** Swagger configuration*/
-    const options = new DocumentBuilder()
-      .setTitle('Nestjs API starter')
-      .setDescription('Nestjs API description')
-      .setVersion('1.0')
-      .addBearerAuth()
-      .build();
+  // Add ThrottlerGuard globally
+  // const throttlerGuard = new ThrottlerGuard(
+  //   app.get(ConfigService),
+  //   app.get('ThrottlerStorage'),
+  //   app.get(Reflector),
+  // );
 
-    const document = SwaggerModule.createDocument(app, options);
-    SwaggerModule.setup('swagger', app, document);
+  // app.useGlobalGuards(throttlerGuard);
 
-    const configService = app.get(ConfigService);
-    const port = configService.get<number>('port');
-    await app.listen(port);
-  } catch (error) {
-    console.error('Failed to bootstrap application:', error);
-  }
+  app.setGlobalPrefix('api/v1');
+
+  app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
+  app.use(RequestIdMiddleware);
+
+  // CORS configuration
+  app.enableCors({
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
+  /** Swagger configuration*/
+  const options = new DocumentBuilder()
+    .setTitle('Nestjs API starter')
+    .setDescription('Nestjs API description')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, options);
+  SwaggerModule.setup('swagger', app, document);
+
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('port');
+  await app.listen(port);
 }
 
 bootstrap();

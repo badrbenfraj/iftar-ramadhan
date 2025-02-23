@@ -1,40 +1,52 @@
-# lts-hydrogen refers to v20
-# Using this instead of node:16 to avoid dependabot updates
 FROM node:lts-hydrogen as builder
-
 WORKDIR /usr/src/app
 
-COPY package.json package-lock.json ./
+# Set up pnpm
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="${PATH}:${PNPM_HOME}"
+RUN corepack enable && corepack prepare pnpm@8.15.3 --activate
+RUN pnpm config set store-dir ~/.pnpm-store
 
-RUN npm ci
+# Copy package files and install ALL dependencies for development
+COPY package.json ./
+ENV NODE_ENV=development
+RUN pnpm install --no-frozen-lockfile
 
 COPY . .
 
-ARG APP_ENV=development
-ENV NODE_ENV=${APP_ENV}
+# Build the application
+RUN pnpm exec nest build
 
-RUN npm run build
-
-RUN npm prune
-
-# Copy privkey2.pem
-COPY /etc/letsencrypt/archive/vps-906ab37a.vps.ovh.net/privkey2.pem /usr/src/app/
-
-# Copy fullchain2.pem
-COPY /etc/letsencrypt/archive/vps-906ab37a.vps.ovh.net/fullchain2.pem /usr/src/app/
-
+# Clean up development dependencies for production
+ENV NODE_ENV=production
+RUN pnpm prune --prod
 
 FROM node:lts-hydrogen
-
-ARG APP_ENV=development
-ENV NODE_ENV=${APP_ENV}
-
 WORKDIR /usr/src/app
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/package*.json ./
-COPY --from=builder /usr/src/app/dist ./dist
+
+# Set up pnpm in production image
+ENV PNPM_HOME="/root/.local/share/pnpm"
+ENV PATH="${PATH}:${PNPM_HOME}"
+RUN corepack enable && corepack prepare pnpm@8.15.3 --activate
+
+ENV NODE_ENV=production \
+    NODE_OPTIONS="--max-old-space-size=2048" \
+    TZ=UTC
+
+RUN apt-get update && apt-get install -y --no-install-recommends dumb-init curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apk/*
+
+COPY --from=builder --chown=node:node /usr/src/app/dist ./dist
+COPY --from=builder --chown=node:node /usr/src/app/node_modules ./node_modules
+COPY --chown=node:node package.json ./
+
+USER node
 
 EXPOSE 3000
 
-USER node
-CMD [ "npm", "run", "start:prod" ]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s \
+    CMD curl -f http://localhost:3000/api/v1/health || exit 1
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD [ "pnpm", "start:prod" ]
