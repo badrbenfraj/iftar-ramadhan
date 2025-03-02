@@ -42,7 +42,8 @@ export class EditPersonDetailsPage implements OnInit {
       lastName: ['', [Validators.required]],
       familyMeal: [null, [Validators.required]],
       singleMeal: [null, [Validators.required]],
-      region: [null, [Validators.required]],
+      region: [null, []],
+      cin: [null, [Validators.minLength(8), Validators.maxLength(8)]],
       phone: ['', []],
       comment: ['', []],
     });

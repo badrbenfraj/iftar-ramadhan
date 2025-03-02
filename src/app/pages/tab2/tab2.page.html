@@ -37,6 +37,23 @@
       </span>
     </div>
     <ion-item lines="full">
+      <ion-label position="floating">CIN</ion-label>
+      <ion-input
+        type="text"
+        maxlength="8"
+        minlength="8"
+        formControlName="cin"
+      ></ion-input>
+      <div *ngIf="form.cin.errors">
+        <span
+          class="is-invalid ion-padding"
+          *ngIf="isSubmitted && (form.cin.errors?.minlength || form.cin.errors?.maxlength)"
+        >
+          CIN must be 8 characters.
+        </span>
+      </div>
+    </ion-item>
+    <ion-item lines="full">
       <ion-label position="floating">First Name</ion-label>
       <ion-input type="text" formControlName="firstName"></ion-input>
     </ion-item>

@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  basePath: 'http://localhost:3000/api/v1',
+  basePath: 'https://vps-9e3159a8.vps.ovh.net/api/v1',
 };

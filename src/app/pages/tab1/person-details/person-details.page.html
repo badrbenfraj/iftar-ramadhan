@@ -32,6 +32,10 @@
         <ion-label>Identifier:</ion-label>
         <ion-label>{{ fastingPerson.id }} </ion-label>
       </ion-item>
+      <ion-item *ngIf="fastingPerson?.cin">
+        <ion-label>CIN:</ion-label>
+        <ion-label>{{ fastingPerson?.cin }} </ion-label>
+      </ion-item>
       <ion-item>
         <ion-label>First Name:</ion-label>
         <ion-label>{{ fastingPerson.firstName }} </ion-label>
