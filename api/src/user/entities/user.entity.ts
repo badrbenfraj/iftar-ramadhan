@@ -17,7 +17,7 @@ export class User {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @ManyToOne(() => Region, (region) => region.users, { nullable: true, eager: true })
+  @ManyToOne(() => Region, (region) => region.users, { nullable: true })
   region?: Region;
 
   @Column({ length: 100 })

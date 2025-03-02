@@ -30,8 +30,7 @@ export class UserOutput {
   roles: ROLE[];
 
   @Expose()
-  @ApiProperty()
-  @Type(() => Region)
+  @ApiProperty({ type: () => Region })
   region: Region;
 
   @Expose()

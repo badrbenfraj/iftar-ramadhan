@@ -15,6 +15,7 @@ import {
 import { Region } from 'src/region/entities/region.entity';
 
 import { ROLE } from '../../auth/constants/role.constant';
+import { Type } from 'class-transformer';
 
 export class CreateUserInput {
   @ApiPropertyOptional()

@@ -1,15 +1,12 @@
-version: '3.8'
-
 services:
   app:
     restart: unless-stopped
     build:
       context: .
       args:
-        - APP_ENV=production
-    command: pnpm start:prod
-    expose:
-      - 3000
+        - APP_ENV
+    ports:
+      - 3000:3000
     volumes:
       - ./:/usr/src/app
       - node_modules:/usr/src/app/node_modules/
@@ -28,35 +25,47 @@ services:
       DEFAULT_ADMIN_USER_PASSWORD: ${DEFAULT_ADMIN_USER_PASSWORD}
     depends_on:
       - pgsqldb
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000/health']  # Adjust if necessary
+      interval: 30s
+      timeout: 10s
+      retries: 3
     labels:
-      - 'traefik.enable=true'
-      - 'traefik.http.routers.api.rule=PathPrefix(`/api`)'
-      - 'traefik.http.routers.api.entrypoints=websecure'
-      - 'traefik.http.routers.api.tls=true'
-      - 'traefik.http.routers.api.tls.certresolver=myresolver'
-      - 'traefik.http.services.api.loadbalancer.server.port=3000'
+      - "traefik.enable=true"
+      - "traefik.http.routers.app.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.app.entrypoints=websecure"
+      - "traefik.http.routers.app.tls.certresolver=myresolver"
+      - "traefik.http.services.app.loadbalancer.server.port=3000"
 
   pgsqldb:
     image: postgres:14.3
     restart: unless-stopped
+    # ports:
+    #   - ${DB_PORT}:5432
     environment:
-      POSTGRES_USER: '${DB_USER}'
-      POSTGRES_PASSWORD: '${DB_PASS}'
-      POSTGRES_DB: '${DB_NAME}'
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+      POSTGRES_DB: ${DB_NAME}
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U postgres -d postgres']
+      test: ['CMD-SHELL', 'pg_isready -U ${DB_USER} -d ${DB_NAME}']
       interval: 10s
       timeout: 5s
       retries: 5
     volumes:
       - pgsqldata:/var/lib/postgresql/data
-    expose:
-      - 5432
 
   adminer:
     image: adminer
     ports:
       - 8080:8080
+    environment:
+      ADMINER_DEFAULT_DRIVER: pgsql
+      ADMINER_DEFAULT_SERVER: pgsqldb
+      ADMINER_DEFAULT_USER: ${DB_USER:-postgres}
+      ADMINER_DEFAULT_PASSWORD: ${DB_PASS:-postgres}
+      ADMINER_DEFAULT_DB: ${DB_NAME:-postgres}
+      ADMINER_DESIGN: nette
+      ADMINER_PLUGINS: "tables-filter tinymce"
     depends_on:
       - pgsqldb
 

@@ -46,6 +46,7 @@ export class FastingController {
     this.logger.setContext(FastingController.name);
   }
 
+  // Put most specific routes first
   @Get('statistics/:region')
   @ApiOperation({
     summary: 'Get statistics fastings by region API',
@@ -123,89 +124,6 @@ export class FastingController {
       data: statisticsArray,
       meta: {},
     };
-  }
-
-  @Post()
-  @ApiOperation({
-    summary: 'Create fasting API',
-  })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    type: SwaggerBaseApiResponse(FastingOutput),
-  })
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async createFasting(
-    @ReqContext() ctx: RequestContext,
-    @Body() input: CreateFastingInput,
-  ): Promise<BaseApiResponse<FastingOutput>> {
-    const today = new Date();
-    if (input.cameToday === true) {
-      input.lastTakenMeal = today;
-      input.takenMeals = [today];
-    } else {
-      today.setDate(today.getDate() - 1);
-      input.lastTakenMeal = today;
-      input.takenMeals = [today];
-    }
-
-    const fasting = await this.fastingService.createFasting(ctx, input);
-    return { data: fasting, meta: {} };
-  }
-
-  @Get(':region')
-  @ApiOperation({
-    summary: 'Get fastings as a list API',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: SwaggerBaseApiResponse([FastingOutput]),
-  })
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async getFastingsByRegion(
-    @ReqContext() ctx: RequestContext,
-    @Param('region') region: number,
-    @Query() query: PaginationParamsDto,
-  ): Promise<BaseApiResponse<FastingOutput[]>> {
-    this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
-
-    const { fastings, count } = await this.fastingService.getFastingsByRegion(
-      ctx,
-      region,
-      query.limit,
-      query.offset,
-    );
-
-    return { data: fastings, meta: { count } };
-  }
-
-  @Get()
-  @ApiOperation({
-    summary: 'Get fastings as a list API',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: SwaggerBaseApiResponse([FastingOutput]),
-  })
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  async getFastings(
-    @ReqContext() ctx: RequestContext,
-    @Query() query: PaginationParamsDto,
-  ): Promise<BaseApiResponse<FastingOutput[]>> {
-    this.logger.log(ctx, `${this.getFastings.name} was called`);
-
-    const { fastings, count } = await this.fastingService.getFastings(
-      ctx,
-      query.limit,
-      query.offset,
-    );
-
-    return { data: fastings, meta: { count } };
   }
 
   @Get(':region/:id')
@@ -304,5 +222,89 @@ export class FastingController {
     this.logger.log(ctx, `${this.deleteFasting.name} was called`);
 
     return this.fastingService.deleteFasting(ctx, id, region);
+  }
+
+  @Get(':region')
+  @ApiOperation({
+    summary: 'Get fastings as a list API',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([FastingOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async getFastingsByRegion(
+    @ReqContext() ctx: RequestContext,
+    @Param('region') region: number,
+    @Query() query: PaginationParamsDto,
+  ): Promise<BaseApiResponse<FastingOutput[]>> {
+    this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
+
+    const { fastings, count } = await this.fastingService.getFastingsByRegion(
+      ctx,
+      region,
+      query.limit,
+      query.offset,
+    );
+
+    return { data: fastings, meta: { count } };
+  }
+
+  // Put most generic routes last
+  @Post()
+  @ApiOperation({
+    summary: 'Create fasting API',
+  })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    type: SwaggerBaseApiResponse(FastingOutput),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async createFasting(
+    @ReqContext() ctx: RequestContext,
+    @Body() input: CreateFastingInput,
+  ): Promise<BaseApiResponse<FastingOutput>> {
+    const today = new Date();
+    if (input.cameToday === true) {
+      input.lastTakenMeal = today;
+      input.takenMeals = [today];
+    } else {
+      today.setDate(today.getDate() - 1);
+      input.lastTakenMeal = today;
+      input.takenMeals = [today];
+    }
+
+    const fasting = await this.fastingService.createFasting(ctx, input);
+    return { data: fasting, meta: {} };
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: 'Get fastings as a list API',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([FastingOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async getFastings(
+    @ReqContext() ctx: RequestContext,
+    @Query() query: PaginationParamsDto,
+  ): Promise<BaseApiResponse<FastingOutput[]>> {
+    this.logger.log(ctx, `${this.getFastings.name} was called`);
+
+    const { fastings, count } = await this.fastingService.getFastings(
+      ctx,
+      query.limit,
+      query.offset,
+    );
+
+    return { data: fastings, meta: { count } };
   }
 }

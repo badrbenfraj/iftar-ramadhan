@@ -42,6 +42,9 @@ export class Fasting {
   @Column({ type: 'varchar', array: true, default: [] })
   takenMeals: string[];
 
+  @Column({ nullable: true })
+  cin: string;
+
   @CreateDateColumn({ name: 'createdAt' })
   createdAt: Date;
 

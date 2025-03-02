@@ -1,52 +1,34 @@
-FROM node:lts-hydrogen as builder
+# lts-hydrogen refers to v20
+# Using this instead of node:16 to avoid dependabot updates
+FROM node:lts-hydrogen AS builder
+
 WORKDIR /usr/src/app
 
-# Set up pnpm
-ENV PNPM_HOME="/root/.local/share/pnpm"
-ENV PATH="${PATH}:${PNPM_HOME}"
-RUN corepack enable && corepack prepare pnpm@8.15.3 --activate
-RUN pnpm config set store-dir ~/.pnpm-store
+COPY package.json package-lock.json ./
 
-# Copy package files and install ALL dependencies for development
-COPY package.json ./
-ENV NODE_ENV=development
-RUN pnpm install --no-frozen-lockfile
+RUN npm ci
 
 COPY . .
 
-# Build the application
-RUN pnpm exec nest build
+ARG APP_ENV=development
+ENV NODE_ENV=${APP_ENV}
 
-# Clean up development dependencies for production
-ENV NODE_ENV=production
-RUN pnpm prune --prod
+RUN npm run build
+
+RUN npm prune
 
 FROM node:lts-hydrogen
+
+ARG APP_ENV=development
+ENV NODE_ENV=${APP_ENV}
+
 WORKDIR /usr/src/app
-
-# Set up pnpm in production image
-ENV PNPM_HOME="/root/.local/share/pnpm"
-ENV PATH="${PATH}:${PNPM_HOME}"
-RUN corepack enable && corepack prepare pnpm@8.15.3 --activate
-
-ENV NODE_ENV=production \
-    NODE_OPTIONS="--max-old-space-size=2048" \
-    TZ=UTC
-
-RUN apt-get update && apt-get install -y --no-install-recommends dumb-init curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -rf /var/cache/apk/*
-
-COPY --from=builder --chown=node:node /usr/src/app/dist ./dist
-COPY --from=builder --chown=node:node /usr/src/app/node_modules ./node_modules
-COPY --chown=node:node package.json ./
-
-USER node
+COPY --from=builder /usr/src/app/node_modules ./node_modules
+COPY --from=builder /usr/src/app/package*.json ./
+COPY --from=builder /usr/src/app/dist ./dist
 
 EXPOSE 3000
 
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s \
-    CMD curl -f http://localhost:3000/api/v1/health || exit 1
+USER node
 
-ENTRYPOINT ["dumb-init", "--"]
-CMD [ "pnpm", "start:prod" ]
+CMD ["sh", "-c", "npx typeorm migration:run -d dist/src/config/typeorm.config.js && node dist/src/cli.js && node dist/src/main"]

@@ -36,7 +36,6 @@
     "migration:revert": "npm run typeorm migration:revert",
     "doc:serve": "npx compodoc -p tsconfig.json -w -s -r 8001",
     "doc:generate": "npx compodoc -p tsconfig.json",
-    "prepare": "cd .. && git init && cd api && husky install",
     "pre-commit": "lint-staged",
     "start:dev:env": "NODE_ENV=development nest start --watch --preserveWatchOutput",
     "start:prod:env": "NODE_ENV=production node dist/src/main",
@@ -52,8 +51,7 @@
     "test:all": "npm run test && npm run test:e2e && npm run test:security",
     "validate": "npm run lint && npm run test:all",
     "clean": "rimraf dist coverage node_modules",
-    "reinstall": "pnpm clean && pnpm install",
-    "postinstall": "if [ \"$NODE_ENV\" != \"production\" ] && [ -d \"../.git\" ]; then echo 'Setting up husky' && pnpm prepare; else echo 'Skipping husky'; fi"
+    "reinstall": "pnpm clean && pnpm install"
   },
   "lint-staged": {
     "**/*.ts": [

@@ -1,0 +1,48 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+env:
+  DOCKER_COMPOSE_VERSION: v2.15.1
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create SSH key
+        run: |
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Create env file
+        run: |
+          echo "APP_ENV=production" > .env
+          echo "APP_PORT=${{ secrets.APP_PORT }}" >> .env
+          echo "DB_PORT=${{ secrets.DB_PORT }}" >> .env
+          echo "DB_NAME=${{ secrets.DB_NAME }}" >> .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASS=${{ secrets.DB_PASS }}" >> .env
+          echo "JWT_ACCESS_TOKEN_EXP_IN_SEC=${{ secrets.JWT_ACCESS_TOKEN_EXP_IN_SEC }}" >> .env
+          echo "JWT_REFRESH_TOKEN_EXP_IN_SEC=${{ secrets.JWT_REFRESH_TOKEN_EXP_IN_SEC }}" >> .env
+          echo "JWT_PUBLIC_KEY_BASE64=${{ secrets.JWT_PUBLIC_KEY_BASE64 }}" >> .env
+          echo "JWT_PRIVATE_KEY_BASE64=${{ secrets.JWT_PRIVATE_KEY_BASE64 }}" >> .env
+          echo "DEFAULT_ADMIN_USER_PASSWORD=${{ secrets.DEFAULT_ADMIN_USER_PASSWORD }}" >> .env
+          echo "ACME_EMAIL=${{ secrets.ACME_EMAIL }}" >> .env
+
+      - name: Deploy to VPS
+        run: |
+          chmod +x deploy.sh
+          ./deploy.sh prod ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} ~/.ssh/id_rsa
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/id_rsa
