@@ -10,6 +10,31 @@ abstract final class AppTheme {
   static ThemeData light() => _build(IftarColors.day, Brightness.light);
   static ThemeData dark() => _build(IftarColors.night, Brightness.dark);
 
+  /// Zero letter-spacing on every style: Material 3's geometry would space
+  /// plain Arabic text. An explicit 0 wins over the geometry that Theme.of
+  /// merges in. Widgets that want Latin tracking use `labelTracking(context)`.
+  static TextTheme _untracked(TextTheme t) {
+    TextStyle zero(TextStyle? s) =>
+        (s ?? const TextStyle()).copyWith(letterSpacing: 0);
+    return t.copyWith(
+      displayLarge: zero(t.displayLarge),
+      displayMedium: zero(t.displayMedium),
+      displaySmall: zero(t.displaySmall),
+      headlineLarge: zero(t.headlineLarge),
+      headlineMedium: zero(t.headlineMedium),
+      headlineSmall: zero(t.headlineSmall),
+      titleLarge: zero(t.titleLarge),
+      titleMedium: zero(t.titleMedium),
+      titleSmall: zero(t.titleSmall),
+      bodyLarge: zero(t.bodyLarge),
+      bodyMedium: zero(t.bodyMedium),
+      bodySmall: zero(t.bodySmall),
+      labelLarge: zero(t.labelLarge),
+      labelMedium: zero(t.labelMedium),
+      labelSmall: zero(t.labelSmall),
+    );
+  }
+
   static ThemeData _build(IftarColors c, Brightness brightness) {
     // Explicit scheme: fromSeed would derive mint-grey containers that
     // clash with the warm palette in pickers, dialogs and menus.
@@ -67,13 +92,17 @@ abstract final class AppTheme {
     );
 
     return base.copyWith(
-      textTheme: text.copyWith(
-        headlineSmall: text.headlineSmall?.copyWith(fontWeight: FontWeight.w500),
-        titleLarge: text.titleLarge?.copyWith(
-          fontSize: 22,
-          fontWeight: FontWeight.w500,
+      textTheme: _untracked(
+        text.copyWith(
+          headlineSmall: text.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w500,
+          ),
+          titleLarge: text.titleLarge?.copyWith(
+            fontSize: 22,
+            fontWeight: FontWeight.w500,
+          ),
+          titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w500),
         ),
-        titleMedium: text.titleMedium?.copyWith(fontWeight: FontWeight.w500),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: c.page,

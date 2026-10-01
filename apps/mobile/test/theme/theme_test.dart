@@ -59,4 +59,41 @@ void main() {
     final expectedPage = Color.lerp(day.page, night.page, 0.5);
     expect(halfway.page, expectedPage);
   });
+
+  test('theme text styles carry no letter-spacing (Arabic must not be spaced)', () {
+    // Theme.of merges the Typography geometry (letterSpacing 0.1 to 0.5)
+    // under textTheme, so check what widgets actually receive.
+    for (final theme in [AppTheme.light(), AppTheme.dark()]) {
+      for (final geometry in [
+        theme.typography.englishLike,
+        theme.typography.tall,
+      ]) {
+        final t = ThemeData.localize(theme, geometry).textTheme;
+        final styles = {
+          'displayLarge': t.displayLarge,
+          'displayMedium': t.displayMedium,
+          'displaySmall': t.displaySmall,
+          'headlineLarge': t.headlineLarge,
+          'headlineMedium': t.headlineMedium,
+          'headlineSmall': t.headlineSmall,
+          'titleLarge': t.titleLarge,
+          'titleMedium': t.titleMedium,
+          'titleSmall': t.titleSmall,
+          'bodyLarge': t.bodyLarge,
+          'bodyMedium': t.bodyMedium,
+          'bodySmall': t.bodySmall,
+          'labelLarge': t.labelLarge,
+          'labelMedium': t.labelMedium,
+          'labelSmall': t.labelSmall,
+        };
+        for (final MapEntry(:key, :value) in styles.entries) {
+          expect(
+            value?.letterSpacing ?? 0,
+            0,
+            reason: '${theme.brightness} $key',
+          );
+        }
+      }
+    }
+  });
 }

@@ -1,13 +1,20 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/core/settings/settings_controller.dart';
 import 'package:iftar_mobile/core/settings/settings_storage.dart';
+import 'package:iftar_mobile/core/widgets/brand.dart';
 import 'package:iftar_mobile/features/auth/presentation/welcome_page.dart';
 
 import '../support/app_harness.dart';
+import '../support/fonts.dart';
 
 void main() {
   late MemorySettingsStorage storage;
+  setUpAll(loadAppFonts);
   setUp(() => storage = MemorySettingsStorage());
 
   Widget app(Locale locale) => localizedApp(
@@ -15,6 +22,29 @@ void main() {
     locale: locale,
     overrides: [settingsStorageProvider.overrideWithValue(storage)],
   );
+
+  /// Pumps Welcome on a [size] screen at text [scale], with the logo image
+  /// decoded so it takes its real height.
+  Future<void> pumpAt(
+    WidgetTester tester,
+    String code, {
+    required Size size,
+    required double scale,
+  }) async {
+    tester.view.physicalSize = size;
+    tester.view.devicePixelRatio = 1;
+    tester.platformDispatcher.textScaleFactorTestValue = scale;
+    addTearDown(tester.view.reset);
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    await tester.runAsync(() async {
+      final done = Completer<void>();
+      const AssetImage('assets/images/ramadan.png')
+          .resolve(ImageConfiguration(devicePixelRatio: 1, bundle: rootBundle))
+          .addListener(ImageStreamListener((_, _) => done.complete()));
+      await done.future;
+    });
+    await tester.pumpWidget(app(Locale(code)));
+  }
 
   testWidgets('offers the three languages and both actions', (tester) async {
     await tester.pumpWidget(app(const Locale('en')));
@@ -41,26 +71,34 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('layout with multiple locales at 1.3x text scale', (tester) async {
-    addTearDown(tester.view.reset);
-    tester.view.physicalSize = const Size(360, 760);
-    tester.view.devicePixelRatio = 1;
-
-    for (final locale in [const Locale('en'), const Locale('fr'), const Locale('ar')]) {
-      // ignore: prefer_const_constructors
-      await tester.pumpWidget(
-        // ignore: prefer_const_constructors
-        MediaQuery(
-          // ignore: prefer_const_constructors
-          data: MediaQueryData(
-            size: const Size(360, 760),
-            // ignore: prefer_const_constructors
-            textScaler: TextScaler.linear(1.3),
-          ),
-          child: app(locale),
-        ),
+  testWidgets('language pills are at least 48 px tall', (tester) async {
+    await tester.pumpWidget(app(const Locale('en')));
+    for (final name in ['English', 'Français', 'العربية']) {
+      final pill = find.ancestor(
+        of: find.text(name),
+        matching: find.byType(InkWell),
       );
-      expect(tester.takeException(), isNull, reason: 'No overflow in ${locale.languageCode}');
+      expect(tester.getSize(pill).height, greaterThanOrEqualTo(48), reason: name);
     }
-  }, skip: true);
+  });
+
+  testWidgets('Arabic hadith and title are not letter-spaced', (tester) async {
+    await tester.pumpWidget(app(const Locale('ar')));
+    for (final text in [hadithText, ar.appTitle]) {
+      final paragraph = tester.renderObject<RenderParagraph>(find.text(text));
+      expect(paragraph.text.style?.letterSpacing ?? 0, 0, reason: text);
+    }
+  });
+
+  for (final code in ['en', 'fr', 'ar']) {
+    testWidgets('fits at 360x760, text scale 1.3 ($code)', (tester) async {
+      await pumpAt(tester, code, size: const Size(360, 760), scale: 1.3);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('fits at 360x640, text scale 2.0 ($code)', (tester) async {
+      await pumpAt(tester, code, size: const Size(360, 640), scale: 2.0);
+      expect(tester.takeException(), isNull);
+    });
+  }
 }
