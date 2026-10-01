@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 import '../../../core/utils/formatters.dart';
 
 enum StatsPeriod {
@@ -69,6 +71,12 @@ class DailyStatistics {
 
   /// Server label, e.g. "Mon Mar 03 2025".
   final String label;
+
+  /// The label as a date ("Mon Mar 03 2025"), or null if the server sent
+  /// something else. Screens fall back to [label].
+  DateTime? get date =>
+      DateFormat('EEE MMM dd yyyy', 'en_US').tryParse(label);
+
   final int totalPersons;
 
   /// Served persons that day.

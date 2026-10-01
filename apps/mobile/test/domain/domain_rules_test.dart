@@ -185,5 +185,13 @@ void main() {
       expect(s.persons, 3);
       expect(s.totalMeals, 12);
     });
+
+    test('day labels parse to dates; unparseable labels stay null', () {
+      final ok = DailyStatistics.fromJson({'date': 'Mon Mar 03 2025', 'statistics': {}});
+      expect(ok.date, DateTime(2025, 3, 3));
+      final odd = DailyStatistics.fromJson({'date': '2025-W10', 'statistics': {}});
+      expect(odd.date, isNull);
+      expect(odd.label, '2025-W10');
+    });
   });
 }
