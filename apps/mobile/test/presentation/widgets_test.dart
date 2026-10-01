@@ -15,7 +15,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(localizedApp(const LoginPage()));
-    await tester.tap(find.text('Login'));
+    await tester.tap(find.text(en.signIn));
     await tester.pump();
     expect(find.text('Username is required.'), findsOneWidget);
     expect(find.text('Password is required.'), findsOneWidget);
