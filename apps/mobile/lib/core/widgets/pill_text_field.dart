@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/iftar_colors.dart';
 
-/// Auth-form field: leading icon, theme border, 16 px bottom gap.
+/// Auth-form field: floating label, leading icon, theme border, 16 px
+/// bottom gap.
 class PillTextField extends StatelessWidget {
   const PillTextField({
     super.key,
@@ -47,7 +48,9 @@ class PillTextField extends StatelessWidget {
         enabled: enabled,
         style: const TextStyle(fontSize: 15),
         decoration: InputDecoration(
-          hintText: hint,
+          // A floating label, so the field keeps its accessible name
+          // after the volunteer types in it.
+          labelText: hint,
           prefixIcon: icon == null
               ? null
               : Icon(icon, color: context.colors.inkMuted, size: 20),
