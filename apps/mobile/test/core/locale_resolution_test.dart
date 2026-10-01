@@ -22,4 +22,15 @@ void main() {
     expect(resolveAppLocale(null, null), const Locale('ar'));
     expect(resolveAppLocale(const Locale('it'), null), const Locale('ar'));
   });
+
+  test('a regional saved choice keeps only its language', () {
+    expect(
+      resolveAppLocale(const Locale('fr', 'TN'), null),
+      const Locale('fr'),
+    );
+  });
+
+  test('an empty device list falls back to Arabic', () {
+    expect(resolveAppLocale(null, const []), const Locale('ar'));
+  });
 }

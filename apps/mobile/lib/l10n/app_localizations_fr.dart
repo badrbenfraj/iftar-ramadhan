@@ -260,7 +260,7 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count individuels',
-      one: '1 individuel',
+      one: '$count individuel',
     );
     return '$_temp0';
   }
@@ -271,7 +271,7 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count familles',
-      one: '1 famille',
+      one: '$count famille',
     );
     return '$_temp0';
   }
@@ -288,7 +288,7 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count portions',
-      one: '1 portion',
+      one: '$count portion',
     );
     return '$_temp0';
   }
@@ -369,7 +369,7 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count portions',
-      one: '1 portion',
+      one: '$count portion',
     );
     return 'Remet $_temp0 chaque soir';
   }
@@ -426,7 +426,7 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count portions',
-      one: '1 portion',
+      one: '$count portion',
     );
     return '$name enregistré. Remettez $_temp0.';
   }
@@ -567,7 +567,7 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count portions',
-      one: '1 portion',
+      one: '$count portion',
     );
     return 'Servi : $name · $_temp0';
   }
