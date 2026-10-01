@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/iftar_colors.dart';
+import '../utils/typography.dart';
 
 /// "Label: value" row, the building block of the Ionic detail screens.
 class InfoTile extends StatelessWidget {
@@ -35,12 +37,12 @@ class InfoTile extends StatelessWidget {
         child: Row(
           children: [
             if (icon != null) ...[
-              Icon(icon, size: 20, color: AppColors.goldDeep),
+              Icon(icon, size: 20, color: context.colors.goldInk),
               const SizedBox(width: AppSpacing.md),
             ],
             Text(
               label,
-              style: const TextStyle(color: AppColors.inkMuted, fontSize: 14),
+              style: TextStyle(color: context.colors.inkMuted, fontSize: 14),
             ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
@@ -90,11 +92,11 @@ class InfoCard extends StatelessWidget {
               ),
               child: Text(
                 title!.toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.goldDeep,
+                style: TextStyle(
+                  color: context.colors.goldInk,
                   fontSize: 12,
-                  letterSpacing: 1.1,
-                  fontWeight: FontWeight.w700,
+                  letterSpacing: labelTracking(context, 1.1),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

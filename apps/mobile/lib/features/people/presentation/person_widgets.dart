@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../l10n/app_localizations.dart';
 import '../domain/fasting_person.dart';
 
 /// Bottom sheet: "List of taken meals for …" (Ionic modal on the badge).
@@ -15,11 +17,12 @@ Future<void> showMealHistory(BuildContext context, FastingPerson person) {
       minChildSize: 0.25,
       maxChildSize: 0.85,
       builder: (context, scroll) {
+        final l = AppLocalizations.of(context);
         if (person.takenMeals.isEmpty) {
-          return const Center(
+          return Center(
             child: Padding(
-              padding: EdgeInsets.all(AppSpacing.xxl),
-              child: Text('There is no previous takens.'),
+              padding: const EdgeInsets.all(AppSpacing.xxl),
+              child: Text(l.noMealsYet),
             ),
           );
         }
@@ -39,7 +42,7 @@ Future<void> showMealHistory(BuildContext context, FastingPerson person) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.md),
                 child: Text(
-                  'List of taken meals for ${isolate(person.fullName)}',
+                  l.mealHistoryTitle(isolate(person.fullName)),
                   textAlign: TextAlign.center,
                   style: Theme.of(context).textTheme.titleMedium,
                 ),
@@ -48,14 +51,14 @@ Future<void> showMealHistory(BuildContext context, FastingPerson person) {
             final date = person.takenMeals[i - 1];
             return ListTile(
               contentPadding: EdgeInsets.zero,
-              leading: const Icon(
+              leading: Icon(
                 Icons.nightlight_round,
-                color: AppColors.goldDeep,
+                color: context.colors.goldInk,
               ),
               title: Text(formatDate(date)),
               trailing: Text(
-                formatTime(date),
-                style: const TextStyle(color: AppColors.inkMuted),
+                ltr(formatTime(date)),
+                style: TextStyle(color: context.colors.inkMuted),
               ),
             );
           },
@@ -75,46 +78,49 @@ Future<({String phone, String comment})?> showContactEditor(
   final commentCtrl = TextEditingController(text: comment ?? '');
   return showDialog<({String phone, String comment})>(
     context: context,
-    builder: (context) => AlertDialog(
-      title: const Text('Phone & comment'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          TextField(
-            controller: phoneCtrl,
-            keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'Phone Number',
-              prefixIcon: Icon(Icons.phone_outlined),
+    builder: (context) {
+      final l = AppLocalizations.of(context);
+      return AlertDialog(
+        title: Text(l.contactTitle),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: phoneCtrl,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                labelText: l.phone,
+                prefixIcon: const Icon(Icons.phone_outlined),
+              ),
             ),
+            const SizedBox(height: AppSpacing.md),
+            TextField(
+              controller: commentCtrl,
+              minLines: 1,
+              maxLines: 3,
+              decoration: InputDecoration(
+                labelText: l.comment,
+                prefixIcon: const Icon(Icons.notes_rounded),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l.cancel),
           ),
-          const SizedBox(height: AppSpacing.md),
-          TextField(
-            controller: commentCtrl,
-            minLines: 1,
-            maxLines: 3,
-            decoration: const InputDecoration(
-              labelText: 'Comments',
-              prefixIcon: Icon(Icons.notes_rounded),
-            ),
+          FilledButton(
+            style: FilledButton.styleFrom(minimumSize: const Size(96, 44)),
+            onPressed: () => Navigator.pop(context, (
+              phone: phoneCtrl.text.trim(),
+              comment: commentCtrl.text.trim(),
+            )),
+            child: Text(l.save),
           ),
         ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        FilledButton(
-          style: FilledButton.styleFrom(minimumSize: const Size(96, 44)),
-          onPressed: () => Navigator.pop(context, (
-            phone: phoneCtrl.text.trim(),
-            comment: commentCtrl.text.trim(),
-          )),
-          child: const Text('Save'),
-        ),
-      ],
-    ),
+      );
+    },
   ).whenComplete(() {
     phoneCtrl.dispose();
     commentCtrl.dispose();

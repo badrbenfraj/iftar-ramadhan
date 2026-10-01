@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/app_failure.dart';
+import '../../../core/network/failure_text.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/info_tile.dart';
-import '../../../core/widgets/meal_status_badge.dart';
 import '../../../core/widgets/state_views.dart';
+import '../../../core/widgets/status_chip.dart';
+import '../../../l10n/app_localizations.dart';
 import '../domain/fasting_person.dart';
 import 'people_controller.dart';
 import 'person_widgets.dart';
@@ -43,6 +46,7 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
   }
 
   Future<void> _confirm() async {
+    final l = AppLocalizations.of(context);
     setState(() => _confirming = true);
     try {
       await ref
@@ -51,7 +55,7 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
       await HapticFeedback.mediumImpact();
       if (mounted) {
         setState(() => _phone = _comment = null);
-        showAppSnackBar(context, 'Meal confirmed.');
+        showAppSnackBar(context, l.mealConfirmed);
       }
     } on MealAlreadyTakenFailure catch (e) {
       await HapticFeedback.heavyImpact();
@@ -59,13 +63,13 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
         showAppSnackBar(
           context,
           e.takenAt == null
-              ? 'Already collected today.'
-              : 'Already collected today at ${formatTime(e.takenAt!)}.',
+              ? l.alreadyCollected
+              : l.alreadyCollectedAt(ltr(formatTime(e.takenAt!))),
           isError: true,
         );
       }
     } on AppFailure catch (e) {
-      if (mounted) showAppSnackBar(context, e.message, isError: true);
+      if (mounted) showAppSnackBar(context, failureText(l, e), isError: true);
     } finally {
       if (mounted) setState(() => _confirming = false);
     }
@@ -75,16 +79,17 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
   Widget build(BuildContext context) {
     final provider = personDetailsProvider(widget.personId);
     final person = ref.watch(provider);
+    final l = AppLocalizations.of(context);
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Person Details'),
+        title: Text(l.detailsTitle),
         actions: [
           if (person.hasValue)
             TextButton.icon(
               onPressed: () => context.push('/people/${widget.personId}/edit'),
               icon: const Icon(Icons.edit_outlined),
-              label: const Text('Edit'),
+              label: Text(l.edit),
             ),
         ],
       ),
@@ -100,6 +105,7 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
   }
 
   Widget _body(FastingPerson person) {
+    final l = AppLocalizations.of(context);
     final taken = person.isMealTakenToday();
     final phone = _phone ?? person.phone;
     final comment = _comment ?? person.comment;
@@ -110,37 +116,37 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           InfoCard(
-            title: 'Identity',
+            title: l.identity,
             children: [
-              InfoTile(label: 'Identifier:', value: '${person.id}'),
+              InfoTile(label: l.identifier, value: ltr('${person.id}')),
               if (person.cin != null)
-                InfoTile(label: 'CIN:', value: person.cin),
-              InfoTile(label: 'First Name:', value: person.firstName),
-              InfoTile(label: 'Last Name:', value: person.lastName),
+                InfoTile(label: l.cinShortLabel, value: person.cin),
+              InfoTile(label: l.firstName, value: isolate(person.firstName)),
+              InfoTile(label: l.lastName, value: isolate(person.lastName)),
               InfoTile(
-                label: 'Phone Number:',
+                label: l.phone,
                 value: phone,
-                trailing: taken ? null : _editIcon(person),
+                trailing: taken ? null : _editIcon(l, person),
               ),
               InfoTile(
-                label: 'Comments:',
+                label: l.comment,
                 value: comment,
-                trailing: taken ? null : _editIcon(person),
+                trailing: taken ? null : _editIcon(l, person),
               ),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
           InfoCard(
-            title: 'Meals',
+            title: l.meals,
             children: [
-              InfoTile(label: 'Single meal:', value: '${person.singleMeal}'),
-              InfoTile(label: 'Family meal:', value: '${person.familyMeal}'),
+              InfoTile(label: l.singleMeal, value: ltr('${person.singleMeal}')),
+              InfoTile(label: l.familyMeal, value: ltr('${person.familyMeal}')),
               InfoTile(
-                label: 'Meal taken:',
-                trailing: MealStatusBadge(takenToday: taken),
+                label: l.mealToday,
+                trailing: StatusChip(person: person),
                 value: person.lastTakenMeal == null
                     ? null
-                    : 'last ${formatDate(person.lastTakenMeal!)}',
+                    : l.lastMeal(formatDate(person.lastTakenMeal!)),
                 onTap: () => showMealHistory(context, person),
               ),
             ],
@@ -149,31 +155,31 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
           FilledButton.icon(
             onPressed: taken || _confirming ? null : _confirm,
             icon: _confirming
-                ? const SizedBox.square(
+                ? SizedBox.square(
                     dimension: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      color: Colors.white,
+                      color: context.colors.onAct,
                     ),
                   )
                 : Icon(taken ? Icons.check_rounded : Icons.restaurant_rounded),
-            label: Text(taken ? 'Already served today' : 'Confirm Meal'),
+            label: Text(taken ? l.alreadyServedToday : l.confirmMeal),
           ),
           const SizedBox(height: AppSpacing.md),
           TextButton.icon(
             onPressed: () => showMealHistory(context, person),
             icon: const Icon(Icons.history_rounded),
-            label: Text('Meal history (${person.takenMeals.length})'),
+            label: Text(l.mealHistory(person.takenMeals.length)),
           ),
         ],
       ),
     );
   }
 
-  Widget _editIcon(FastingPerson person) => IconButton(
-    tooltip: 'Edit phone & comment',
+  Widget _editIcon(AppLocalizations l, FastingPerson person) => IconButton(
+    tooltip: l.editContact,
     visualDensity: VisualDensity.compact,
-    icon: const Icon(Icons.edit_rounded, size: 18, color: AppColors.tealDeep),
+    icon: Icon(Icons.edit_rounded, size: 18, color: context.colors.actInk),
     onPressed: () => _editContact(person),
   );
 }
