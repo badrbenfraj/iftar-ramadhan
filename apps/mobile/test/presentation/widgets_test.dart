@@ -90,7 +90,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('List of fasting people'), findsOneWidget);
+    expect(find.text(en.peopleTitle), findsOneWidget);
     expect(find.text('2 registered · 1 served today'), findsOneWidget);
     expect(find.text('Najwa Chalbi'), findsOneWidget);
     expect(find.text('Aziza Ouerghi'), findsOneWidget);
@@ -102,6 +102,6 @@ void main() {
 
     await tester.enterText(find.byType(TextField), 'nobody');
     await tester.pumpAndSettle();
-    expect(find.textContaining('No match'), findsOneWidget);
+    expect(find.textContaining('No one matches'), findsOneWidget);
   });
 }
