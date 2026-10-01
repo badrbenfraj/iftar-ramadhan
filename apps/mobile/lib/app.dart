@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import 'core/router/app_router.dart';
 import 'core/settings/locale_resolution.dart';
+import 'core/settings/settings_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
 
@@ -12,12 +13,15 @@ class IftarApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final settings =
+        ref.watch(settingsControllerProvider).value ?? const AppSettings();
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
       darkTheme: AppTheme.dark(),
-      themeMode: ThemeMode.light,
+      themeMode: settings.themeMode,
+      locale: settings.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       localeListResolutionCallback: (device, _) =>
