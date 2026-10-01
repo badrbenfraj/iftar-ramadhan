@@ -48,11 +48,8 @@ class KhatamPatternPainter extends CustomPainter {
       ..strokeWidth = 1
       ..color = color.withValues(alpha: opacity);
 
-    // Tighten loop bounds to avoid drawing rows/columns entirely off-canvas
     for (var y = tile / 2; y < size.height + tile / 2; y += tile) {
-      if (y < 0) continue; // Skip rows entirely above canvas
       for (var x = tile / 2; x < size.width + tile / 2; x += tile) {
-        if (x < 0) continue; // Skip columns entirely left of canvas
         final c = Offset(x, y);
         canvas
           ..drawPath(khatamPath(c, tile * 0.32), paint)
