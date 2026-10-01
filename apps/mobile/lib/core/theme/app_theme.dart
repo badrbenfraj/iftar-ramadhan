@@ -156,6 +156,7 @@ abstract final class AppTheme {
           fontFamily: fontFamily,
           color: AppPalette.onSky,
         ),
+        actionTextColor: AppPalette.mint,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadii.button),
           side: BorderSide(color: AppPalette.gold.withValues(alpha: 0.35)),
@@ -182,7 +183,12 @@ abstract final class AppTheme {
               states.contains(WidgetState.selected) ? c.act : c.line,
         ),
         thumbColor: const WidgetStatePropertyAll(Colors.white),
-        trackOutlineColor: const WidgetStatePropertyAll(Colors.transparent),
+        trackOutlineColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected)
+                  ? Colors.transparent
+                  : c.inkMuted,
+        ),
       ),
     );
   }

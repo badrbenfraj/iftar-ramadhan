@@ -3,13 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/core/theme/app_colors.dart';
 import 'package:iftar_mobile/core/theme/iftar_colors.dart';
 
-double contrast(Color a, Color b) {
-  final la = a.computeLuminance();
-  final lb = b.computeLuminance();
-  final hi = la > lb ? la : lb;
-  final lo = la > lb ? lb : la;
-  return (hi + 0.05) / (lo + 0.05);
-}
+import '../support/contrast.dart';
 
 void main() {
   const white = Color(0xFFFFFFFF);
