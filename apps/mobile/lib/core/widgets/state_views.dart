@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../network/app_failure.dart';
+import '../network/failure_text.dart';
 import '../theme/app_colors.dart';
+import '../theme/iftar_colors.dart';
 
-/// Centered spinner with an optional caption ("Fetching data" in Ionic).
+/// Centered spinner with an optional caption.
 class LoadingView extends StatelessWidget {
   const LoadingView({super.key, this.message});
 
@@ -23,7 +26,7 @@ class LoadingView extends StatelessWidget {
             const SizedBox(height: AppSpacing.md),
             Text(
               message!,
-              style: const TextStyle(color: AppColors.tealDeep, fontSize: 14),
+              style: TextStyle(color: context.colors.actInk, fontSize: 14),
             ),
           ],
         ],
@@ -41,24 +44,25 @@ class ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final (icon, title) = switch (failure) {
-      NetworkFailure() => (Icons.wifi_off_rounded, 'You are offline'),
-      TimeoutFailure() => (Icons.hourglass_empty_rounded, 'Server is slow'),
-      ServerFailure() => (Icons.cloud_off_rounded, 'Server error'),
-      UnauthorizedFailure() => (Icons.lock_outline_rounded, 'Signed out'),
-      NotFoundFailure() => (Icons.search_off_rounded, 'Not found'),
-      _ => (Icons.error_outline_rounded, 'Something went wrong'),
+    final l = AppLocalizations.of(context);
+    final icon = switch (failure) {
+      NetworkFailure() => Icons.wifi_off_rounded,
+      TimeoutFailure() => Icons.hourglass_empty_rounded,
+      ServerFailure() => Icons.cloud_off_rounded,
+      UnauthorizedFailure() => Icons.lock_outline_rounded,
+      NotFoundFailure() => Icons.search_off_rounded,
+      _ => Icons.error_outline_rounded,
     };
     return EmptyView(
       icon: icon,
-      title: title,
-      message: failure.message,
+      title: failureTitle(l, failure),
+      message: failureText(l, failure),
       action: onRetry == null
           ? null
           : OutlinedButton.icon(
               onPressed: onRetry,
               icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Try again'),
+              label: Text(l.tryAgain),
             ),
     );
   }
@@ -80,6 +84,7 @@ class EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final c = context.colors;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(AppSpacing.xxl),
@@ -88,11 +93,8 @@ class EmptyView extends StatelessWidget {
           children: [
             Container(
               padding: const EdgeInsets.all(AppSpacing.lg),
-              decoration: const BoxDecoration(
-                color: AppColors.goldSoft,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, size: 32, color: AppColors.night),
+              decoration: BoxDecoration(color: c.chip, shape: BoxShape.circle),
+              child: Icon(icon, size: 32, color: c.chipInk),
             ),
             const SizedBox(height: AppSpacing.lg),
             Text(
@@ -105,7 +107,7 @@ class EmptyView extends StatelessWidget {
               Text(
                 message!,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppColors.inkMuted),
+                style: TextStyle(color: c.inkMuted),
               ),
             ],
             if (action != null) ...[
@@ -119,18 +121,22 @@ class EmptyView extends StatelessWidget {
   }
 }
 
-/// Snackbar helper used after actions (save, delete, confirm...).
+/// Snackbar after actions (save, delete, confirm...). Errors use clay.
 void showAppSnackBar(
   BuildContext context,
   String message, {
   bool isError = false,
 }) {
+  final c = context.colors;
   ScaffoldMessenger.of(context)
     ..hideCurrentSnackBar()
     ..showSnackBar(
       SnackBar(
-        content: Text(message),
-        backgroundColor: isError ? AppColors.danger : AppColors.night,
+        content: Text(
+          message,
+          style: isError ? TextStyle(color: c.onClay) : null,
+        ),
+        backgroundColor: isError ? c.clay : null,
       ),
     );
 }

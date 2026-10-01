@@ -26,7 +26,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void initState() {
     super.initState();
-    _error = ref.read(authControllerProvider.notifier).lastSignOutReason;
+    _error = ref.read(authControllerProvider.notifier).lastSignOutFailure?.message;
   }
 
   @override

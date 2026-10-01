@@ -13,7 +13,7 @@ class AuthController extends AsyncNotifier<User?> {
   StreamSubscription<void>? _expirySub;
 
   /// Set when the user was signed out by the server (shown on the login page).
-  String? lastSignOutReason;
+  AppFailure? lastSignOutFailure;
 
   AuthRepository get _repo => ref.read(authRepositoryProvider);
 
@@ -22,7 +22,7 @@ class AuthController extends AsyncNotifier<User?> {
     _expirySub = ref
         .watch(sessionExpiredEventsProvider)
         .stream
-        .listen((_) => _signOut(reason: const UnauthorizedFailure().message));
+        .listen((_) => _signOut(reason: const UnauthorizedFailure()));
     ref.onDispose(() => _expirySub?.cancel());
 
     final cached = await _repo.restoreSession();
@@ -45,16 +45,16 @@ class AuthController extends AsyncNotifier<User?> {
   }
 
   Future<void> login(String username, String password) async {
-    lastSignOutReason = null;
+    lastSignOutFailure = null;
     final user = await _repo.login(username, password);
     state = AsyncData(user);
   }
 
   Future<void> logout() => _signOut();
 
-  Future<void> _signOut({String? reason}) async {
+  Future<void> _signOut({AppFailure? reason}) async {
     if (state.value == null && reason != null) return;
-    lastSignOutReason = reason;
+    lastSignOutFailure = reason;
     await _repo.logout();
     state = const AsyncData(null);
   }
@@ -72,6 +72,7 @@ Region regionOf(AsyncValue<User?> auth) {
   if (region == null) {
     throw const AppStateFailure(
       'Your account has no region assigned. Ask an administrator.',
+      code: AppStateFailure.noRegion,
     );
   }
   return region;
