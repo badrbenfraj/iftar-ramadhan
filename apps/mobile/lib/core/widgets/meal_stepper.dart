@@ -54,6 +54,7 @@ class MealStepper extends StatelessWidget {
             width: 44,
             child: Semantics(
               liveRegion: true,
+              excludeSemantics: true,
               label: '$label $value',
               child: Text(
                 ltr('$value'),

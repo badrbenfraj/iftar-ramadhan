@@ -48,38 +48,44 @@ class _Tile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = context.colors;
-    return Opacity(
-      opacity: count == 0 ? 0.42 : 1,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-        decoration: BoxDecoration(
-          color: c.tile,
-          borderRadius: BorderRadius.circular(14),
-        ),
-        child: Row(
-          children: [
-            Text(
-              ltr('$count'),
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.w600,
-                height: 1,
-                color: c.ink,
-                fontFeatures: const [FontFeature.tabularFigures()],
-              ),
+    // A zero tile is quieter through its hollow fill, outline and muted
+    // number. Text is never faded with opacity: it must stay AA (spec §8).
+    final zero = count == 0;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: zero ? c.surface : c.tile,
+        border: Border.all(color: zero ? c.line : Colors.transparent),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Text(
+            ltr('$count'),
+            style: TextStyle(
+              fontSize: 30,
+              fontWeight: FontWeight.w600,
+              height: 1,
+              color: zero ? c.inkMuted : c.ink,
+              fontFeatures: const [FontFeature.tabularFigures()],
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(label, maxLines: 2, style: const TextStyle(fontSize: 12, height: 1.3)),
-                  Text(caption, style: TextStyle(fontSize: 11, color: c.inkMuted)),
-                ],
-              ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12, height: 1.3, color: c.ink),
+                ),
+                Text(caption, style: TextStyle(fontSize: 11, color: c.inkMuted)),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

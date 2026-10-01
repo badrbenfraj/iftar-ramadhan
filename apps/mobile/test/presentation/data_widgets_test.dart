@@ -9,6 +9,7 @@ import 'package:iftar_mobile/core/widgets/status_chip.dart';
 import 'package:iftar_mobile/features/people/domain/fasting_person.dart';
 
 import '../support/app_harness.dart';
+import '../support/contrast.dart';
 import '../support/fakes.dart';
 
 void main() {
@@ -46,6 +47,111 @@ void main() {
     await tester.pumpWidget(localizedApp(const Scaffold(body: HandOverTiles(person: nobody))));
     expect(find.text(en.none), findsNWidgets(2));
     expect(tester.takeException(), isNull);
+  });
+
+  group('zero hand-over tiles keep AA text', () {
+    const nobody = FastingPerson(
+      id: 9,
+      firstName: 'A',
+      lastName: 'B',
+      singleMeal: 0,
+      familyMeal: 0,
+    );
+    const mixed = FastingPerson(
+      id: 9,
+      firstName: 'A',
+      lastName: 'B',
+      singleMeal: 0,
+      familyMeal: 2,
+    );
+
+    BoxDecoration tileDecoration(WidgetTester tester, Finder inside) =>
+        tester
+                .widget<DecoratedBox>(
+                  find
+                      .ancestor(of: inside, matching: find.byType(DecoratedBox))
+                      .first,
+                )
+                .decoration
+            as BoxDecoration;
+
+    testWidgets('no tile text sits under reduced opacity', (tester) async {
+      await tester.pumpWidget(
+        localizedApp(const Scaffold(body: HandOverTiles(person: nobody))),
+      );
+      for (final text in [en.familyMeal, en.singleMeal, en.none, ltr('0')]) {
+        final faded = find.ancestor(
+          of: find.text(text),
+          matching: find.byWidgetPredicate(
+            (w) =>
+                (w is Opacity && w.opacity < 1) ||
+                (w is FadeTransition && w.opacity.value < 1),
+          ),
+        );
+        expect(faded, findsNothing, reason: '"$text" must not be faded');
+      }
+    });
+
+    testWidgets('a zero tile still looks quieter than a stocked tile', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        localizedApp(const Scaffold(body: HandOverTiles(person: mixed))),
+      );
+      final stocked = find.text(ltr('2'));
+      final zero = find.text(ltr('0'));
+      expect(tileDecoration(tester, zero), isNot(tileDecoration(tester, stocked)));
+      expect(
+        tester.widget<Text>(zero).style?.color,
+        isNot(tester.widget<Text>(stocked).style?.color),
+      );
+    });
+
+    for (final night in [false, true]) {
+      testWidgets('zero tile text is at least 4.5:1 ${night ? 'at night' : 'by day'}', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          localizedApp(
+            const Scaffold(body: HandOverTiles(person: nobody)),
+            night: night,
+          ),
+        );
+        final fill = tileDecoration(tester, find.text(en.familyMeal)).color!;
+        final texts = {
+          'label': find.text(en.familyMeal),
+          'caption': find.text(en.none).first,
+          'number': find.text(ltr('0')).first,
+        };
+        texts.forEach((name, finder) {
+          final color = tester.widget<Text>(finder).style?.color;
+          expect(color, isNotNull, reason: '$name sets its own colour');
+          expect(
+            contrast(color!, fill),
+            greaterThanOrEqualTo(4.5),
+            reason: '$name on the zero tile',
+          );
+        });
+      });
+    }
+  });
+
+  testWidgets('meal stepper reads label and value once', (tester) async {
+    final handle = tester.ensureSemantics();
+    await tester.pumpWidget(localizedApp(Scaffold(
+      body: MealStepper(
+        label: 'Single meal',
+        caption: '1 portion',
+        value: 3,
+        onChanged: (_) {},
+      ),
+    )));
+    final node = tester.getSemantics(
+      find.bySemanticsLabel(RegExp('^Single meal 3')),
+    );
+    expect(node.label, 'Single meal 3');
+    expect(RegExp('3').allMatches(node.label), hasLength(1));
+    handle.dispose();
   });
 
   testWidgets('meal stepper stays within bounds', (tester) async {
