@@ -1,0 +1,52 @@
+import 'dart:async';
+
+import 'package:dio/dio.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'config/app_config.dart';
+import 'network/api_client.dart';
+import 'network/auth_interceptor.dart';
+import 'storage/session_storage.dart';
+
+/// Dependency-injection roots. Tests override these with fakes.
+
+final appConfigProvider = Provider<AppConfig>(
+  (_) => AppConfig.fromEnvironment(),
+);
+
+final sessionStorageProvider = Provider<SessionStorage>(
+  (_) => SecureSessionStorage(),
+);
+
+/// Emits when the refresh token is rejected; the auth controller signs out.
+final sessionExpiredEventsProvider = Provider<StreamController<void>>((ref) {
+  final controller = StreamController<void>.broadcast();
+  ref.onDispose(controller.close);
+  return controller;
+});
+
+final dioProvider = Provider<Dio>((ref) {
+  final options = ApiClient.baseOptions(
+    ref.watch(appConfigProvider).apiBaseUrl,
+  );
+  final events = ref.watch(sessionExpiredEventsProvider);
+  final dio = Dio(options)
+    ..interceptors.add(
+      AuthInterceptor(
+        storage: ref.watch(sessionStorageProvider),
+        refreshClient: Dio(options),
+        onSessionExpired: () {
+          if (!events.isClosed) events.add(null);
+        },
+      ),
+    );
+  ref.onDispose(dio.close);
+  return dio;
+});
+
+final apiClientProvider = Provider<ApiClient>(
+  (ref) => ApiClient(ref.watch(dioProvider)),
+);
+
+/// Injectable clock so "today" logic is testable.
+final clockProvider = Provider<DateTime Function()>((_) => DateTime.now);

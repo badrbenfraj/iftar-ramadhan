@@ -1,0 +1,503 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iftar Saem Fusion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Aref+Ruqaa:wght@400;700&family=Readex+Pro:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ruqaa:'Aref Ruqaa','Amiri',serif; --sans:'Readex Pro','Noto Sans Arabic',system-ui,sans-serif;
+  --night:#121A3A; --night-2:#1D2754; --horizon:#3A3566; --moon:#F3EBDD; --night-muted:#A8AEC8;
+  --gold:#D6A645; --gold-soft:#F1E3BF; --mint:#43CEBB;
+  --p-bg:#F6F1E7; --p-ink:#1A2038; --p-muted:#5D6377; --p-line:#E3D9C6; --p-card:#FFFCF6;
+  --a-bg:#F6F1E7; --a-surface:#FFFCF6; --a-line:#E3D9C6; --a-ink:#1A2038; --a-muted:#5D6377; --a-tile:#F1EBDF;
+  --a-act:#0D6B62; --a-on-act:#FFFFFF; --a-act-ink:#0A5049; --a-act-soft:#DCEEE8;
+  --a-clay:#A8432A; --a-clay-ink:#7E2F1D; --a-clay-soft:#F5E2D8;
+  --a-gold-ink:#86621A; --a-chip:#F1E3BF; --a-chip-ink:#1A2038; --a-warn:#F3EBD6;
+  --a-sys:#121A3A;
+}
+html.night{
+  --p-bg:#0B1129; --p-ink:#F1EADB; --p-muted:#A9B0C6; --p-line:#27315A; --p-card:#151D3B;
+  --a-bg:#0E1530; --a-surface:#18213F; --a-line:#2A3560; --a-ink:#F1EADB; --a-muted:#A9B0C6; --a-tile:#1F2949;
+  --a-act:#43CEBB; --a-on-act:#121A3A; --a-act-ink:#86E3D4; --a-act-soft:#123E48;
+  --a-clay:#E8957A; --a-clay-ink:#F0A68D; --a-clay-soft:#3A2632;
+  --a-gold-ink:#D6A645; --a-chip:#2A3055; --a-chip-ink:#F1E3BF; --a-warn:#2B2A33;
+  --a-sys:#2A3563;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--p-bg);color:var(--p-ink);font-family:var(--sans);line-height:1.55;transition:background .4s,color .4s}
+.wrap{max-width:1240px;margin:0 auto;padding:48px 24px 96px}
+.eyebrow{font-size:13px;letter-spacing:.06em;color:var(--p-muted)}
+h1{font-weight:300;font-size:clamp(40px,6vw,72px);line-height:1.02;margin:10px 0 0}
+h1 .ar{font-family:var(--ruqaa);font-weight:400;color:var(--a-gold-ink);font-size:.62em;margin-inline-start:14px}
+html.night h1 .ar{color:var(--gold)}
+.lede{max-width:680px;font-size:18px;color:var(--p-muted);margin:16px 0 0;font-weight:300}
+h2{font-weight:500;font-size:22px;margin:64px 0 6px}
+.sub{color:var(--p-muted);margin:0 0 24px;max-width:680px}
+
+.stage{display:grid;grid-template-columns:auto minmax(0,1fr);gap:40px;align-items:start;margin-top:36px}
+@media (max-width:900px){.stage{grid-template-columns:1fr;justify-items:center}}
+.phone{width:360px;height:760px;border-radius:46px;background:#0A0E1E;padding:9px;box-shadow:0 30px 60px -30px rgba(18,26,58,.45)}
+.scr{border-radius:37px;overflow:hidden;height:100%;position:relative;background:var(--a-bg);display:flex;flex-direction:column;color:var(--a-ink);font-family:var(--sans)}
+.ico{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.sb{height:34px;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:12px;font-weight:500;direction:ltr;flex:none;position:relative;z-index:2}
+.sb.light{color:var(--moon)}
+button{font-family:inherit}
+.tap{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.spin{width:16px;height:16px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:sp .8s linear infinite;flex:none}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin,.pulse,.prog i{animation:none!important}}
+
+.sky{background:linear-gradient(180deg,#0E1530 0%,#1D2754 55%,#3A3566 86%,#5A4560 100%);position:relative;color:var(--moon)}
+.sky.dusk::after{content:"";position:absolute;inset:0;background:radial-gradient(ellipse 90% 40% at 50% 112%,rgba(232,168,107,.42),transparent 70%);pointer-events:none}
+.khatam{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%23D6A645' stroke-opacity='0.17' stroke-width='1'%3E%3Crect x='12' y='12' width='20' height='20'/%3E%3Crect x='12' y='12' width='20' height='20' transform='rotate(45 22 22)'/%3E%3Ccircle cx='22' cy='22' r='3'/%3E%3C/g%3E%3C/svg%3E");background-size:44px 44px}
+.sky.khatam{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%23D6A645' stroke-opacity='0.17' stroke-width='1'%3E%3Crect x='12' y='12' width='20' height='20'/%3E%3Crect x='12' y='12' width='20' height='20' transform='rotate(45 22 22)'/%3E%3Ccircle cx='22' cy='22' r='3'/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(180deg,#0E1530 0%,#1D2754 55%,#3A3566 86%,#5A4560 100%);background-size:44px 44px,auto}
+.loginTop .sb{position:absolute;top:0;left:0;right:0}
+.band-sky{background-color:var(--night);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='44' height='44' viewBox='0 0 44 44'%3E%3Cg fill='none' stroke='%23D6A645' stroke-opacity='0.17' stroke-width='1'%3E%3Crect x='12' y='12' width='20' height='20'/%3E%3Crect x='12' y='12' width='20' height='20' transform='rotate(45 22 22)'/%3E%3Ccircle cx='22' cy='22' r='3'/%3E%3C/g%3E%3C/svg%3E"),linear-gradient(180deg,#0E1530,#1D2754);background-size:44px 44px,auto;color:var(--moon);position:relative;flex:none}
+.moon{position:absolute;width:30px;height:30px;border-radius:50%;box-shadow:7px -4px 0 0 var(--gold);filter:drop-shadow(0 0 10px rgba(214,166,69,.35))}
+.star{position:absolute;width:2px;height:2px;border-radius:50%;background:var(--moon);opacity:.7}
+
+.welcome{flex:1;display:flex;flex-direction:column;align-items:center;padding:0 28px 30px;position:relative;z-index:1}
+.langpick{display:flex;gap:6px;margin-top:4px}
+.langpick button{background:rgba(243,235,221,.08);border:1px solid rgba(243,235,221,.22);color:var(--moon);border-radius:999px;font:500 12px var(--sans);padding:5px 12px;cursor:pointer}
+.langpick button.on{background:var(--gold);border-color:var(--gold);color:var(--night)}
+.archwin{margin-top:40px;width:212px;height:282px;border:1px solid rgba(214,166,69,.55);border-radius:106px 106px 10px 10px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;position:relative;text-align:center;padding:0 16px}
+.archwin::before{content:"";position:absolute;inset:7px;border:1px solid rgba(214,166,69,.18);border-radius:99px 99px 6px 6px}
+.archwin .title{font-family:var(--ruqaa);color:var(--gold);font-size:48px;line-height:1.1}
+.archwin .hadith{font-family:var(--ruqaa);color:var(--moon);font-size:17px;opacity:.92;line-height:1.5}
+.archwin .en{font-size:11.5px;color:var(--night-muted);max-width:160px}
+.grow{flex:1}
+.btn{font:500 15.5px var(--sans);border-radius:14px;height:52px;width:100%;display:flex;align-items:center;justify-content:center;gap:8px;border:0;cursor:pointer}
+.btn:active{transform:scale(.985)}
+.btn.mint{background:var(--mint);color:var(--night)}
+.btn.ghost-night{background:transparent;color:var(--moon);border:1px solid rgba(243,235,221,.35);margin-top:12px}
+.btn.act{background:var(--a-act);color:var(--a-on-act)}
+.btn.night{background:var(--a-sys);color:var(--moon)}
+.btn.line{background:transparent;color:var(--a-ink);border:1px solid var(--a-line)}
+.btn.text{background:transparent;color:var(--a-act-ink);height:44px}
+.links{display:flex;justify-content:space-around;margin-top:2px}
+.links button{background:none;border:0;font-size:14px;font-weight:500;color:var(--a-act-ink);padding:10px 12px;cursor:pointer}
+
+.loginTop{height:250px;flex:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;position:relative}
+.loginTop .title{font-family:var(--ruqaa);color:var(--gold);font-size:40px;line-height:1.1;position:relative;z-index:1}
+.loginTop .sub2{font-size:12.5px;color:var(--night-muted);position:relative;z-index:1}
+.loginTop .back{position:absolute;top:40px;inset-inline-start:16px;z-index:2}
+.paper{flex:1;background:var(--a-bg);border-radius:28px 28px 0 0;margin-top:-28px;position:relative;z-index:2;padding:26px 24px 20px;display:flex;flex-direction:column}
+.paper h3{margin:0;font-weight:500;font-size:24px}
+.paper .lead{font-size:13px;color:var(--a-muted);margin:2px 0 6px}
+.fgroup{margin-top:14px}
+.flbl{font-size:12.5px;color:var(--a-muted);margin-bottom:6px;display:block}
+.inp{display:flex;align-items:center;gap:8px;height:50px;border:1px solid var(--a-line);border-radius:14px;background:var(--a-surface);padding:0 6px 0 14px}
+[dir="rtl"] .inp{padding:0 14px 0 6px}
+.inp:focus-within{border-color:var(--a-act);box-shadow:0 0 0 3px color-mix(in srgb,var(--a-act) 15%,transparent)}
+.inp input{flex:1;min-width:0;width:100%;border:0;background:transparent;font:400 15px var(--sans);color:var(--a-ink);outline:none}
+.inp .mini{height:38px;border-radius:10px;border:1px solid var(--a-line);background:var(--a-bg);color:var(--a-act-ink);font:500 13px var(--sans);display:flex;align-items:center;gap:6px;padding:0 12px;cursor:pointer}
+.inp .eye{background:none;border:0;color:var(--a-muted);width:40px;height:40px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.err{font-size:12px;color:var(--a-clay);margin-top:6px}
+.formerr{font-size:12.5px;color:var(--a-clay-ink);background:var(--a-clay-soft);border-radius:12px;padding:10px 12px;margin-top:14px}
+
+.rb{width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.32);border:1px solid rgba(243,235,221,.16);display:flex;align-items:center;justify-content:center;flex:none;color:var(--moon);cursor:pointer}
+.hdr{padding:4px 20px 18px;position:relative}
+.hdr .meta{font-size:12px;color:var(--gold);display:flex;align-items:center;gap:6px}
+.hdr h3{margin:6px 0 2px;font-weight:500;font-size:22px;color:var(--moon)}
+.hdr .count{font-size:13px;color:var(--night-muted)}
+.hdr .track{height:3px;background:rgba(243,235,221,.14);border-radius:3px;margin-top:10px;position:relative;overflow:hidden}
+.hdr .track i{position:absolute;inset-block:0;inset-inline-start:0;background:var(--mint);border-radius:3px}
+.search{margin-top:14px;height:46px;border-radius:14px;background:var(--a-surface);display:flex;align-items:center;gap:8px;padding:0 14px;color:var(--a-muted)}
+.search input{flex:1;min-width:0;border:0;background:transparent;font:400 14.5px var(--sans);color:var(--a-ink);outline:none}
+.filters{display:flex;gap:8px;padding:12px 14px 2px;flex:none}
+.filters button{background:var(--a-surface);border:1px solid var(--a-line);border-radius:999px;padding:6px 12px;font:500 12.5px var(--sans);color:var(--a-muted);cursor:pointer;display:flex;gap:6px;align-items:center}
+.filters button.on{background:var(--a-sys);border-color:var(--a-sys);color:var(--moon)}
+.filters b{font-weight:600;font-variant-numeric:tabular-nums}
+.banner{margin:10px 14px 0;font-size:12px;color:var(--a-gold-ink);background:var(--a-warn);border-radius:10px;padding:8px 12px;display:flex;gap:8px;align-items:center;flex:none}
+.list{flex:1;overflow:auto;padding:10px 14px 96px;display:flex;flex-direction:column;gap:10px;scrollbar-width:none}
+.list::-webkit-scrollbar{display:none}
+.row{background:var(--a-surface);border:1px solid var(--a-line);border-radius:16px;padding:12px;display:flex;align-items:center;gap:12px}
+.row.tap:active{transform:scale(.99)}
+.idchip{min-width:50px;text-align:center;font-weight:600;font-size:13px;background:var(--a-chip);color:var(--a-chip-ink);border-radius:10px;padding:6px 4px;font-variant-numeric:tabular-nums;direction:ltr}
+.who{flex:1;min-width:0}
+.who b{display:block;font-weight:500;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.who .m{display:flex;align-items:center;gap:6px;margin-top:3px;font-size:12px;color:var(--a-muted);white-space:nowrap}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:500;border-radius:999px;padding:2px 9px 2px 7px;white-space:nowrap}
+.chip .ico{width:12px;height:12px;stroke-width:2.4}
+.chip.wait{background:var(--a-act-soft);color:var(--a-act-ink)}
+.chip.done{background:var(--a-clay-soft);color:var(--a-clay-ink)}
+.chev{color:var(--a-muted)}
+[dir="rtl"] .chev,[dir="rtl"] .flipx{transform:scaleX(-1)}
+.empty{padding:36px 10px;text-align:center;color:var(--a-muted);font-size:14px}
+.nav{position:absolute;left:0;right:0;bottom:0;height:72px;background:var(--night);display:flex;align-items:center;justify-content:space-around;padding:0 8px;color:var(--night-muted);font-size:10.5px;z-index:4}
+.nav button{background:none;border:0;color:inherit;font:inherit;display:flex;flex-direction:column;align-items:center;gap:3px;width:56px;cursor:pointer;padding:6px 0}
+.nav .on{color:var(--gold)}
+.fab{width:62px!important;height:62px;border-radius:50%;background:var(--mint)!important;color:var(--night)!important;display:flex!important;align-items:center;justify-content:center;margin-top:-34px;border:6px solid var(--night)!important;padding:0!important}
+.fab .ico{width:26px;height:26px;stroke-width:2}
+.toast{position:absolute;left:16px;right:16px;bottom:86px;background:var(--night);color:var(--moon);border:1px solid rgba(214,166,69,.35);border-radius:14px;padding:12px 16px;font-size:13.5px;z-index:6;box-shadow:0 10px 30px -10px rgba(0,0,0,.5)}
+.toast.top{bottom:auto;top:92px}
+
+.cam{position:relative;flex:1;min-height:0;overflow:hidden;display:flex;flex-direction:column;background:radial-gradient(circle at 50% 36%,#2A3046,#121626 70%);color:var(--moon)}
+.top{display:flex;align-items:center;gap:8px;padding:2px 14px 0;position:relative;z-index:2}
+.tt{flex:1;min-width:0;display:flex;align-items:center;gap:10px}
+.tt b{display:block;font-weight:500;font-size:15px;line-height:1.2}.tt span{font-size:11.5px;color:var(--gold);white-space:nowrap}
+.sync{font-size:11px;color:var(--night);background:var(--gold);border-radius:999px;padding:3px 9px;white-space:nowrap}
+.vfw{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;position:relative}
+.vf{width:144px;height:156px;max-height:calc(100% - 20px);border:2.5px solid var(--vf,rgba(243,235,221,.85));border-radius:72px 72px 16px 16px;box-shadow:0 0 0 999px rgba(6,9,20,.48);position:relative;transition:border-color .25s}
+.vf::after{content:"";position:absolute;top:-6px;left:50%;width:9px;height:9px;margin-left:-4.5px;background:var(--gold);transform:rotate(45deg)}
+.hint{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);font-size:12px;background:rgba(0,0,0,.5);border:1px solid rgba(214,166,69,.45);border-radius:999px;padding:6px 14px;white-space:nowrap;display:flex;gap:6px;align-items:center}
+.findbar{display:flex;align-items:center;gap:12px;background:var(--a-surface);border-radius:24px 24px 0 0;padding:18px 20px 22px;cursor:pointer;color:var(--a-ink);flex:none}
+.findbar .fi{width:40px;height:40px;border-radius:50%;background:var(--a-act-soft);color:var(--a-act-ink);display:flex;align-items:center;justify-content:center}
+.findbar span{flex:1;font-size:14.5px;font-weight:500}
+.findbar small{display:block;font-size:12px;color:var(--a-muted);font-weight:400}
+.panel{background:var(--a-surface);border-radius:26px 26px 0 0;overflow:hidden;flex:none}
+.band{display:flex;align-items:center;gap:12px;padding:14px 18px;color:#fff}
+.band.serve{background:#0D6B62}.band.paused{background:#A8432A}.band.system{background:#121A3A}.band.wait{background:#2A3360}
+html.night .band.serve{background:#0F7A70} html.night .band.system,html.night .band.wait{background:#2A3563}
+.band .seal{width:44px;height:44px;flex:none}
+.band .bt{flex:1;min-width:0}
+.band .word{font-weight:600;font-size:24px;line-height:1.15}
+.band .word.sm{font-size:19px;font-weight:500}
+.band .mean{font-size:12.5px;opacity:.92}
+.band .end{font-weight:500;font-size:24px;font-variant-numeric:tabular-nums;direction:ltr}
+.body{padding:14px 18px 12px}
+.name{font-size:19px;font-weight:500;line-height:1.25}
+.pmeta{font-size:12.5px;color:var(--a-muted);margin-top:2px}
+.lbl{font-size:12px;color:var(--a-muted);margin:12px 0 6px}
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tile{background:var(--a-tile);border-radius:14px;padding:9px 12px;display:flex;align-items:center;gap:10px}
+.tile .n{font-size:30px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums}
+.tile .tl{font-size:12px;line-height:1.3}.tile .tl small{display:block;color:var(--a-muted);font-size:11px}
+.tile.zero{opacity:.42}
+.verify{display:flex;gap:8px;align-items:center;font-size:12.5px;color:var(--a-gold-ink);background:var(--a-warn);border-radius:10px;padding:8px 10px;margin-top:10px}
+.note2{font-size:12.5px;line-height:1.5;margin-top:10px}
+.waitbar{height:52px;border-radius:14px;margin-top:14px;display:flex;align-items:center;justify-content:center;gap:10px;font-size:14px;color:var(--a-muted);border:1px dashed var(--a-line)}
+.doneband{background:#0A5049;color:#fff;border-radius:24px 24px 0 0;padding:16px 18px 20px;display:flex;align-items:flex-start;gap:12px;flex:none}
+.doneband .seal{width:44px;height:44px;flex:none}
+.doneband .bless{font-family:var(--ruqaa);color:var(--gold);font-size:30px;line-height:1.15}
+.doneband .ln{font-size:12.5px;opacity:.92;margin-top:2px}
+.doneband .undo{margin-inline-start:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:12px;height:44px;padding:0 14px;font:500 14px var(--sans);cursor:pointer;white-space:nowrap;align-self:center}
+.prog{height:3px;background:rgba(255,255,255,.15);border-radius:3px;margin-top:8px;overflow:hidden;width:160px}
+.prog i{display:block;height:100%;background:var(--gold);border-radius:3px;animation:fill 5s linear forwards}
+@keyframes fill{from{width:100%}to{width:0}}
+.overlay{position:absolute;inset:0;background:rgba(8,10,20,.6);display:flex;align-items:flex-end;z-index:5}
+.dialog{background:var(--a-surface);width:100%;border-radius:28px 28px 0 0;padding:24px 22px 18px;color:var(--a-ink)}
+.dialog h4{font-weight:500;font-size:22px;margin:0 0 8px;line-height:1.2}
+.dialog p{font-size:13.5px;color:var(--a-muted);margin:0 0 16px}
+
+.form{flex:1;overflow:auto;padding:4px 20px 100px;scrollbar-width:none}
+.form::-webkit-scrollbar{display:none}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.dupe{margin-top:8px;font-size:12.5px;color:var(--a-clay-ink);background:var(--a-clay-soft);border-radius:12px;padding:10px 12px}
+.dupe button{background:none;border:0;color:var(--a-clay-ink);font:600 12.5px var(--sans);text-decoration:underline;padding:0;margin-top:4px;cursor:pointer}
+.card{background:var(--a-surface);border:1px solid var(--a-line);border-radius:16px;padding:4px 14px;margin-top:14px}
+.stepper{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
+.stepper+.stepper{border-top:1px solid var(--a-line)}
+.stepper .sl{font-size:14.5px}.stepper .sl small{display:block;font-size:11.5px;color:var(--a-muted)}
+.stepper .ctl{display:flex;align-items:center;gap:12px}
+.stepper button{width:44px;height:44px;border-radius:50%;border:1px solid var(--a-line);background:var(--a-bg);color:var(--a-ink);font-size:20px;cursor:pointer}
+.stepper .v{font-size:24px;font-weight:600;width:24px;text-align:center}
+.total{font-size:12.5px;color:var(--a-gold-ink);margin:8px 2px 0}
+.switch{display:flex;align-items:center;gap:14px;padding:12px 0;cursor:pointer}
+.switch .sl{flex:1;font-size:14.5px}.switch .sl small{display:block;font-size:11.5px;color:var(--a-muted)}
+.tog{width:50px;height:30px;border-radius:999px;background:var(--a-line);position:relative;flex:none}
+.tog::after{content:"";position:absolute;top:3px;inset-inline-start:3px;width:24px;height:24px;border-radius:50%;background:#fff;transition:inset-inline-start .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.tog.on{background:var(--a-act)}.tog.on::after{inset-inline-start:23px}
+.disc{display:flex;align-items:center;justify-content:space-between;padding:14px 2px 6px;font-size:14px;color:var(--a-act-ink);cursor:pointer}
+
+.statsky{padding:4px 20px 20px}
+.statsky .n{font-size:64px;font-weight:300;line-height:1;direction:ltr;display:inline-block;color:var(--moon)}
+.statsky .of{font-size:13px;color:var(--night-muted)}
+.period{display:flex;gap:8px;margin-top:12px}
+.period button{background:rgba(243,235,221,.08);border:1px solid rgba(243,235,221,.2);color:var(--moon);border-radius:999px;padding:6px 12px;font:500 12.5px var(--sans);cursor:pointer}
+.period button.on{background:var(--gold);border-color:var(--gold);color:var(--night)}
+.figs{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px}
+.fig{background:var(--a-surface);border:1px solid var(--a-line);border-radius:16px;padding:12px}
+.fig b{display:block;font-size:24px;font-weight:600;line-height:1.1}.fig span{font-size:11.5px;color:var(--a-muted)}
+.days{padding:0 14px 96px;display:flex;flex-direction:column;gap:8px}
+.d{display:flex;align-items:center;gap:10px;font-size:12.5px;background:var(--a-surface);border:1px solid var(--a-line);border-radius:14px;padding:10px 12px}
+.d .dl{width:64px;color:var(--a-muted)}
+.d .db{flex:1;height:8px;background:var(--a-tile);border-radius:6px;overflow:hidden}.d .db i{display:block;height:100%;background:var(--gold);border-radius:6px}
+.d .dv{width:32px;text-align:end;font-weight:600;font-variant-numeric:tabular-nums}
+.custom{margin:0 14px;font-size:13px;color:var(--a-act-ink);background:none;border:0;padding:6px 0;cursor:pointer;font-weight:500;text-align:start}
+
+.sum{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:0 30px;text-align:center;position:relative;z-index:1}
+.sum .n{font-size:110px;line-height:.9;font-weight:300;color:var(--moon)}
+.sum .bl{font-family:var(--ruqaa);font-size:46px;color:var(--gold);margin-top:22px}
+.sum .d{font-size:13px;color:var(--night-muted);margin-top:6px}
+.sum .k{font-size:12.5px;color:var(--gold)}
+
+.side{min-width:0}
+.ctrl{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+.seg{display:inline-flex;border:1px solid var(--p-line);border-radius:12px;overflow:hidden;background:var(--p-card)}
+.seg button{border:0;background:transparent;color:var(--p-ink);padding:9px 14px;cursor:pointer;font:500 14px var(--sans)}
+.seg button[aria-pressed="true"]{background:var(--night);color:var(--moon)}
+html.night .seg button[aria-pressed="true"]{background:var(--mint);color:var(--night)}
+.slbl{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--p-muted)}
+.simgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:10px}
+.sim{display:flex;gap:12px;align-items:center;text-align:start;background:var(--p-card);border:1px solid var(--p-line);border-radius:14px;padding:12px 14px;cursor:pointer;color:var(--p-ink);font:inherit}
+.sim:hover{border-color:var(--gold)}
+.sim b{display:block;font-weight:500;font-size:14px}.sim span{font-size:12px;color:var(--p-muted)}
+.sim i{width:10px;height:10px;transform:rotate(45deg);flex:none}
+.net{display:flex;align-items:center;gap:10px;margin-top:14px;cursor:pointer;font-size:14px;background:none;border:0;color:var(--p-ink);padding:0}
+.netdot{width:10px;height:10px;border-radius:50%}
+.note{margin-top:24px;border-top:1px solid var(--p-line);padding-top:18px}
+.note p{font-size:18px;line-height:1.5;margin:8px 0 0;font-weight:300}
+.meter{display:flex;gap:28px;margin-top:16px;font-size:13px;color:var(--p-muted)}
+.meter b{display:block;font-weight:500;font-size:28px;color:var(--p-ink);line-height:1.1}
+.tryit{margin-top:24px;font-size:14px;color:var(--p-muted)}
+.tryit ol{padding-inline-start:20px;margin:8px 0 0}.tryit li{margin:4px 0}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}
+.colcard{background:var(--p-card);border:1px solid var(--p-line);border-radius:18px;padding:18px 20px}
+.colcard h3{margin:0 0 8px;font-weight:500;font-size:17px}
+.colcard ul{margin:0;padding-inline-start:18px;color:var(--p-muted);font-size:14px}.colcard li{margin:5px 0}
+footer{margin-top:64px;font-size:13px;color:var(--p-muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="eyebrow">Iftar Saem · Maghrib light × UX prototype</div>
+  <h1>The fusion <span class="ar">إفطار صائم</span></h1>
+  <p class="lede">Maghrib light's colors and screens, the flows from the UX prototype, and Zitouna's seal and hand-over numbers. Everything works: start at Welcome, sign in, then scan cards from the panel on the right.</p>
+
+  <div class="stage">
+    <div class="phone"><div class="scr" id="app"></div></div>
+    <div class="side">
+      <div class="ctrl">
+        <div class="seg" role="group" aria-label="Language">
+          <button data-lang="en" aria-pressed="true">English</button>
+          <button data-lang="fr" aria-pressed="false">Français</button>
+          <button data-lang="ar" aria-pressed="false">العربية</button>
+        </div>
+        <div class="seg"><button id="nightBtn" aria-pressed="false">Night mode</button></div>
+        <div class="seg"><button id="resetBtn" aria-pressed="false">Restart</button></div>
+      </div>
+      <span class="slbl">Simulate a card in front of the camera</span>
+      <div class="simgrid">
+        <button class="sim" data-sim="142"><i style="background:#0D6B62"></i><span><b>Fatma's card</b><span>registered, not served yet</span></span></button>
+        <button class="sim" data-sim="87"><i style="background:#A8432A"></i><span><b>Mohamed's card</b><span>already served at 18:12</span></span></button>
+        <button class="sim" data-sim="215"><i style="background:#121A3A"></i><span><b>An unknown card</b><span>#215, not registered</span></span></button>
+        <button class="sim" data-sim="bad"><i style="background:#D6A645"></i><span><b>A damaged code</b><span>not an Iftar Saem card</span></span></button>
+      </div>
+      <button class="net" id="netBtn"><span class="netdot" id="netDot"></span><span id="netLbl"></span></button>
+      <div class="note"><span class="slbl">What's happening</span><p id="note"></p></div>
+      <div class="meter">
+        <div><b id="mTaps">0</b>taps for this person</div>
+        <div><b id="mServed">0</b>served this session</div>
+        <div><b id="mSync">0</b>waiting to sync</div>
+      </div>
+      <div class="tryit"><span class="slbl">Try these</span><ol>
+        <li>Pick a language on Welcome, then sign in. Leave a field empty to see the error.</li>
+        <li>Open the scanner (round mint button), scan Fatma, confirm, then press Undo.</li>
+        <li>Scan Mohamed to see "already served".</li>
+        <li>Cut the network, then scan Fatma again.</li>
+        <li>Tap "Find someone without a card" and type "fat".</li>
+        <li>Scan the unknown card, then register it. In Add, type CIN 08123812.</li>
+        <li>Close the scanner to see tonight's summary.</li>
+      </ol></div>
+    </div>
+  </div>
+
+  <h2>What comes from where</h2>
+  <div class="cols">
+    <div class="colcard"><h3>From Maghrib light</h3><ul><li>The palette: night sky, lantern gold, mint on night, teal on day, limestone, clay</li><li>Welcome: arch window, crescent, dusk horizon, calligraphy</li><li>People: night header with the 8-point star, cards with gold ID chips</li><li>Night tab bar with the mint scan button</li></ul></div>
+    <div class="colcard"><h3>From the UX prototype</h3><ul><li>Instant identify, one-tap confirm, 5 s Undo</li><li>Honest offline mode, plus "serve offline" with sync</li><li>Find without a card, with a CIN check</li><li>Scan to register, steppers, duplicate CIN</li><li>Waiting filter, instant stats, tonight's summary</li></ul></div>
+    <div class="colcard"><h3>From Zitouna and the critiques</h3><ul><li>The 8-point-star seal carries each scan verdict</li><li>Hand-over quantities in large numbers</li><li>Icon plus word in every status, never color alone</li><li>A fixed maghrib time, not a countdown</li><li>Masked CIN, and translation into 3 languages</li></ul></div>
+  </div>
+  <footer>Prototype with sample data. Undo, served-by, and offline sync need backend support. Translations and the hadith wording need a native-speaker review.</footer>
+</div>
+
+<script>
+const I18N={
+en:{appSub:"Iftar distribution for volunteers",hadithMean:"Whoever gives iftar to a fasting person shares in their reward",signIn:"Sign in",create:"Create volunteer account",welcomeBack:"Welcome back",loginLead:"Sign in to serve tonight in your region.",username:"Username",password:"Password",show:"Show",hide:"Hide",loginErr:"Enter your username and password.",noAccount:"New volunteer? Create an account",scanTitle:"Scan card",tonightCount:"{n} served tonight",toSync:"{n} to sync",hint:"Hold the card inside the arch",findNoCard:"Find someone without a card",findNoCardSub:"Search by name, CIN, or phone",checking:"Checking tonight's status…",notServed:"Not served tonight",handOver:"Hand over",family:"Family meal",single:"Single meal",p1:"1 portion",pN:"{n} portions",none:"none",confirm:"Confirm hand-over",confirming:"Confirming…",skip:"Skip",details:"Details",noCardCheck:"No card: ask for the CIN ending in {d}",cin:"CIN",already:"Already served tonight",servedNote:"Nothing to hand over. Kindly let them know it was collected at {t}.",scanNext:"Scan next card",history:"History",blessMean:"May God accept it",servedLine:"Served {name} · {p}",undo:"Undo",willSync:"Saved on this phone. Syncs when online.",undone:"Undone. {name} is not marked as served.",unknownTitle:"Card #{id} isn't registered",unknownMean:"Nobody has this card in La Marsa.",registerCard:"Register this card",scanAgain:"Scan again",invalidTitle:"This code can't be read",invalidMean:"It isn't an Iftar Saem card, or it's damaged.",unverTitle:"Can't check tonight",unverMean:"No connection. Last sync at 18:05: not served yet.",retry:"Retry",serveOffline:"Serve offline",offAskTitle:"Serve without checking?",offAskBody:"Only if no other volunteer is serving La Marsa tonight. The meal is saved on this phone and syncs later. If someone else already served {name}, you'll be told.",cancel:"Cancel",failTitle:"Not confirmed yet",failMean:"Don't hand over until it's confirmed",failNote:"No connection. Retry before handing over. If the first try went through, it shows as confirmed, never as a second meal.",findTitle:"Without a card",searchFind:"Name, CIN, or phone",findHint:"Type 2 letters. Results come from this phone, so search works offline.",noResults:"No one matches “{q}”.",summaryKicker:"Tonight · 14 Ramadan",summaryLine:"iftars served by you",summaryDetail:"{f} family · {s} single · {p} portions",backPeople:"Back to people",keepScanning:"Keep scanning",hijri:"Ramadan 14",maghrib:"Maghrib",people:"Fasting people",countLine:"{a} registered · {b} served today",search:"Search by name, ID, or CIN",fAll:"All",fWait:"Waiting",fDone:"Served",emptyWait:"Everyone has been served tonight.",navPeople:"People",navAdd:"Add",navStats:"Stats",navProfile:"Profile",addTitle:"New person",addSub:"Scan the card first, it fills the ID",cardId:"Card ID",scanCard:"Scan",cardRead:"Card read: #{id}",firstName:"First name",lastName:"Last name",cinLbl:"CIN (8 digits)",dupe:"Same CIN as {name} (#{id}). Is this the same person?",openRecord:"Open existing record",meals:"Meals each evening",total:"Hands over {p} each evening",here:"Here now",hereSub:"Hand over tonight's meal and record it",more:"Phone and notes (optional)",phone:"Phone",notes:"Notes",saveServe:"Save and hand over",save:"Save",saveAnother:"Save and add another",errId:"Scan or type the card ID",errName:"Add a first and last name",errIdTaken:"Card #{id} already belongs to {name}",savedServe:"{name} saved. Hand over {p}.",saved:"{name} saved.",statsTitle:"Statistics",pTonight:"Tonight",pWeek:"This week",pRamadan:"Ramadan",ofServed:"of {b} people served",custom:"Custom dates",fPortions:"portions",fSingle:"single",fFamily:"family",lastDays:"Last nights",night:"Night {n}",notInProto:"Not part of this prototype",offline:"Offline · using the list saved at 18:05",synced:"{n} offline meal synced",ignored:"Finish with this person first",cardOffline:"Card #{id} isn't on this phone"},
+fr:{appSub:"Distribution d’iftar pour bénévoles",hadithMean:"Celui qui donne l’iftar à un jeûneur partage sa récompense",signIn:"Se connecter",create:"Créer un compte bénévole",welcomeBack:"Bon retour",loginLead:"Connectez-vous pour servir ce soir dans votre région.",username:"Nom d’utilisateur",password:"Mot de passe",show:"Afficher",hide:"Masquer",loginErr:"Saisissez votre nom d’utilisateur et votre mot de passe.",noAccount:"Nouveau bénévole ? Créer un compte",scanTitle:"Scanner la carte",tonightCount:"{n} servis ce soir",toSync:"{n} à synchroniser",hint:"Placez la carte dans l’arche",findNoCard:"Trouver une personne sans carte",findNoCardSub:"Par nom, CIN ou téléphone",checking:"Vérification de ce soir…",notServed:"Pas encore servi ce soir",handOver:"À remettre",family:"Repas famille",single:"Repas individuel",p1:"1 portion",pN:"{n} portions",none:"aucun",confirm:"Confirmer la remise",confirming:"Confirmation…",skip:"Passer",details:"Détails",noCardCheck:"Sans carte : demandez la CIN finissant par {d}",cin:"CIN",already:"Déjà servi ce soir",servedNote:"Rien à remettre. Indiquez-lui avec douceur que le repas a été retiré à {t}.",scanNext:"Carte suivante",history:"Historique",blessMean:"Qu’Allah l’accepte",servedLine:"Servi : {name} · {p}",undo:"Annuler",willSync:"Enregistré sur ce téléphone. Synchronisé au retour du réseau.",undone:"Annulé. {name} n’est pas marqué comme servi.",unknownTitle:"La carte n° {id} n’est pas inscrite",unknownMean:"Personne n’a cette carte à La Marsa.",registerCard:"Inscrire cette carte",scanAgain:"Scanner à nouveau",invalidTitle:"Ce code est illisible",invalidMean:"Ce n’est pas une carte Iftar Saem, ou elle est abîmée.",unverTitle:"Vérification impossible",unverMean:"Pas de connexion. Dernière synchro à 18:05 : pas encore servi.",retry:"Réessayer",serveOffline:"Servir hors ligne",offAskTitle:"Servir sans vérifier ?",offAskBody:"Seulement si aucun autre bénévole ne sert La Marsa ce soir. Le repas est enregistré sur ce téléphone puis synchronisé. Si quelqu’un a déjà servi {name}, vous serez prévenu.",cancel:"Annuler",failTitle:"Pas encore confirmé",failMean:"Ne remettez rien avant la confirmation",failNote:"Pas de connexion. Réessayez avant de remettre le repas. Si le premier envoi est passé, il s’affiche comme confirmé, jamais comme un second repas.",findTitle:"Sans carte",searchFind:"Nom, CIN ou téléphone",findHint:"Tapez 2 lettres. Les résultats viennent du téléphone : la recherche marche hors ligne.",noResults:"Personne ne correspond à « {q} ».",summaryKicker:"Ce soir · 14 Ramadan",summaryLine:"iftars servis par vous",summaryDetail:"{f} famille · {s} individuel · {p} portions",backPeople:"Retour à la liste",keepScanning:"Continuer à scanner",hijri:"Ramadan 14",maghrib:"Maghreb",people:"Personnes inscrites",countLine:"{a} inscrits · {b} servis aujourd’hui",search:"Rechercher par nom, n° ou CIN",fAll:"Tous",fWait:"En attente",fDone:"Servis",emptyWait:"Tout le monde a été servi ce soir.",navPeople:"Personnes",navAdd:"Ajouter",navStats:"Stats",navProfile:"Profil",addTitle:"Nouvelle personne",addSub:"Scannez d’abord la carte, elle remplit le n°",cardId:"N° de carte",scanCard:"Scanner",cardRead:"Carte lue : n° {id}",firstName:"Prénom",lastName:"Nom",cinLbl:"CIN (8 chiffres)",dupe:"Même CIN que {name} (n° {id}). Est-ce la même personne ?",openRecord:"Ouvrir la fiche existante",meals:"Repas chaque soir",total:"Remet {p} chaque soir",here:"Présent maintenant",hereSub:"Remettre le repas de ce soir et l’enregistrer",more:"Téléphone et notes (facultatif)",phone:"Téléphone",notes:"Notes",saveServe:"Enregistrer et remettre",save:"Enregistrer",saveAnother:"Enregistrer et ajouter",errId:"Scannez ou saisissez le n° de carte",errName:"Ajoutez le prénom et le nom",errIdTaken:"La carte n° {id} appartient déjà à {name}",savedServe:"{name} enregistré. Remettez {p}.",saved:"{name} enregistré.",statsTitle:"Statistiques",pTonight:"Ce soir",pWeek:"Semaine",pRamadan:"Ramadan",ofServed:"sur {b} personnes servies",custom:"Dates personnalisées",fPortions:"portions",fSingle:"individuels",fFamily:"famille",lastDays:"Dernières soirées",night:"Soir {n}",notInProto:"Hors de ce prototype",offline:"Hors ligne · liste enregistrée à 18:05",synced:"{n} repas hors ligne synchronisé",ignored:"Terminez d’abord avec cette personne",cardOffline:"La carte n° {id} n’est pas sur ce téléphone"},
+ar:{appSub:"توزيع الإفطار للمتطوّعين",hadithMean:"",signIn:"تسجيل الدخول",create:"إنشاء حساب متطوّع",welcomeBack:"مرحباً بعودتك",loginLead:"سجّل الدخول للتوزيع الليلة في منطقتك.",username:"اسم المستخدم",password:"كلمة المرور",show:"إظهار",hide:"إخفاء",loginErr:"أدخل اسم المستخدم وكلمة المرور.",noAccount:"متطوّع جديد؟ أنشئ حساباً",scanTitle:"مسح البطاقة",tonightCount:"{n} استلموا الليلة",toSync:"{n} بانتظار المزامنة",hint:"ضع البطاقة داخل القوس",findNoCard:"البحث عن شخص بلا بطاقة",findNoCardSub:"بالاسم أو ب.ت.و أو الهاتف",checking:"جارٍ التحقق من الليلة…",notServed:"لم يستلم الليلة",handOver:"يُسلَّم له",family:"وجبة عائلية",single:"وجبة فردية",p1:"حصة واحدة",pN:"{n} حصص",none:"لا شيء",confirm:"تأكيد التسليم",confirming:"جارٍ التأكيد…",skip:"تخطّي",details:"التفاصيل",noCardCheck:"بلا بطاقة: اطلب رقم ب.ت.و المنتهي بـ {d}",cin:"ب.ت.و",already:"استلم الليلة",servedNote:"لا شيء للتسليم. أخبره بلطف أنه استلم على الساعة {t}.",scanNext:"البطاقة التالية",history:"السجل",blessMean:"",servedLine:"تم التسليم: {name} · {p}",undo:"تراجع",willSync:"حُفظ على هذا الهاتف، وتتم المزامنة عند عودة الاتصال.",undone:"تم التراجع. {name} غير مسجّل كمستلم.",unknownTitle:"البطاقة رقم {id} غير مسجّلة",unknownMean:"لا أحد يحمل هذه البطاقة في المرسى.",registerCard:"تسجيل هذه البطاقة",scanAgain:"إعادة المسح",invalidTitle:"تعذّرت قراءة هذا الرمز",invalidMean:"ليست بطاقة إفطار صائم، أو أنها تالفة.",unverTitle:"تعذّر التحقق الليلة",unverMean:"لا يوجد اتصال. آخر مزامنة 18:05: لم يستلم بعد.",retry:"إعادة المحاولة",serveOffline:"التسليم دون اتصال",offAskTitle:"التسليم دون تحقق؟",offAskBody:"فقط إذا لم يكن هناك متطوّع آخر يوزّع في المرسى الليلة. يُحفظ التسليم على هذا الهاتف ويُزامن لاحقاً. إذا سبق أن استلم {name}، ستُعلَم بذلك.",cancel:"إلغاء",failTitle:"لم يُؤكَّد بعد",failMean:"لا تسلّم قبل التأكيد",failNote:"لا يوجد اتصال. أعد المحاولة قبل التسليم. إذا وصلت المحاولة الأولى، ستظهر كتأكيد وليس كوجبة ثانية.",findTitle:"بلا بطاقة",searchFind:"الاسم أو ب.ت.و أو الهاتف",findHint:"اكتب حرفين. النتائج من هذا الهاتف، فالبحث يعمل دون اتصال.",noResults:"لا أحد يطابق «{q}».",summaryKicker:"الليلة · 14 رمضان",summaryLine:"إفطاراً قدّمتَه",summaryDetail:"{f} عائلية · {s} فردية · {p} حصة",backPeople:"العودة إلى القائمة",keepScanning:"مواصلة المسح",hijri:"14 رمضان",maghrib:"المغرب",people:"الصائمون",countLine:"{a} مسجّلاً · {b} استلموا اليوم",search:"ابحث بالاسم أو الرقم أو ب.ت.و",fAll:"الكل",fWait:"في الانتظار",fDone:"استلموا",emptyWait:"استلم الجميع الليلة.",navPeople:"الصائمون",navAdd:"إضافة",navStats:"إحصائيات",navProfile:"حسابي",addTitle:"شخص جديد",addSub:"امسح البطاقة أولاً، فهي تملأ الرقم",cardId:"رقم البطاقة",scanCard:"مسح",cardRead:"تمت قراءة البطاقة: {id}",firstName:"الاسم",lastName:"اللقب",cinLbl:"ب.ت.و (8 أرقام)",dupe:"نفس رقم ب.ت.و لـ {name} (رقم {id}). هل هو الشخص نفسه؟",openRecord:"فتح الملف الموجود",meals:"الوجبات كل مساء",total:"يستلم {p} كل مساء",here:"حاضر الآن",hereSub:"تسليم وجبة الليلة وتسجيلها",more:"الهاتف والملاحظات (اختياري)",phone:"الهاتف",notes:"ملاحظات",saveServe:"حفظ وتسليم",save:"حفظ",saveAnother:"حفظ وإضافة آخر",errId:"امسح رقم البطاقة أو اكتبه",errName:"أضف الاسم واللقب",errIdTaken:"البطاقة {id} مسجّلة باسم {name}",savedServe:"تم حفظ {name}. سلّمه {p}.",saved:"تم حفظ {name}.",statsTitle:"الإحصائيات",pTonight:"الليلة",pWeek:"هذا الأسبوع",pRamadan:"رمضان",ofServed:"من {b} شخصاً استلموا",custom:"تواريخ مخصّصة",fPortions:"حصة",fSingle:"فردية",fFamily:"عائلية",lastDays:"الليالي الأخيرة",night:"الليلة {n}",notInProto:"ليست ضمن هذا النموذج",offline:"دون اتصال · القائمة المحفوظة على 18:05",synced:"تمت مزامنة {n} وجبة",ignored:"أنهِ مع هذا الشخص أولاً",cardOffline:"البطاقة {id} ليست على هذا الهاتف"}
+};
+const NOTES={
+ welcome:"Welcome is always night: the arch, the crescent, the dusk horizon. The language is chosen here first, before anything else, because everything after depends on it.",
+ login:"Login keeps the sky at the top and the work on paper below. Errors are one plain sentence in the volunteer's language, and the password can be shown.",
+ people:"Maghrib light's list, as you liked it. Additions: Waiting / Served filters with counts, an icon beside every status word, and a fixed maghrib time instead of a countdown.",
+ add:"Registration: scan the blank card to fill its ID (no typos), meals are steppers with a default, and an already-registered CIN is caught before saving.",
+ stats:"Presets apply instantly. Today the app asks for two dates and a Validate Period tap.",
+ summary:"Closing the loop: when the volunteer ends a session, they see what they gave tonight, and a blessing.",
+ find:"Forgot card: search the saved list by name, CIN, or phone. Picking someone adds a CIN check, so a name alone isn't enough to collect.",
+ idle:"Camera ready. The bar at the bottom is the way in for people who forgot their card. It's always one tap away.",
+ identifying:"The name and meals appear instantly from the phone's saved list, so the volunteer can greet the person by name. Only tonight's status waits for the server.",
+ ready:"One decision, one tap. The seal and the teal band say \"serve\" before you read a word, and the quantities are the largest thing on screen. New cards are ignored until this person is served or skipped.",
+ confirming:"Confirming with the server. The button reports progress instead of disappearing.",
+ confirmed:"Served. The blessing lives in the band, and the camera is live again immediately. Undo stays for 5 seconds; scanning the next card dismisses it.",
+ served:"Already served: a solid clay band with the time, a different layout, and no serve button. The wording helps the volunteer say no kindly.",
+ unknown:"Unknown card. Instead of a dead end, it offers to register this card with its ID pre-filled.",
+ invalid:"Unreadable code. Two ways forward, never a dead end.",
+ unverified:"Offline. The app doesn't pretend: it shows the last known status and offers a deliberate offline serve, with the risk spelled out.",
+ offlineAsk:"A conscious choice, not a default. Offline serving is only safe when one phone serves the region.",
+ confirmFailed:"The confirm didn't reach the server. The instruction is explicit: don't hand over yet. Retry is safe, because the app already recognizes its own earlier confirm.",
+ ignored:"Ignored on purpose: a decision is pending. The camera never replaces a person you haven't served or skipped.",
+ undone:"Undone. A mistaken confirm costs one tap to fix, not an argument tomorrow."
+};
+const SEED=[
+ {id:142,first:"Fatma",last:"Trabelsi",cin:"08123812",phone:"22341418",single:0,family:1,served:null},
+ {id:87,first:"Mohamed",last:"Ben Salah",cin:"07654305",phone:"98112230",single:1,family:0,served:"18:12"},
+ {id:201,first:"Hédi",last:"Jlassi",cin:"09871774",phone:"",single:1,family:1,served:null},
+ {id:19,first:"Aïcha",last:"Mansouri",cin:"06432119",phone:"55210983",single:1,family:0,served:"18:20"},
+ {id:166,first:"Youssef",last:"Gharbi",cin:"11223166",phone:"",single:0,family:1,served:null},
+ {id:58,first:"Fatma",last:"Ben Ali",cin:"05567058",phone:"24876112",single:1,family:0,served:null},
+ {id:73,first:"Moncef",last:"Haddad",cin:"08990073",phone:"",single:2,family:0,served:null},
+ {id:120,first:"Sonia",last:"Khelifi",cin:"10293120",phone:"29004511",single:0,family:1,served:"17:58"}
+];
+let people, S, clock;
+const blankForm=()=>({id:"",first:"",last:"",cin:"",phone:"",notes:"",single:1,family:0,here:true,more:false,errors:{}});
+function reset(){people=SEED.map(p=>({...p}));clock=42;const lang=S?S.lang:'en';S={lang,online:true,screen:"welcome",filter:"all",q:"",fq:"",scan:{phase:"idle",id:null,noCard:false,offline:false},undoUntil:0,pending:[],session:{served:0,single:0,family:0},taps:0,toast:null,toastUntil:0,form:blankForm(),login:{u:"",p:"",show:false,err:false},period:"tonight"};noteKey='welcome';}
+const app=document.getElementById('app');
+const esc=v=>String(v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const t=(k,v={})=>{let s=I18N[S.lang][k];if(s===undefined)s=I18N.en[k]??k;for(const[a,b]of Object.entries(v))s=s.split('{'+a+'}').join(b);return s;};
+const byId=id=>people.find(p=>p.id===+id);
+const nm=p=>`<bdi>${p.first} ${p.last}</bdi>`;
+const plainName=p=>`${p.first} ${p.last}`;
+const portions=p=>p.single+p.family*4;
+const pText=n=>n===1?t('p1'):t('pN',{n});
+const servedTonight=()=>people.filter(p=>p.served).length;
+const now=()=>'18:'+String(Math.min(59,clock++)).padStart(2,'0');
+const I={x:'<path d="M6 6l12 12M18 6 6 18"/>',bolt:'<path d="M13 3 6 13h5l-1 8 7-10h-5z"/>',search:'<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',list:'<path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/>',add:'<circle cx="10" cy="8" r="4"/><path d="M3 20a7 7 0 0 1 14 0M19 8v6M16 11h6"/>',scan:'<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M8 12h8"/>',stats:'<path d="M5 20V10M12 20V4M19 20v-7"/>',user:'<circle cx="12" cy="8" r="4"/><path d="M4 20a8 8 0 0 1 16 0"/>',check:'<path d="m5 12 5 5 9-10"/>',circle:'<circle cx="12" cy="12" r="7"/>',back:'<path d="M15 6l-6 6 6 6"/>',wifi:'<path d="M3 3l18 18M8.5 16.5a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 4-2.4M12 20h.01M19 12.5a10 10 0 0 0-1.6-1.2"/>',id:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M7 15h4M7 11h2M15 10.5a1.5 1.5 0 1 0 0-.01M13 15h4"/>',chev:'<path d="m9 6 6 6-6 6"/>',refresh:'<path d="M20 11a8 8 0 1 0-2.3 5.7M20 5v6h-6"/>',moon:'<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>'};
+const ico=(k,st='',cls='')=>`<svg class="ico ${cls}" viewBox="0 0 24 24" style="${st}">${I[k]}</svg>`;
+const KH='<g fill="currentColor"><rect x="10" y="10" width="28" height="28" rx="1.5"/><rect x="10" y="10" width="28" height="28" rx="1.5" transform="rotate(45 24 24)"/></g>';
+const KHO='<g fill="none" stroke="currentColor" stroke-width="1.8"><rect x="12" y="12" width="24" height="24"/><rect x="12" y="12" width="24" height="24" transform="rotate(45 24 24)"/></g>';
+function seal(kind){
+ const fill={serve:'rgba(255,255,255,.95)',stop:'rgba(255,255,255,.95)',sys:'#D6A645',wait:'#D6A645',done:'#D6A645'}[kind];
+ const fg={serve:'#0D6B62',stop:'#A8432A',sys:'#121A3A',wait:'',done:'#0A5049'}[kind];
+ const g={serve:`<path d="m17 24.5 4.5 4.5 9.5-10" fill="none" stroke="${fg}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,done:`<path d="m17 24.5 4.5 4.5 9.5-10" fill="none" stroke="${fg}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>`,stop:`<circle cx="24" cy="24" r="7.5" fill="none" stroke="${fg}" stroke-width="2.2"/><path d="M24 20v4.2l2.6 1.8" fill="none" stroke="${fg}" stroke-width="2.2" stroke-linecap="round"/>`,sys:`<path d="M24 18v8M24 30.5v.01" fill="none" stroke="${fg}" stroke-width="2.8" stroke-linecap="round"/>`,wait:''}[kind];
+ return `<svg class="seal ${kind==='wait'?'pulse':''}" viewBox="0 0 48 48" style="color:${fill}">${kind==='wait'?KHO:KH}${g}</svg>`;
+}
+const sb=(time,light)=>`<div class="sb ${light?'light':''}"><span>${time}</span><span>●●● ▮</span></div>`;
+function nav(on){const b=(k,i,l)=>`<button class="tap ${on===k?'on':''}" data-act="go" data-arg="${k}">${ico(i)}<span>${t(l)}</span></button>`;return `<div class="nav">${b('people','list','navPeople')}${b('add','add','navAdd')}<button class="fab tap" data-act="openScan" aria-label="${t('scanTitle')}">${ico('scan')}</button>${b('stats','stats','navStats')}${b('profile','user','navProfile')}</div>`;}
+function toast(){if(!S.toast||Date.now()>S.toastUntil)return '';return `<div class="toast ${S.screen==='scan'?'top':''}">${S.toast}</div>`;}
+const stars=n=>Array.from({length:n},(_,i)=>{const x=(i*53)%100,y=(i*37)%42+6;return `<span class="star" style="top:${y}%;left:${x}%;opacity:${.3+((i*7)%6)/10}"></span>`}).join('');
+function give(p){return `<div class="tiles"><div class="tile ${p.family?'':'zero'}"><span class="n">${p.family}</span><span class="tl">${t('family')}<small>${p.family?pText(p.family*4):t('none')}</small></span></div><div class="tile ${p.single?'':'zero'}"><span class="n">${p.single}</span><span class="tl">${t('single')}<small>${p.single?pText(p.single):t('none')}</small></span></div></div>`;}
+const pmeta=p=>`<div class="pmeta"><bdi dir="ltr">#${p.id}</bdi> · ${t('cin')} <bdi dir="ltr">••••• ${p.cin.slice(-3)}</bdi></div>`;
+const statusChip=p=>p.served?`<span class="chip done">${ico('check')}<bdi>خذا</bdi> <bdi dir="ltr">${p.served}</bdi></span>`:`<span class="chip wait">${ico('circle')}<bdi>ما خذاش</bdi></span>`;
+
+const SCREENS={
+ welcome(){return `<div class="sky dusk" style="flex:1;display:flex;flex-direction:column">${sb('17:58',true)}<div class="moon" style="top:62px;inset-inline-end:44px"></div>${stars(9)}
+  <div class="welcome"><div class="langpick">${[['en','English'],['fr','Français'],['ar','العربية']].map(([k,l])=>`<button class="tap ${S.lang===k?'on':''}" data-act="lang" data-arg="${k}">${l}</button>`).join('')}</div>
+  <div class="archwin khatam"><div class="title">إفطار صائم</div><div class="hadith">من فطّر صائماً كان له مثل أجره</div>${t('hadithMean')?`<div class="en">${t('hadithMean')}</div>`:''}</div>
+  <div style="font-size:12.5px;color:var(--night-muted);margin-top:16px;position:relative">${t('appSub')}</div>
+  <div class="grow"></div><button class="btn mint tap" data-act="go" data-arg="login">${t('signIn')}</button><button class="btn ghost-night tap" data-act="nope">${t('create')}</button></div></div>`;},
+ login(){const L=S.login;return `<div class="sky dusk loginTop khatam">${sb('17:59',true)}<button class="rb back tap" data-act="go" data-arg="welcome" aria-label="Back">${ico('back','','flipx')}</button><div class="moon" style="top:64px;inset-inline-end:40px"></div><div class="title">إفطار صائم</div><div class="sub2">${t('appSub')}</div></div>
+  <div class="paper"><h3>${t('welcomeBack')}</h3><div class="lead">${t('loginLead')}</div>
+   <div class="fgroup"><span class="flbl">${t('username')}</span><div class="inp">${ico('user','color:var(--a-muted)')}<input id="l_u" value="${esc(L.u)}" autocomplete="off" dir="ltr"></div></div>
+   <div class="fgroup"><span class="flbl">${t('password')}</span><div class="inp">${ico('lock','color:var(--a-muted)')}<input id="l_p" type="${L.show?'text':'password'}" value="${esc(L.p)}" dir="ltr"><button class="eye tap" data-act="togglePw" aria-label="${L.show?t('hide'):t('show')}">${ico('eye')}</button></div></div>
+   ${L.err?`<div class="formerr">${t('loginErr')}</div>`:''}
+   <div class="grow"></div><button class="btn act tap" data-act="doLogin">${t('signIn')}</button><button class="btn text tap" data-act="nope">${t('noAccount')}</button></div>`;},
+ people(){const total=people.length,done=servedTonight(),wait=total-done;return `<div class="band-sky">${sb('18:31',true)}<div class="hdr"><div class="meta">${ico('moon','width:14px;height:14px')}${t('hijri')} · ${t('maghrib')} <bdi dir="ltr">18:52</bdi></div><h3>${t('people')}</h3><div class="count">${t('countLine',{a:`<bdi dir="ltr">${total}</bdi>`,b:`<bdi dir="ltr">${done}</bdi>`})}</div><div class="track"><i style="width:${Math.round(done/total*100)}%"></i></div>
+  <label class="search">${ico('search')}<input id="q" value="${esc(S.q)}" placeholder="${t('search')}" autocomplete="off"></label></div></div>
+  ${S.online?'':`<div class="banner">${ico('wifi','width:15px;height:15px')}${t('offline')}</div>`}
+  <div class="filters">${[['all','fAll',total],['wait','fWait',wait],['done','fDone',done]].map(([k,l,n])=>`<button class="tap ${S.filter===k?'on':''}" data-act="filter" data-arg="${k}">${t(l)} <b>${n}</b></button>`).join('')}</div>
+  <div class="list" id="rows">${peopleRows()}</div>${nav('people')}${toast()}`;},
+ add(){const f=S.form,e=f.errors,dup=f.cin.length===8?people.find(p=>p.cin===f.cin):null;return `<div class="band-sky">${sb('16:40',true)}<div class="hdr" style="padding-bottom:16px"><div class="meta">${ico('moon','width:14px;height:14px')}${t('hijri')}</div><h3>${t('addTitle')}</h3><div class="count">${t('addSub')}</div></div></div>
+  <div class="form">
+   <div class="fgroup"><span class="flbl">${t('cardId')}</span><div class="inp">${ico('id','color:var(--a-muted)')}<input id="f_id" inputmode="numeric" value="${esc(f.id)}" dir="ltr"><button class="mini tap" data-act="scanFill">${ico('scan','width:16px;height:16px')}${t('scanCard')}</button></div>${e.id?`<div class="err">${e.id}</div>`:''}</div>
+   <div class="fgroup two"><div><span class="flbl">${t('firstName')}</span><div class="inp"><input id="f_first" value="${esc(f.first)}"></div></div><div><span class="flbl">${t('lastName')}</span><div class="inp"><input id="f_last" value="${esc(f.last)}"></div></div></div>${e.name?`<div class="err">${e.name}</div>`:''}
+   <div class="fgroup"><span class="flbl">${t('cinLbl')}</span><div class="inp"><input id="f_cin" inputmode="numeric" maxlength="8" value="${esc(f.cin)}" dir="ltr"></div><div id="dupe">${dupHtml(dup)}</div></div>
+   <div class="card"><div class="stepper"><span class="sl">${t('single')}<small>${t('p1')}</small></span><span class="ctl"><button class="tap" data-act="step" data-arg="single:-1" aria-label="−">−</button><span class="v">${f.single}</span><button class="tap" data-act="step" data-arg="single:1" aria-label="+">+</button></span></div>
+    <div class="stepper"><span class="sl">${t('family')}<small>${t('pN',{n:4})}</small></span><span class="ctl"><button class="tap" data-act="step" data-arg="family:-1" aria-label="−">−</button><span class="v">${f.family}</span><button class="tap" data-act="step" data-arg="family:1" aria-label="+">+</button></span></div></div>
+   <div class="total">${t('total',{p:pText(f.single+f.family*4)})}</div>
+   <div class="card"><div class="switch tap" data-act="toggleHere"><span class="sl">${t('here')}<small>${t('hereSub')}</small></span><span class="tog ${f.here?'on':''}"></span></div></div>
+   <div class="disc tap" data-act="toggleMore"><span>${t('more')}</span><span>${f.more?'−':'+'}</span></div>
+   ${f.more?`<div class="fgroup"><span class="flbl">${t('phone')}</span><div class="inp"><input id="f_phone" inputmode="tel" value="${esc(f.phone)}" dir="ltr"></div></div><div class="fgroup"><span class="flbl">${t('notes')}</span><div class="inp"><input id="f_notes" value="${esc(f.notes)}"></div></div>`:''}
+   <button class="btn act tap" style="margin-top:20px" data-act="save" data-arg="done">${f.here?t('saveServe'):t('save')}</button><button class="btn text tap" data-act="save" data-arg="another">${t('saveAnother')}</button>
+  </div>${nav('add')}${toast()}`;},
+ stats(){const sv=people.filter(p=>p.served);const D={tonight:{n:sv.length,b:people.length,po:sv.reduce((a,p)=>a+portions(p),0),s:sv.reduce((a,p)=>a+p.single,0),f:sv.reduce((a,p)=>a+p.family,0)},week:{n:47,b:56,po:121,s:23,f:24},ramadan:{n:101,b:112,po:262,s:50,f:53}}[S.period];
+  const nights=[[13,92,198],[12,88,189],[11,95,204],[10,84,181]];
+  return `<div class="band-sky">${sb('21:10',true)}<div class="hdr" style="padding-bottom:4px"><div class="meta">${ico('moon','width:14px;height:14px')}${t('hijri')}</div><h3>${t('statsTitle')}</h3></div>
+  <div class="statsky"><span class="n">${D.n}</span><div class="of">${t('ofServed',{b:`<bdi dir="ltr">${D.b}</bdi>`})}</div><div class="period">${[['tonight','pTonight'],['week','pWeek'],['ramadan','pRamadan']].map(([k,l])=>`<button class="tap ${S.period===k?'on':''}" data-act="period" data-arg="${k}">${t(l)}</button>`).join('')}</div></div></div>
+  <div class="figs"><div class="fig"><b>${D.po}</b><span>${t('fPortions')}</span></div><div class="fig"><b>${D.s}</b><span>${t('fSingle')}</span></div><div class="fig"><b>${D.f}</b><span>${t('fFamily')}</span></div></div>
+  <button class="custom tap" data-act="nope">${t('custom')}</button>
+  <div class="days"><div class="lbl" style="margin:6px 2px 0">${t('lastDays')}</div>${nights.map(([n,w,v])=>`<div class="d"><span class="dl">${t('night',{n})}</span><span class="db"><i style="width:${w}%"></i></span><span class="dv">${v}</span></div>`).join('')}</div>${nav('stats')}${toast()}`;},
+ find(){return `<div class="band-sky">${sb('18:43',true)}<div class="hdr" style="padding-bottom:16px"><div style="display:flex;align-items:center;gap:10px"><button class="rb tap" data-act="backScan" aria-label="Back">${ico('back','','flipx')}</button><h3 style="margin:0">${t('findTitle')}</h3></div>
+  <label class="search">${ico('search')}<input id="fq" value="${esc(S.fq)}" placeholder="${t('searchFind')}" autocomplete="off"></label></div></div><div class="list" id="frows" style="padding-bottom:24px">${findRows()}</div>${toast()}`;},
+ summary(){const s=S.session;return `<div class="sky dusk khatam" style="flex:1;display:flex;flex-direction:column">${sb('19:05',true)}<div class="moon" style="top:70px;inset-inline-end:46px"></div>${stars(7)}<div class="sum"><div class="k">${t('summaryKicker')}</div><div class="n">${s.served}</div><div style="font-size:15px;margin-top:6px">${t('summaryLine')}</div><div class="d">${t('summaryDetail',{f:s.family,s:s.single,p:s.single+s.family*4})}</div><div class="bl">تقبّل الله</div>${t('blessMean')?`<div class="d">${t('blessMean')}</div>`:''}
+  <div style="width:100%;margin-top:36px"><button class="btn mint tap" data-act="go" data-arg="people">${t('backPeople')}</button><button class="btn ghost-night tap" data-act="openScan">${t('keepScanning')}</button></div></div></div>`;},
+ scan(){const ph=S.scan.phase,p=byId(S.scan.id);const vf={ready:'#43CEBB',confirming:'#43CEBB',served:'#E8957A',unknown:'#A8AEC8',invalid:'#D6A645',unverified:'#D6A645',confirmFailed:'#D6A645',offlineAsk:'#D6A645',identifying:'#D6A645'}[ph]||'rgba(243,235,221,.85)';
+  return `<div class="cam" style="--vf:${vf}">${sb('18:42',true)}<div class="top"><button class="rb tap" data-act="closeScan" aria-label="Close">${ico('x')}</button><div class="tt"><div><b>${t('scanTitle')}</b><span>${t('tonightCount',{n:`<bdi dir="ltr">${servedTonight()}</bdi>`})}</span></div></div>${S.pending.length?`<span class="sync">${t('toSync',{n:S.pending.length})}</span>`:''}${S.online?'':`<span class="rb" style="color:var(--gold)">${ico('wifi')}</span>`}<button class="rb tap" data-act="nope" aria-label="Torch">${ico('bolt')}</button></div>
+  <div class="vfw"><div class="vf"></div>${ph==='idle'||ph==='confirmed'?`<div class="hint">${ico('moon','width:14px;height:14px;color:var(--gold)')}${t('hint')}</div>`:''}</div></div>${scanSheet(ph,p)}${toast()}`;}
+};
+function dupHtml(dup){return dup?`<div class="dupe">${t('dupe',{name:nm(dup),id:dup.id})}<br><button class="tap" data-act="openDupe" data-arg="${dup.id}">${t('openRecord')}</button></div>`:'';}
+function peopleRows(){const q=S.q.trim().toLowerCase();let list=people.filter(p=>S.filter==='all'||(S.filter==='wait'?!p.served:!!p.served));if(q)list=list.filter(p=>plainName(p).toLowerCase().includes(q)||String(p.id).includes(q)||p.cin.includes(q));
+ if(!list.length)return `<div class="empty">${S.filter==='wait'&&!q?t('emptyWait'):t('noResults',{q:esc(S.q)})}</div>`;
+ return list.map(p=>`<div class="row"><span class="idchip">${String(p.id).padStart(4,'0')}</span><div class="who"><b>${nm(p)}</b><div class="m">${statusChip(p)}<span>${p.family?t('family')+' · '+p.family*4:t('single')+' · '+p.single}</span></div></div>${ico('chev','','chev')}</div>`).join('');}
+function findRows(){const q=S.fq.trim().toLowerCase();if(q.length<2)return `<div class="empty" style="text-align:start;padding:16px 4px">${t('findHint')}</div>`;const list=people.filter(p=>plainName(p).toLowerCase().includes(q)||p.cin.includes(q)||p.phone.includes(q.replace(/\s/g,'')));if(!list.length)return `<div class="empty">${t('noResults',{q:esc(S.fq)})}</div>`;
+ return list.map(p=>`<div class="row tap" data-act="pick" data-arg="${p.id}"><span class="idchip">${String(p.id).padStart(4,'0')}</span><div class="who"><b>${nm(p)}</b><div class="m">${statusChip(p)}<span>${t('cin')} <bdi dir="ltr">••• ${p.cin.slice(-3)}</bdi></span></div></div>${ico('chev','','chev')}</div>`).join('');}
+function scanSheet(ph,p){const verify=S.scan.noCard&&p?`<div class="verify">${ico('id','width:16px;height:16px')}${t('noCardCheck',{d:`<bdi dir="ltr">${p.cin.slice(-3)}</bdi>`})}</div>`:'';
+ switch(ph){
+  case 'idle':return `<div class="findbar tap" data-act="openFind"><span class="fi">${ico('search')}</span><span>${t('findNoCard')}<small>${t('findNoCardSub')}</small></span>${ico('chev','color:var(--a-muted)','chev')}</div>`;
+  case 'identifying':return `<div class="panel"><div class="band wait">${seal('wait')}<div class="bt"><div class="word sm">${nm(p)}</div><div class="mean">${t('checking')}</div></div></div><div class="body">${pmeta(p)}<div class="lbl">${t('handOver')}</div>${give(p)}${verify}<div class="waitbar"><span class="spin"></span>${t('checking')}</div></div></div>`;
+  case 'ready':case 'confirming':return `<div class="panel"><div class="band serve">${seal('serve')}<div class="bt"><div class="word"><bdi>ما خذاش</bdi></div><div class="mean">${t('notServed')}</div></div></div><div class="body"><div class="name">${nm(p)}</div>${pmeta(p)}<div class="lbl">${t('handOver')}</div>${give(p)}${verify}
+   <button class="btn act tap" style="margin-top:14px" data-act="${ph==='ready'?'confirm':'none'}">${ph==='confirming'?`<span class="spin"></span>${t('confirming')}`:`${ico('check')}${t('confirm')}`}</button><div class="links"><button class="tap" data-act="skip">${t('skip')}</button><button class="tap" data-act="nope">${t('details')}</button></div></div></div>`;
+  case 'confirmed':{const left=Math.max(0,Math.ceil((S.undoUntil-Date.now())/1000));return `<div class="doneband">${seal('done')}<div style="min-width:0"><div class="bless">تقبّل الله</div><div class="ln">${t('servedLine',{name:nm(p),p:pText(portions(p))})}</div>${S.scan.offline?`<div class="ln">${t('willSync')}</div>`:(t('blessMean')?`<div class="ln" style="opacity:.75">${t('blessMean')}</div>`:'')}<div class="prog"><i></i></div></div><button class="undo tap" data-act="undo">${t('undo')} · <bdi dir="ltr">${left}</bdi></button></div>`;}
+  case 'served':return `<div class="panel"><div class="band paused">${seal('stop')}<div class="bt"><div class="word"><bdi>خذا</bdi></div><div class="mean">${t('already')}</div></div><span class="end">${p.served}</span></div><div class="body"><div class="name">${nm(p)}</div>${pmeta(p)}<div class="note2">${t('servedNote',{t:`<bdi dir="ltr">${p.served}</bdi>`})}</div>
+   <button class="btn night tap" style="margin-top:16px" data-act="scanNext">${ico('scan')}${t('scanNext')}</button><div class="links"><button class="tap" data-act="nope">${t('history')}</button><button class="tap" data-act="nope">${t('details')}</button></div></div></div>`;
+  case 'unknown':return `<div class="panel"><div class="band system">${seal('sys')}<div class="bt"><div class="word sm">${S.online?t('unknownTitle',{id:`<bdi dir="ltr">${S.scan.id}</bdi>`}):t('cardOffline',{id:`<bdi dir="ltr">${S.scan.id}</bdi>`})}</div><div class="mean">${t('unknownMean')}</div></div></div><div class="body"><button class="btn act tap" data-act="registerCard">${ico('add')}${t('registerCard')}</button><div class="links"><button class="tap" data-act="scanNext">${t('scanAgain')}</button></div></div></div>`;
+  case 'invalid':return `<div class="panel"><div class="band system">${seal('sys')}<div class="bt"><div class="word sm">${t('invalidTitle')}</div><div class="mean">${t('invalidMean')}</div></div></div><div class="body"><button class="btn line tap" data-act="openFind">${ico('search')}${t('findNoCard')}</button><div class="links"><button class="tap" data-act="scanNext">${t('scanAgain')}</button></div></div></div>`;
+  case 'unverified':case 'offlineAsk':return `<div class="panel"><div class="band system">${seal('sys')}<div class="bt"><div class="word sm">${t('unverTitle')}</div><div class="mean">${t('unverMean')}</div></div></div><div class="body"><div class="name">${nm(p)}</div>${pmeta(p)}<div class="lbl">${t('handOver')}</div>${give(p)}${verify}
+   <button class="btn act tap" style="margin-top:14px" data-act="retry">${ico('refresh')}${t('retry')}</button><div class="links"><button class="tap" data-act="askOffline">${t('serveOffline')}</button><button class="tap" data-act="skip">${t('skip')}</button></div></div></div>
+   ${ph==='offlineAsk'?`<div class="overlay"><div class="dialog"><h4>${t('offAskTitle')}</h4><p>${t('offAskBody',{name:nm(p)})}</p><button class="btn act tap" data-act="serveOffline">${t('serveOffline')}</button><button class="btn text tap" data-act="cancelOffline">${t('cancel')}</button></div></div>`:''}`;
+  case 'confirmFailed':return `<div class="panel"><div class="band system">${seal('sys')}<div class="bt"><div class="word sm">${t('failTitle')}</div><div class="mean">${t('failMean')}</div></div></div><div class="body"><div class="name">${nm(p)}</div>${pmeta(p)}<div class="note2">${t('failNote')}</div>
+   <button class="btn act tap" style="margin-top:14px" data-act="confirm">${ico('refresh')}${t('retry')}</button><div class="links"><button class="tap" data-act="skip">${t('skip')}</button></div></div></div>`;
+ }return '';}
+let noteKey='welcome',timer=null;
+function render(){const f=document.activeElement&&app.contains(document.activeElement)?document.activeElement.id:null;const c=f?document.activeElement.selectionStart:null;
+ app.innerHTML=SCREENS[S.screen]();app.setAttribute('dir',S.lang==='ar'?'rtl':'ltr');app.setAttribute('lang',S.lang);
+ if(f){const el=document.getElementById(f);if(el){el.focus();try{el.setSelectionRange(c,c);}catch(e){}}}
+ const k=S.screen==='scan'?(noteKey==='ignored'||noteKey==='undone'?noteKey:S.scan.phase):S.screen;
+ document.getElementById('note').textContent=NOTES[k]||'';document.getElementById('mTaps').textContent=S.taps;document.getElementById('mServed').textContent=S.session.served;document.getElementById('mSync').textContent=S.pending.length;
+ document.getElementById('netDot').style.background=S.online?'#0D6B62':'#A8432A';document.getElementById('netLbl').textContent=S.online?'Network: online. Click to cut it':'Network: offline. Click to restore it';
+ document.querySelectorAll('[data-lang]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.lang===S.lang)));}
+function showToast(h,ms=2600){S.toast=h;S.toastUntil=Date.now()+ms;setTimeout(()=>{if(Date.now()>=S.toastUntil){S.toast=null;render();}},ms+30);}
+function setPhase(ph){S.scan.phase=ph;noteKey=ph;}
+function startPerson(id,noCard){if(!noCard)S.taps=0;S.scan={phase:'identifying',id,noCard:!!noCard,offline:false};noteKey='identifying';S.undoUntil=0;render();clearTimeout(timer);timer=setTimeout(()=>{const p=byId(id);setPhase(p.served?'served':(S.online?'ready':'unverified'));render();},700);}
+const BUSY=['identifying','ready','confirming','unverified','offlineAsk','confirmFailed'];
+function simScan(code){if(S.screen==='welcome'||S.screen==='login'){S.screen='people';}if(S.screen!=='scan'){S.screen='scan';setPhase('idle');}
+ if(BUSY.includes(S.scan.phase)){noteKey='ignored';showToast(t('ignored'),1800);render();return;}
+ if(code==='bad'){S.taps=0;S.scan={phase:'invalid',id:null,noCard:false};noteKey='invalid';render();return;}
+ const p=byId(code);if(!p){S.taps=0;S.scan={phase:'unknown',id:+code,noCard:false};noteKey='unknown';render();return;}startPerson(p.id,false);}
+function markServed(p,off){p.served=now();S.session.served++;S.session.single+=p.single;S.session.family+=p.family;if(off)S.pending.push(p.id);}
+const A={
+ lang(a){S.lang=a;},
+ go(a){if(a==='profile'){showToast(t('notInProto'));return;}S.screen=a;},
+ togglePw(){S.login.show=!S.login.show;},
+ doLogin(){const L=S.login;if(!L.u.trim()||!L.p){L.err=true;return;}L.err=false;S.screen='people';},
+ openScan(){S.screen='scan';setPhase('idle');},
+ closeScan(){clearTimeout(timer);S.screen=S.session.served?'summary':'people';},
+ filter(a){S.filter=a;},period(a){S.period=a;},nope(){showToast(t('notInProto'));},
+ openFind(){S.screen='find';S.fq='';S.taps=1;setTimeout(()=>{const el=document.getElementById('fq');el&&el.focus();},30);},
+ backScan(){S.screen='scan';setPhase('idle');},
+ pick(a){S.screen='scan';startPerson(+a,true);},
+ confirm(){setPhase('confirming');render();clearTimeout(timer);timer=setTimeout(()=>{const p=byId(S.scan.id);if(!S.online){setPhase('confirmFailed');render();return;}markServed(p,false);S.scan.offline=false;S.undoUntil=Date.now()+5000;setPhase('confirmed');render();},500);},
+ skip(){setPhase('idle');},scanNext(){setPhase('idle');},
+ undo(){const p=byId(S.scan.id);p.served=null;S.session.served--;S.session.single-=p.single;S.session.family-=p.family;S.pending=S.pending.filter(i=>i!==p.id);S.undoUntil=0;setPhase('idle');noteKey='undone';showToast(t('undone',{name:nm(p)}));},
+ retry(){startPerson(S.scan.id,S.scan.noCard);},askOffline(){setPhase('offlineAsk');},cancelOffline(){setPhase('unverified');},
+ serveOffline(){const p=byId(S.scan.id);markServed(p,true);S.scan.offline=true;S.undoUntil=Date.now()+5000;setPhase('confirmed');},
+ registerCard(){S.form={...blankForm(),id:String(S.scan.id)};S.screen='add';},
+ scanFill(){showToast(t('cardRead',{id:'215'}),1800);S.form.id='215';S.form.errors={};},
+ openDupe(a){const p=byId(a);S.screen='people';S.q=p.first+' '+p.last;S.filter='all';},
+ step(a){const[k,d]=a.split(':');S.form[k]=Math.max(0,Math.min(9,S.form[k]+ +d));},
+ toggleHere(){S.form.here=!S.form.here;},toggleMore(){S.form.more=!S.form.more;},
+ save(a){const f=S.form,e={};if(!f.id.trim())e.id=t('errId');else{const ex=byId(f.id);if(ex)e.id=t('errIdTaken',{id:f.id,name:nm(ex)});}if(!f.first.trim()||!f.last.trim())e.name=t('errName');f.errors=e;if(Object.keys(e).length)return;
+  const p={id:+f.id,first:f.first.trim(),last:f.last.trim(),cin:(f.cin||'00000000').padStart(8,'0'),phone:f.phone,single:f.single,family:f.family,served:f.here?now():null};if(p.single+p.family===0)p.single=1;people.unshift(p);
+  showToast(f.here?t('savedServe',{name:nm(p),p:pText(portions(p))}):t('saved',{name:nm(p)}),3200);S.form=blankForm();if(a==='done')S.screen='people';}
+};
+app.addEventListener('click',e=>{const el=e.target.closest('[data-act]');if(!el||!app.contains(el))return;const a=el.dataset.act;if(a==='none')return;S.taps++;if(A[a]){A[a](el.dataset.arg);render();}});
+app.addEventListener('input',e=>{const id=e.target.id;
+ if(id==='q'){S.q=e.target.value;document.getElementById('rows').innerHTML=peopleRows();return;}
+ if(id==='fq'){S.fq=e.target.value;document.getElementById('frows').innerHTML=findRows();return;}
+ if(id==='l_u'){S.login.u=e.target.value;return;} if(id==='l_p'){S.login.p=e.target.value;return;}
+ if(id&&id.startsWith('f_')){const k=id.slice(2);S.form[k]=e.target.value;if(k==='cin'){const dup=S.form.cin.length===8?people.find(p=>p.cin===S.form.cin):null;document.getElementById('dupe').innerHTML=dupHtml(dup);}}});
+document.querySelectorAll('[data-sim]').forEach(b=>b.addEventListener('click',()=>simScan(b.dataset.sim)));
+document.getElementById('netBtn').addEventListener('click',()=>{S.online=!S.online;if(S.online&&S.pending.length){const n=S.pending.length;setTimeout(()=>{S.pending=[];showToast(t('synced',{n}));render();},900);}render();});
+document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{S.lang=b.dataset.lang;render();}));
+document.getElementById('nightBtn').addEventListener('click',e=>{const on=document.documentElement.classList.toggle('night');e.currentTarget.setAttribute('aria-pressed',String(on));});
+document.getElementById('resetBtn').addEventListener('click',()=>{clearTimeout(timer);reset();render();});
+setInterval(()=>{if(S.screen==='scan'&&S.scan.phase==='confirmed'){if(Date.now()>S.undoUntil)setPhase('idle');render();}},500);
+reset();const qs=new URLSearchParams(location.search);if(qs.get('lang'))S.lang=qs.get('lang');render();
+</script>
+</body>
+</html>

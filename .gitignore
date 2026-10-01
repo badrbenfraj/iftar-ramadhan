@@ -17,16 +17,26 @@ $RECYCLE.BIN/
 log.txt
 npm-debug.log*
 
-.angular
 .idea
-.ionic
-.sass-cache
-.sourcemaps
-.versions
 .vscode
 coverage
 dist
 node_modules
-/platforms
-/plugins
-/www
+
+# Legacy Ionic app (apps/legacy-ionic)
+.angular
+.ionic
+.sass-cache
+.sourcemaps
+.versions
+/apps/legacy-ionic/platforms
+/apps/legacy-ionic/plugins
+/apps/legacy-ionic/www
+
+# Flutter app (apps/mobile) — see apps/mobile/.gitignore for the full list
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+/apps/mobile/build/

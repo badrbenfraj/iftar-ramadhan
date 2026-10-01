@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ramadan night (see lib/core/theme/app_colors.dart) -->
+    <color name="night">#0E1A3A</color>
+    <color name="gold">#E2B44F</color>
+</resources>
