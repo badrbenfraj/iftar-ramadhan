@@ -88,7 +88,7 @@ class _PulseState extends State<_Pulse> with SingleTickerProviderStateMixin {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (MediaQuery.disableAnimationsOf(context)) {
-      _controller.stop();
+      _controller..stop()..value = 0;
     } else if (!_controller.isAnimating) {
       _controller.repeat(reverse: true);
     }

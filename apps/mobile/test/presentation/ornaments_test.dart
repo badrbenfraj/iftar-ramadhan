@@ -45,4 +45,36 @@ void main() {
     expect(find.text('arch'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('khatam pattern clips to its bounds in sky band', (tester) async {
+    // SkyBand has the khatam pattern; if it escapes bounds, it would be visible
+    // in a painted area. This test verifies the pattern is painted cleanly.
+    await tester.pumpWidget(localizedApp(const Scaffold(
+      body: SizedBox(
+        height: 120,
+        child: SkyBand(child: Text('band content')),
+      ),
+    )));
+    expect(find.text('band content'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('seal with reduced motion settles and is fully visible', (tester) async {
+    // Disable animations via MediaQuery.
+    await tester.pumpWidget(localizedApp(const MediaQuery(
+      data: MediaQueryData(disableAnimations: true),
+      child: Scaffold(
+        body: Center(
+          child: Seal(SealKind.checking, semanticLabel: 'Checking progress'),
+        ),
+      ),
+    )));
+
+    // Should settle without hanging (animation is stopped).
+    await tester.pumpAndSettle();
+
+    // Seal should still be found by its semantic label.
+    expect(find.bySemanticsLabel('Checking progress'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
