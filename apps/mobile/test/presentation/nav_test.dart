@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/shell/home_shell.dart';
 
@@ -29,5 +30,72 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(ar.navPeople), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('screen readers can activate tabs', (tester) async {
+    var selected = -1;
+    Widget nav() => localizedApp(
+      Scaffold(
+        bottomNavigationBar: AppBottomNav(currentIndex: 0, onSelect: (i) => selected = i),
+      ),
+      locale: const Locale('en'),
+    );
+
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(nav());
+
+      final statsNode = tester.getSemantics(find.bySemanticsLabel(en.navStats));
+      expect(statsNode.label, en.navStats);
+
+      // ignore: deprecated_member_use
+      tester.binding.pipelineOwner.semanticsOwner!
+          .performAction(statsNode.id, SemanticsAction.tap);
+      await tester.pumpAndSettle();
+      expect(selected, 2);
+    } finally {
+      handle.dispose();
+    }
+  });
+
+  testWidgets('scan button is accessible to screen readers', (tester) async {
+    var scanned = false;
+    Widget nav() => localizedApp(
+      Scaffold(
+        floatingActionButton: ScanButton(onPressed: () => scanned = true),
+        bottomNavigationBar: const SizedBox.shrink(),
+      ),
+      locale: const Locale('en'),
+    );
+
+    final handle = tester.ensureSemantics();
+    try {
+      await tester.pumpWidget(nav());
+
+      final scanNode = tester.getSemantics(find.bySemanticsLabel(en.navScan));
+      expect(scanNode.label, en.navScan);
+
+      // ignore: deprecated_member_use
+      tester.binding.pipelineOwner.semanticsOwner!
+          .performAction(scanNode.id, SemanticsAction.tap);
+      await tester.pumpAndSettle();
+      expect(scanned, isTrue);
+    } finally {
+      handle.dispose();
+    }
+  });
+
+  testWidgets('Arabic tab labels have correct letterSpacing', (tester) async {
+    Widget nav() => localizedApp(
+      Scaffold(
+        bottomNavigationBar: AppBottomNav(currentIndex: 0, onSelect: (_) {}),
+      ),
+      locale: const Locale('ar'),
+    );
+
+    await tester.pumpWidget(nav());
+
+    final textWidget = tester.widget<Text>(find.text(ar.navPeople));
+    expect(textWidget.style!.letterSpacing, 0);
   });
 }

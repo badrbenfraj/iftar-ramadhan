@@ -101,6 +101,7 @@ class _TabButton extends StatelessWidget {
       selected: selected,
       button: true,
       label: label,
+      onTap: onTap,
       excludeSemantics: true,
       child: InkResponse(
         onTap: onTap,
@@ -118,6 +119,7 @@ class _TabButton extends StatelessWidget {
                 color: color,
                 fontSize: 10.5,
                 fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                letterSpacing: 0,
               ),
             ),
           ],
@@ -139,17 +141,24 @@ class ScanButton extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(6),
       decoration: const BoxDecoration(color: AppPalette.sky, shape: BoxShape.circle),
-      child: Tooltip(
-        message: label,
-        child: Material(
-          color: AppPalette.mint,
-          shape: const CircleBorder(),
-          child: InkWell(
-            customBorder: const CircleBorder(),
-            onTap: onPressed,
-            child: const SizedBox.square(
-              dimension: 62,
-              child: Icon(Icons.qr_code_scanner_rounded, size: 28, color: AppPalette.sky),
+      child: Semantics(
+        button: true,
+        label: label,
+        onTap: onPressed,
+        excludeSemantics: true,
+        child: Tooltip(
+          message: label,
+          excludeFromSemantics: true,
+          child: Material(
+            color: AppPalette.mint,
+            shape: const CircleBorder(),
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: onPressed,
+              child: const SizedBox.square(
+                dimension: 62,
+                child: Icon(Icons.qr_code_scanner_rounded, size: 28, color: AppPalette.sky),
+              ),
             ),
           ),
         ),
