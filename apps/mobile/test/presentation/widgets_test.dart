@@ -1,29 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/core/network/app_failure.dart';
-import 'package:iftar_mobile/core/theme/app_theme.dart';
 import 'package:iftar_mobile/core/widgets/meal_status_badge.dart';
 import 'package:iftar_mobile/features/auth/presentation/login_page.dart';
 import 'package:iftar_mobile/features/people/presentation/people_list_page.dart';
 import 'package:iftar_mobile/features/scan/presentation/scan_controller.dart';
 import 'package:iftar_mobile/features/scan/presentation/scan_result_panel.dart';
 
+import '../support/app_harness.dart';
 import '../support/fakes.dart';
-
-Widget _app(Widget child, {List<Override> overrides = const []}) =>
-    ProviderScope(
-      overrides: overrides,
-      retry: (_, _) => null,
-      child: MaterialApp(theme: AppTheme.light(), home: child),
-    );
 
 void main() {
   testWidgets('login validates required fields before calling the API', (
     tester,
   ) async {
-    await tester.pumpWidget(_app(const LoginPage()));
+    await tester.pumpWidget(localizedApp(const LoginPage()));
     await tester.tap(find.text('Login'));
     await tester.pump();
     expect(find.text('Username is required.'), findsOneWidget);
@@ -33,7 +24,7 @@ void main() {
   group('scan result panel', () {
     Future<void> pumpPanel(WidgetTester tester, ScanStatus status) =>
         tester.pumpWidget(
-          _app(
+          localizedApp(
             Scaffold(
               body: Align(
                 alignment: Alignment.bottomCenter,
@@ -95,7 +86,7 @@ void main() {
       person(2, first: 'Aziza', last: 'Ouerghi', takenToday: true),
     ]);
     await tester.pumpWidget(
-      _app(const PeopleListPage(), overrides: testOverrides(repo)),
+      localizedApp(const PeopleListPage(), overrides: testOverrides(repo)),
     );
     await tester.pumpAndSettle();
 

@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart';
 
 import 'core/router/app_router.dart';
+import 'core/settings/locale_resolution.dart';
 import 'core/theme/app_theme.dart';
+import 'l10n/app_localizations.dart';
 
 class IftarApp extends ConsumerWidget {
   const IftarApp({super.key});
@@ -10,10 +13,20 @@ class IftarApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp.router(
-      title: 'إفطار صائم',
+      onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
       themeMode: ThemeMode.light,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
+      localeListResolutionCallback: (device, _) =>
+          resolveAppLocale(null, device),
+      builder: (context, child) {
+        // Dates follow the UI language; digits stay Western (formatters.dart).
+        Intl.defaultLocale = Localizations.localeOf(context).languageCode;
+        return child!;
+      },
       routerConfig: ref.watch(routerProvider),
     );
   }
