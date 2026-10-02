@@ -76,7 +76,9 @@ class ScanResultPanel extends ConsumerWidget {
 
     switch (status) {
       case ScanIdle():
-        return _FindBar(onTap: onFindWithoutCard);
+        // Only the camera while waiting: people without a card are served
+        // from the people list, outside the scanner.
+        return const SizedBox.shrink();
 
       case ScanLookingUp(:final personId):
         return _Sheet(
@@ -536,54 +538,6 @@ class _DoneBand extends StatelessWidget {
                     ),
                   ),
                 ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _FindBar extends StatelessWidget {
-  const _FindBar({required this.onTap});
-
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final c = context.colors;
-    return Material(
-      color: c.surface,
-      borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(20, 18, 20, 22),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(color: c.actSoft, shape: BoxShape.circle),
-                  child: Icon(Icons.search_rounded, color: c.actInk),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(l.findNoCard, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w500)),
-                      Text(l.findNoCardSubtitle, style: TextStyle(fontSize: 12, color: c.inkMuted)),
-                    ],
-                  ),
-                ),
-                Icon(Icons.chevron_right_rounded, color: c.inkMuted),
               ],
             ),
           ),

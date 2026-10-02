@@ -181,6 +181,9 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                             camera: _camera,
                             servedTonight: servedTonight,
                             onClose: confirming ? null : _close,
+                            // Disabled, not hidden, while someone is pending.
+                            onFind: available && scan.acceptsScans ? _findWithoutCard : null,
+                            showFind: available,
                           ),
                           // The sheet takes what it needs of the space below the
                           // top bar and scrolls inside itself beyond that.
@@ -221,13 +224,25 @@ class _ScanPageState extends ConsumerState<ScanPage> {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({required this.camera, required this.servedTonight, required this.onClose});
+  const _TopBar({
+    required this.camera,
+    required this.servedTonight,
+    required this.onClose,
+    required this.onFind,
+    required this.showFind,
+  });
 
   final MobileScannerController camera;
   final int servedTonight;
 
   /// Null while a confirmation is in flight.
   final VoidCallback? onClose;
+
+  /// "Find someone without a card"; null while someone is pending.
+  final VoidCallback? onFind;
+
+  /// Hidden when the camera is off: that screen has its own Find button.
+  final bool showFind;
 
   @override
   Widget build(BuildContext context) {
@@ -254,6 +269,10 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
+          if (showFind) ...[
+            _RoundIcon(icon: Icons.person_search_rounded, tooltip: l.findNoCard, onPressed: onFind),
+            const SizedBox(width: 8),
+          ],
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: camera,
             builder: (context, value, _) {

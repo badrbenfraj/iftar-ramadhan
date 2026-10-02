@@ -142,9 +142,28 @@ void main() {
     expect(findButton(tester).onPressed, isNull);
   });
 
+  IconButton findIcon(WidgetTester tester) => tester.widget<IconButton>(
+    find.ancestor(of: find.byTooltip(en.findNoCard), matching: find.byType(IconButton)).first,
+  );
+
+  testWidgets('with a camera, idle shows no find sheet, only a search icon in the top bar', (tester) async {
+    await open(tester);
+    expect(find.text(en.findNoCard), findsNothing);
+    expect(find.byTooltip(en.findNoCard), findsOneWidget);
+    expect(findIcon(tester).onPressed, isNotNull);
+  });
+
+  testWidgets('the search icon is disabled while a person is pending', (tester) async {
+    final container = await open(tester);
+    await container.read(scanControllerProvider.notifier).onDetected('101');
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(container.read(scanControllerProvider).status, isA<ScanReady>());
+    expect(findIcon(tester).onPressed, isNull);
+  });
+
   testWidgets('backstop: a pending person is not replaced by a late find result', (tester) async {
     final container = await open(tester);
-    await tester.tap(find.text(en.findNoCard));
+    await tester.tap(find.byTooltip(en.findNoCard));
     await tester.pumpAndSettle();
     // A pending decision appears meanwhile (set directly, bypassing the page).
     await container.read(scanControllerProvider.notifier).onDetected('101');
@@ -159,7 +178,7 @@ void main() {
   testWidgets('a card the camera reads while Find is open does not replace the pick', (tester) async {
     final cam = _FakeCamera();
     final container = await open(tester, camera: cam);
-    await tester.tap(find.text(en.findNoCard));
+    await tester.tap(find.byTooltip(en.findNoCard));
     await tester.pumpAndSettle();
     cam.emit('101'); // the camera keeps running under the Find page
     await tester.pump(const Duration(milliseconds: 50));

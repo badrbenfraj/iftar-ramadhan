@@ -9,48 +9,42 @@ import '../support/fonts.dart';
 void main() {
   setUpAll(loadAppFonts);
 
-  // The scan page gives the panel all the space below the top bar
-  // (Expanded → Align(bottom) → Column(min) → Flexible). The idle find bar
-  // must stay a compact bar at the bottom instead of filling that space.
-  for (final size in const [Size(360, 760), Size(1280, 900)]) {
-    testWidgets('idle find bar stays compact at ${size.width.toInt()}×${size.height.toInt()}',
-        (tester) async {
-      tester.view.physicalSize = size;
-      tester.view.devicePixelRatio = 1;
-      addTearDown(tester.view.reset);
+  // Idle shows only the camera: people without a card are served from the
+  // people list, outside the scanner (user decision, 2026-10-02).
+  testWidgets('idle scanner shows no sheet over the camera', (tester) async {
+    tester.view.physicalSize = const Size(360, 760);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
 
-      await tester.pumpWidget(localizedApp(
-        Scaffold(
-          body: Column(
-            children: [
-              const SizedBox(height: 120),
-              Expanded(
-                child: Align(
-                  alignment: Alignment.bottomCenter,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: ScanResultPanel(
-                          status: const ScanIdle(),
-                          onFindWithoutCard: () {},
-                        ),
+    await tester.pumpWidget(localizedApp(
+      Scaffold(
+        body: Column(
+          children: [
+            const SizedBox(height: 120),
+            Expanded(
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: ScanResultPanel(
+                        status: const ScanIdle(),
+                        onFindWithoutCard: () {},
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ));
-      await tester.pumpAndSettle();
+      ),
+    ));
+    await tester.pumpAndSettle();
 
-      final bar = tester.getRect(find.byType(ScanResultPanel));
-      expect(bar.height, lessThan(140), reason: 'find bar height ${bar.height}');
-      expect(bar.bottom, size.height, reason: 'anchored to the bottom');
-      expect(find.text(en.findNoCard), findsOneWidget);
-      expect(tester.takeException(), isNull);
-    });
-  }
+    expect(find.text(en.findNoCard), findsNothing);
+    expect(tester.getSize(find.byType(ScanResultPanel)).height, 0);
+    expect(tester.takeException(), isNull);
+  });
 }
