@@ -6,6 +6,9 @@ import '../theme/app_colors.dart';
 /// Shown in Arabic in every language; its meaning is translated (spec §4.1).
 const hadithText = 'من فطّر صائماً كان له مثل أجره';
 
+/// "May God accept it", said after each confirmed iftar (spec §4.6, §4.8).
+const blessingText = 'تقبّل الله';
+
 /// The "رمضان كريم" calligraphy from the Ionic app, tinted for its background
 /// (gold on the night sky, indigo on ivory).
 class BrandLogo extends StatelessWidget {

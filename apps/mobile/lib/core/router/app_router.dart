@@ -13,6 +13,7 @@ import '../../features/people/presentation/person_form_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
 import '../../features/scan/presentation/find_person_page.dart';
 import '../../features/scan/presentation/scan_page.dart';
+import '../../features/scan/presentation/session_summary_page.dart';
 import '../../features/statistics/presentation/statistics_page.dart';
 import '../../shell/home_shell.dart';
 
@@ -98,6 +99,12 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/find',
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const FindPersonPage(),
+      ),
+      GoRoute(
+        path: '/summary',
+        parentNavigatorKey: _rootKey,
+        redirect: (_, state) => state.extra is SessionSummary ? null : '/people',
+        builder: (_, state) => SessionSummaryPage(summary: state.extra! as SessionSummary),
       ),
       GoRoute(
         path: '/people/:id',
