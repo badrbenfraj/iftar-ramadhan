@@ -632,7 +632,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Card read: #{id}'**
-  String cardRead(int id);
+  String cardRead(String id);
 
   /// No description provided for @cardScanTitle.
   ///
@@ -704,7 +704,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Same CIN as {name} (#{id}). Is this the same person?'**
-  String duplicateCin(String name, int id);
+  String duplicateCin(String name, String id);
 
   /// No description provided for @openExistingRecord.
   ///

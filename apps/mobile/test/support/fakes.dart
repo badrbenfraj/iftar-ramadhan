@@ -147,9 +147,31 @@ class FakePeopleRepository implements PeopleRepository {
     return p;
   }
 
+  int updateCalls = 0;
+
   @override
-  Future<FastingPerson> update(Region region, PersonDraft draft) =>
-      throw UnimplementedError();
+  Future<FastingPerson> update(Region region, PersonDraft draft) async {
+    updateCalls++;
+    final old = people[draft.id];
+    if (old == null) throw const NotFoundFailure();
+    final cin = draft.cin?.trim();
+    final updated = FastingPerson(
+      id: old.id,
+      firstName: draft.firstName.trim(),
+      lastName: draft.lastName.trim(),
+      cin: (cin == null || cin.isEmpty) ? null : cin,
+      phone: draft.phone,
+      comment: draft.comment,
+      singleMeal: draft.singleMeal,
+      familyMeal: draft.familyMeal,
+      lastTakenMeal: old.lastTakenMeal,
+      takenMeals: old.takenMeals,
+      mealTakenTodayFromServer: old.mealTakenTodayFromServer,
+      region: old.region,
+    );
+    people[updated.id] = updated;
+    return updated;
+  }
 
   @override
   Future<void> delete(int regionId, int id) async => people.remove(id);

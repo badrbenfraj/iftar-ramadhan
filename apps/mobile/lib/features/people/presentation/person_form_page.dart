@@ -42,6 +42,7 @@ class AddPersonPage extends StatelessWidget {
     final l = AppLocalizations.of(context);
     return Scaffold(
       body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           SkyBand(
             child: Column(
@@ -107,6 +108,7 @@ class PersonForm extends ConsumerStatefulWidget {
 
 class _PersonFormState extends ConsumerState<PersonForm> {
   final _formKey = GlobalKey<FormState>();
+  final _idKey = GlobalKey<FormFieldState<String>>();
   final _idFocus = FocusNode();
   late final _id = TextEditingController(
     text: '${widget.person?.id ?? widget.initialId ?? ''}',
@@ -145,7 +147,9 @@ class _PersonFormState extends ConsumerState<PersonForm> {
       _id.text = '$id';
       _idServerError = null;
     });
-    showAppSnackBar(context, AppLocalizations.of(context).cardRead(id));
+    // Drop a stale "already registered" message for the previous ID.
+    _idKey.currentState?.validate();
+    showAppSnackBar(context, AppLocalizations.of(context).cardRead(ltr('$id')));
   }
 
   void _resetForNext() {
@@ -300,6 +304,7 @@ class _PersonFormState extends ConsumerState<PersonForm> {
           labeled(
             l.cardId,
             TextFormField(
+              key: _idKey,
               controller: _id,
               focusNode: _idFocus,
               enabled: !widget.isEdit,
@@ -552,7 +557,7 @@ class _DuplicateCinWarning extends ConsumerWidget {
                     ),
                     Expanded(
                       child: Text(
-                        l.duplicateCin(isolate(duplicate.fullName), duplicate.id),
+                        l.duplicateCin(isolate(duplicate.fullName), ltr('${duplicate.id}')),
                         style: TextStyle(color: c.clayInk, fontSize: 12.5),
                       ),
                     ),

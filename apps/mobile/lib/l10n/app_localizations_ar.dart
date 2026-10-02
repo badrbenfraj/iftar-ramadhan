@@ -294,7 +294,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get scanCard => 'مسح';
 
   @override
-  String cardRead(int id) {
+  String cardRead(String id) {
     return 'تمت قراءة البطاقة: $id';
   }
 
@@ -332,7 +332,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cinLength => 'رقم ب.ت.و يتكوّن من 8 أرقام';
 
   @override
-  String duplicateCin(String name, int id) {
+  String duplicateCin(String name, String id) {
     return 'نفس رقم ب.ت.و لـ $name (رقم $id). هل هو الشخص نفسه؟';
   }
 

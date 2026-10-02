@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/core/utils/formatters.dart';
+import 'package:iftar_mobile/core/widgets/night_sky.dart';
 import 'package:iftar_mobile/features/people/domain/fasting_person.dart';
 import 'package:iftar_mobile/features/people/presentation/person_form_page.dart';
 import 'package:iftar_mobile/l10n/app_localizations.dart';
@@ -51,14 +52,14 @@ void main() {
     await tester.tap(find.text(en.scanCard));
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextFormField, '215'), findsOneWidget);
-    expect(find.text(en.cardRead(215)), findsOneWidget);
+    expect(find.text(en.cardRead(ltr('215'))), findsOneWidget);
   });
 
   testWidgets('an already-registered CIN is flagged before saving', (tester) async {
     await pump(tester);
     await tester.enterText(input(en.cinLabel), '08123812');
     await tester.pumpAndSettle();
-    expect(find.text(en.duplicateCin(isolate('Fatma Trabelsi'), 142)), findsOneWidget);
+    expect(find.text(en.duplicateCin(isolate('Fatma Trabelsi'), ltr('142'))), findsOneWidget);
     expect(find.text(en.openExistingRecord), findsOneWidget);
     // Not colour alone: there is an icon too.
     expect(find.byIcon(Icons.warning_amber_rounded), findsOneWidget);
@@ -69,7 +70,7 @@ void main() {
     await tester.enterText(input(en.cinLabel), '٠٨١٢٣٨١٢');
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextFormField, '08123812'), findsOneWidget);
-    expect(find.text(en.duplicateCin(isolate('Fatma Trabelsi'), 142)), findsOneWidget);
+    expect(find.text(en.duplicateCin(isolate('Fatma Trabelsi'), ltr('142'))), findsOneWidget);
   });
 
   testWidgets('steppers update the hand-over line', (tester) async {
@@ -101,6 +102,86 @@ void main() {
     expect(find.text(en.personSavedHandOver(isolate('Nour Saidi'), 1)), findsOneWidget);
     expect(find.widgetWithText(TextFormField, 'Nour'), findsNothing);
     expect(find.widgetWithText(TextFormField, '215'), findsNothing);
+  });
+
+  testWidgets('the header band spans the full width', (tester) async {
+    tester.view.physicalSize = const Size(360, 760);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(localizedApp(
+      AddPersonPage(scanCardId: (_) async => 215),
+      overrides: testOverrides(repo),
+    ));
+    await tester.pumpAndSettle();
+    expect(tester.getSize(find.byType(SkyBand)).width, 360);
+  });
+
+  testWidgets('an ID typed with Arabic-Indic digits is normalised', (tester) async {
+    await pump(tester);
+    await tester.enterText(input(en.cardId), '٢١٥');
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextFormField, '215'), findsOneWidget);
+  });
+
+  testWidgets('add another resets steppers, Here now and focus', (tester) async {
+    await pump(tester);
+    await tester.tap(find.text(en.scanCard));
+    await tester.pumpAndSettle();
+    await tester.enterText(input(en.firstName), 'Nour');
+    await tester.enterText(input(en.lastName), 'Saidi');
+    await tester.tap(find.byTooltip(en.increase).last); // family 0 -> 1
+    await tester.pump();
+    await tester.ensureVisible(find.byType(SwitchListTile));
+    await tester.tap(find.byType(SwitchListTile));
+    await tester.pump();
+    await tester.ensureVisible(find.text(en.saveAndAddAnother));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(en.saveAndAddAnother));
+    await tester.pumpAndSettle();
+
+    expect(repo.people[215]?.familyMeal, 1);
+    await tester.ensureVisible(find.byType(SwitchListTile));
+    await tester.pumpAndSettle();
+    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isTrue);
+    await tester.drag(find.byType(ListView), const Offset(0, 3000));
+    await tester.pumpAndSettle();
+    expect(find.text(ltr('1')), findsOneWidget); // single
+    expect(find.text(ltr('0')), findsOneWidget); // family
+    final idEditable = tester.widget<EditableText>(
+      find.descendant(of: input(en.cardId), matching: find.byType(EditableText)),
+    );
+    expect(idEditable.focusNode.hasFocus, isTrue);
+  });
+
+  testWidgets('scanning another card clears a stale already-registered error', (tester) async {
+    repo.people[215] = const FastingPerson(
+      id: 215, firstName: 'Old', lastName: 'Card', singleMeal: 1, familyMeal: 0,
+    );
+    var scanned = 215;
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(localizedApp(
+      AddPersonPage(scanCardId: (_) async => scanned),
+      overrides: testOverrides(repo),
+    ));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(en.scanCard));
+    await tester.pumpAndSettle();
+    await tester.enterText(input(en.firstName), 'Nour');
+    await tester.enterText(input(en.lastName), 'Saidi');
+    await tester.ensureVisible(find.text(en.saveAndAddAnother));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(en.saveAndAddAnother));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(ListView), const Offset(0, 3000));
+    await tester.pumpAndSettle();
+    expect(find.text(en.idTaken), findsOneWidget);
+
+    scanned = 216;
+    await tester.tap(find.text(en.scanCard));
+    await tester.pumpAndSettle();
+    expect(find.text(en.idTaken), findsNothing);
   });
 
   for (final inset in [34.0, 0.0]) {

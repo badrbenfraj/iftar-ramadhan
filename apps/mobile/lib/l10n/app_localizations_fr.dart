@@ -312,7 +312,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get scanCard => 'Scanner';
 
   @override
-  String cardRead(int id) {
+  String cardRead(String id) {
     return 'Carte lue : n° $id';
   }
 
@@ -350,7 +350,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get cinLength => 'La CIN compte 8 chiffres';
 
   @override
-  String duplicateCin(String name, int id) {
+  String duplicateCin(String name, String id) {
     return 'Même CIN que $name (n° $id). Est-ce la même personne ?';
   }
 

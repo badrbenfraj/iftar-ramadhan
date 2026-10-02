@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
@@ -31,9 +33,11 @@ class _CardIdScannerPageState extends State<CardIdScannerPage> {
   );
   bool _done = false;
   bool _invalid = false;
+  Timer? _invalidTimer;
 
   @override
   void dispose() {
+    _invalidTimer?.cancel();
     _camera.dispose();
     super.dispose();
   }
@@ -49,6 +53,11 @@ class _CardIdScannerPageState extends State<CardIdScannerPage> {
       }
     }
     if (!_invalid) setState(() => _invalid = true);
+    // The "not a card ID" hint is a reaction, not a state: let it fade.
+    _invalidTimer?.cancel();
+    _invalidTimer = Timer(const Duration(seconds: 2), () {
+      if (mounted) setState(() => _invalid = false);
+    });
   }
 
   @override
@@ -59,7 +68,14 @@ class _CardIdScannerPageState extends State<CardIdScannerPage> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          MobileScanner(controller: _camera, onDetect: _onDetect),
+          MobileScanner(
+            controller: _camera,
+            onDetect: _onDetect,
+            errorBuilder: (context, error) => CardScannerError(
+              denied: error.errorCode == MobileScannerErrorCode.permissionDenied,
+              onClose: () => Navigator.of(context).pop(),
+            ),
+          ),
           IgnorePointer(
             child: CustomPaint(
               painter: ArchViewfinderPainter(
@@ -121,6 +137,70 @@ class _CardIdScannerPageState extends State<CardIdScannerPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Shown in place of the camera when it can't start.
+class CardScannerError extends StatelessWidget {
+  const CardScannerError({super.key, required this.denied, required this.onClose});
+
+  /// The volunteer refused camera access (they can fix it in settings).
+  final bool denied;
+  final VoidCallback onClose;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return ColoredBox(
+      color: AppPalette.sky,
+      child: SafeArea(
+        child: Stack(
+          children: [
+            PositionedDirectional(
+              top: 8,
+              start: 8,
+              child: IconButton.filled(
+                style: IconButton.styleFrom(
+                  backgroundColor: Colors.black45,
+                  foregroundColor: AppPalette.onSky,
+                  minimumSize: const Size.square(48),
+                ),
+                tooltip: l.cancel,
+                icon: const Icon(Icons.close_rounded),
+                onPressed: onClose,
+              ),
+            ),
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.no_photography_outlined, size: 48, color: AppPalette.gold),
+                    const SizedBox(height: 16),
+                    Text(
+                      denied ? l.cameraOffTitle : l.cameraUnavailableTitle,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: AppPalette.onSky,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      denied ? l.cameraOffMessage : l.cameraUnavailableMessage,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(color: AppPalette.onSkyMuted),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
