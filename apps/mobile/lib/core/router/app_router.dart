@@ -11,6 +11,7 @@ import '../../features/people/presentation/people_list_page.dart';
 import '../../features/people/presentation/person_details_page.dart';
 import '../../features/people/presentation/person_form_page.dart';
 import '../../features/profile/presentation/profile_page.dart';
+import '../../features/scan/presentation/find_person_page.dart';
 import '../../features/scan/presentation/scan_page.dart';
 import '../../features/statistics/presentation/statistics_page.dart';
 import '../../shell/home_shell.dart';
@@ -92,6 +93,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: '/scan',
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const ScanPage(),
+      ),
+      GoRoute(
+        path: '/find',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const FindPersonPage(),
       ),
       GoRoute(
         path: '/people/:id',

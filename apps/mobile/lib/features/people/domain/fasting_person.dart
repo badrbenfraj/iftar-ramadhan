@@ -1,3 +1,4 @@
+import '../../../core/utils/formatters.dart';
 import '../../auth/domain/user.dart';
 
 /// A registered beneficiary. `singleMeal` / `familyMeal` are how many of each
@@ -99,15 +100,44 @@ class FastingPerson {
     region: region,
   );
 
-  /// Search used by the people list ("search by Name or Id").
+  /// Search by ID, names in any order, CIN or phone; case-, accent- and
+  /// space-insensitive ("  HEDI " finds "Hédi"). Arabic is folded too
+  /// (diacritics, tatweel, alef/yaa/taa-marbuta variants) and the query may
+  /// use Arabic-Indic digits.
   bool matches(String query) {
-    final q = query.trim().toLowerCase();
+    final q = _fold(latinDigits(query).trim());
     if (q.isEmpty) return true;
     return '$id'.contains(q) ||
-        fullName.toLowerCase().contains(q) ||
-        '$lastName $firstName'.toLowerCase().contains(q) ||
-        (cin?.toLowerCase().contains(q) ?? false) ||
-        (phone?.replaceAll(' ', '').contains(q.replaceAll(' ', '')) ?? false);
+        _fold(fullName).contains(q) ||
+        _fold('$lastName $firstName').contains(q) ||
+        (cin != null && _fold(latinDigits(cin!)).contains(q)) ||
+        (phone != null &&
+            _fold(latinDigits(phone!)).replaceAll(' ', '').contains(q.replaceAll(' ', '')));
+  }
+
+  static String _fold(String text) {
+    const from = 'àâäáãåçéèêëíìîïñóòôöõúùûüýÿ';
+    const to = 'aaaaaaceeeeiiiinooooouuuuyy';
+    final out = StringBuffer();
+    for (final ch in text.toLowerCase().split('')) {
+      final unit = ch.codeUnitAt(0);
+      // Arabic tashkeel (064B-0652, 0670) and tatweel (0640): dropped.
+      if ((unit >= 0x064B && unit <= 0x0652) || unit == 0x0670 || unit == 0x0640) {
+        continue;
+      }
+      switch (ch) {
+        case 'أ' || 'إ' || 'آ' || 'ٱ':
+          out.write('ا');
+        case 'ى':
+          out.write('ي');
+        case 'ة':
+          out.write('ه');
+        default:
+          final i = from.indexOf(ch);
+          out.write(i < 0 ? ch : to[i]);
+      }
+    }
+    return out.toString();
   }
 }
 

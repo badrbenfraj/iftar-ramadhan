@@ -88,6 +88,34 @@ void main() {
       expect(p.totalPortions, 6); // family meal = 4 portions
     });
 
+    test('search ignores case, accents and surrounding spaces', () {
+      final p = FastingPerson.fromJson({...json, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(p.matches('  HEDI '), isTrue);
+      expect(p.matches('jlassi hédi'), isTrue);
+      expect(p.matches('hadi'), isFalse);
+    });
+
+    test('Arabic search ignores diacritics, tatweel and letter variants', () {
+      FastingPerson named(String first, String last) =>
+          FastingPerson.fromJson({...json, 'firstName': first, 'lastName': last});
+      expect(named('محمد', 'بن علي').matches('مُحَمَّد'), isTrue);
+      expect(named('أحمد', 'بن علي').matches('احمد'), isTrue);
+      expect(named('احمد', 'بن علي').matches('إحمد'), isTrue);
+      expect(named('مُحَمَّد', 'بن علي').matches('محمد'), isTrue);
+      expect(named('مـحمد', 'بن علي').matches('محمد'), isTrue);
+      expect(named('منى', 'بن علي').matches('منى'), isTrue);
+      expect(named('منى', 'بن علي').matches('مني'), isTrue);
+      expect(named('فاطمة', 'بن علي').matches('فاطمه'), isTrue);
+      expect(named('فاطمة', 'بن علي').matches('خديجة'), isFalse);
+    });
+
+    test('an ID or CIN typed with Arabic-Indic digits matches', () {
+      final p = FastingPerson.fromJson({...json, 'id': 101, 'cin': '09876543'});
+      expect(p.matches('١٠١'), isTrue);
+      expect(p.matches('٥٤٣'), isTrue);
+      expect(p.matches('٩٩٩'), isFalse);
+    });
+
     test('the server flag wins over the device clock', () {
       final p = FastingPerson.fromJson({...json, 'mealTakenToday': false});
       expect(p.isMealTakenToday(DateTime(2025, 3, 3, 20)), isFalse);
