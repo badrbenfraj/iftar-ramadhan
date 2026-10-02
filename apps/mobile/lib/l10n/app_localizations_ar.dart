@@ -625,6 +625,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'اسمح لهذا التطبيق باستعمال الكاميرا من إعدادات الهاتف لمسح البطاقات. يمكنك دائماً البحث عن شخص بلا بطاقة.';
 
   @override
+  String get cameraOpenSettings => 'فتح الإعدادات';
+
+  @override
   String get cameraUnavailableTitle => 'الكاميرا غير متاحة';
 
   @override

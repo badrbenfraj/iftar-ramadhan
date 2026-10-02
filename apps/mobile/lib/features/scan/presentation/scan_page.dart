@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
@@ -392,6 +393,14 @@ class _CameraUnavailable extends StatelessWidget {
                 icon: const Icon(Icons.search_rounded),
                 label: Text(l.findNoCard),
               ),
+              if (denied) ...[
+                const SizedBox(height: AppSpacing.sm),
+                TextButton.icon(
+                  onPressed: openAppSettings,
+                  icon: const Icon(Icons.settings_outlined),
+                  label: Text(l.cameraOpenSettings),
+                ),
+              ],
             ],
           ),
         ),

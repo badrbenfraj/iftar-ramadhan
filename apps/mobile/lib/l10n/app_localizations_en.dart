@@ -624,6 +624,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Allow camera access for this app in your phone settings to scan cards. You can still find people without a card.';
 
   @override
+  String get cameraOpenSettings => 'Open settings';
+
+  @override
   String get cameraUnavailableTitle => 'Camera unavailable';
 
   @override

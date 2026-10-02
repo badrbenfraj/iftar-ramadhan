@@ -638,6 +638,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Autorisez l’accès à la caméra dans les réglages du téléphone pour scanner les cartes. Vous pouvez toujours trouver une personne sans carte.';
 
   @override
+  String get cameraOpenSettings => 'Ouvrir les paramètres';
+
+  @override
   String get cameraUnavailableTitle => 'Caméra indisponible';
 
   @override

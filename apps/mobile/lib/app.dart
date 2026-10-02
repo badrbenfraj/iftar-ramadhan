@@ -8,6 +8,7 @@ import 'core/router/app_router.dart';
 import 'core/settings/locale_resolution.dart';
 import 'core/settings/settings_controller.dart';
 import 'core/theme/app_theme.dart';
+import 'core/utils/startup_permissions.dart';
 import 'features/people/presentation/people_controller.dart';
 import 'l10n/app_localizations.dart';
 
@@ -27,6 +28,10 @@ class _IftarAppState extends ConsumerState<IftarApp> {
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(onResume: _onResume);
+    // After the first frame, so the system dialog appears over the app UI.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => requestStartupPermissions(),
+    );
   }
 
   void _onResume() {

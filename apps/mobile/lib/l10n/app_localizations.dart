@@ -1162,6 +1162,12 @@ abstract class AppLocalizations {
   /// **'Allow camera access for this app in your phone settings to scan cards. You can still find people without a card.'**
   String get cameraOffMessage;
 
+  /// No description provided for @cameraOpenSettings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get cameraOpenSettings;
+
   /// No description provided for @cameraUnavailableTitle.
   ///
   /// In en, this message translates to:
