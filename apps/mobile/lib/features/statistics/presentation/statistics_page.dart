@@ -94,10 +94,27 @@ class StatisticsPage extends ConsumerWidget {
                           onTap: () => controller.select(preset),
                         ),
                       if (stats.preset == StatsPreset.custom)
-                        _PresetChip(label: l.presetCustom, selected: true, onTap: () {}),
+                        _PresetChip(
+                          label: l.presetCustom,
+                          selected: true,
+                          onTap: () => _pickCustom(context, ref, stats),
+                        ),
                     ],
                   ),
                 ],
+              ),
+            ),
+            // Reachable whatever the result is: loading, error or data.
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: Padding(
+                padding: const EdgeInsetsDirectional.only(start: 14, top: 6),
+                child: TextButton.icon(
+                  style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
+                  onPressed: () => _pickCustom(context, ref, stats),
+                  icon: const Icon(Icons.date_range_rounded),
+                  label: Text(l.customDates),
+                ),
               ),
             ),
             switch (stats.result) {
@@ -105,10 +122,7 @@ class StatisticsPage extends ConsumerWidget {
                 padding: const EdgeInsets.only(top: 24),
                 child: ErrorView(failure: toAppFailure(error), onRetry: controller.refresh),
               ),
-              AsyncData(:final value) => _Results(
-                days: value,
-                onCustom: () => _pickCustom(context, ref, stats),
-              ),
+              AsyncData(:final value) => _Results(days: value),
               _ => const Padding(
                 padding: EdgeInsets.only(top: 48),
                 child: LoadingView(),
@@ -126,7 +140,8 @@ class StatisticsPage extends ConsumerWidget {
     DateTime clamp(DateTime d) => d.isAfter(today) ? today : d;
     var from = clamp(stats.from);
     var to = clamp(stats.to);
-    var invalid = false;
+    // Null while valid; otherwise the localized reason.
+    String Function(AppLocalizations)? invalid;
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -144,7 +159,7 @@ class StatisticsPage extends ConsumerWidget {
             );
             if (picked != null) {
               setSheetState(() {
-                invalid = false;
+                invalid = null;
                 start ? from = picked : to = picked;
               });
             }
@@ -174,10 +189,10 @@ class StatisticsPage extends ConsumerWidget {
                   trailing: Text(formatDate(to)),
                   onTap: () => pick(start: false),
                 ),
-                if (invalid)
+                if (invalid != null)
                   Semantics(
                     liveRegion: true,
-                    child: Text(l.rangeInvalid, style: TextStyle(color: sheetContext.colors.clay)),
+                    child: Text(invalid!(l), style: TextStyle(color: sheetContext.colors.clay)),
                   ),
                 const SizedBox(height: 12),
                 FilledButton(
@@ -189,7 +204,13 @@ class StatisticsPage extends ConsumerWidget {
                     if (ok) {
                       Navigator.of(sheetContext).pop();
                     } else {
-                      setSheetState(() => invalid = true);
+                      // setCustom refuses a future end first, else an inverted range.
+                      final future = dateOnly(to).isAfter(dateOnly(ref.read(clockProvider)()));
+                      setSheetState(
+                        () => invalid = future
+                            ? (l) => l.rangeInFuture
+                            : (l) => l.rangeInvalid,
+                      );
                     }
                   },
                   child: Text(l.apply),
@@ -242,10 +263,9 @@ class _PresetChip extends StatelessWidget {
 }
 
 class _Results extends StatelessWidget {
-  const _Results({required this.days, required this.onCustom});
+  const _Results({required this.days});
 
   final List<DailyStatistics> days;
-  final VoidCallback onCustom;
 
   @override
   Widget build(BuildContext context) {
@@ -281,18 +301,6 @@ class _Results extends StatelessWidget {
                     Expanded(child: figures[2]),
                   ],
                 ),
-        ),
-        Align(
-          alignment: AlignmentDirectional.centerStart,
-          child: Padding(
-            padding: const EdgeInsetsDirectional.only(start: 6),
-            child: TextButton.icon(
-              style: TextButton.styleFrom(minimumSize: const Size(48, 48)),
-              onPressed: onCustom,
-              icon: const Icon(Icons.date_range_rounded),
-              label: Text(l.customDates),
-            ),
-          ),
         ),
         if (days.isEmpty)
           EmptyView(icon: Icons.insights_rounded, title: l.noStats)

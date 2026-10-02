@@ -726,6 +726,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'The start date must be on or before the end date.';
 
   @override
+  String get rangeInFuture => 'Pick dates up to today.';
+
+  @override
   String get byDay => 'By day';
 
   @override

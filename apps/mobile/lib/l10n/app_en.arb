@@ -235,6 +235,7 @@
   "toDate": "To",
   "apply": "Apply",
   "rangeInvalid": "The start date must be on or before the end date.",
+  "rangeInFuture": "Pick dates up to today.",
   "byDay": "By day",
   "noStats": "No meals recorded in this period.",
   "profileTitle": "Profile",

@@ -740,6 +740,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'La date de début doit précéder ou égaler la date de fin.';
 
   @override
+  String get rangeInFuture => 'Choisissez des dates jusqu’à aujourd’hui.';
+
+  @override
   String get byDay => 'Par jour';
 
   @override

@@ -726,6 +726,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'تاريخ البداية يجب أن يسبق تاريخ النهاية أو يساويه.';
 
   @override
+  String get rangeInFuture => 'اختر تواريخ حتى اليوم.';
+
+  @override
   String get byDay => 'حسب اليوم';
 
   @override

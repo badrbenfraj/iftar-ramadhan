@@ -208,6 +208,7 @@
   "toDate": "Au",
   "apply": "Appliquer",
   "rangeInvalid": "La date de début doit précéder ou égaler la date de fin.",
+  "rangeInFuture": "Choisissez des dates jusqu’à aujourd’hui.",
   "byDay": "Par jour",
   "noStats": "Aucun repas enregistré sur cette période.",
   "profileTitle": "Profil",

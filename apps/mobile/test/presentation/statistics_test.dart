@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,11 +26,15 @@ class FakeStatisticsRepository implements StatisticsRepository {
   /// Thrown by [fetch] while non-null.
   AppFailure? failure;
 
+  /// When set, [fetch] waits for it before answering.
+  Completer<void>? gate;
+
   final calls = <(DateTime, DateTime)>[];
 
   @override
   Future<List<DailyStatistics>> fetch(int regionId, DateTime from, DateTime to) async {
     calls.add((from, to));
+    await gate?.future;
     final f = failure;
     if (f != null) throw f;
     return days ??
@@ -178,13 +184,15 @@ void main() {
       WidgetTester tester, {
       DateTime? ramadanStart,
       Locale locale = const Locale('en'),
+      DateTime Function()? clock,
+      bool settle = true,
     }) async {
       await tester.pumpWidget(
         localizedApp(
           const StatisticsPage(),
           locale: locale,
           overrides: [
-            ...testOverrides(FakePeopleRepository([])),
+            ...testOverrides(FakePeopleRepository([]), clock: clock),
             statisticsRepositoryProvider.overrideWithValue(stats),
             appConfigProvider.overrideWithValue(
               AppConfig(apiBaseUrl: 'http://test', environment: 'test', ramadanStart: ramadanStart),
@@ -192,7 +200,8 @@ void main() {
           ],
         ),
       );
-      await tester.pumpAndSettle();
+      // A loading spinner never settles.
+      settle ? await tester.pumpAndSettle() : await tester.pump(const Duration(milliseconds: 50));
     }
 
     void phone(WidgetTester tester, {double scale = 1}) {
@@ -294,6 +303,54 @@ void main() {
       await tester.pumpAndSettle();
       expect(stats.calls.last, (DateTime(2025, 3, 1), DateTime(2025, 3, 3)));
       expect(find.text(en.presetCustom), findsOneWidget);
+    });
+
+    testWidgets('Custom dates is reachable when the load failed', (tester) async {
+      stats.failure = const NetworkFailure();
+      await pumpPage(tester);
+      expect(find.text(en.tryAgain), findsOneWidget);
+      await tester.tap(find.text(en.customDates));
+      await tester.pumpAndSettle();
+      expect(find.text(en.fromDate), findsOneWidget);
+      expect(find.text(en.apply), findsOneWidget);
+    });
+
+    testWidgets('Custom dates is reachable while loading', (tester) async {
+      stats.gate = Completer<void>();
+      await pumpPage(tester, settle: false);
+      expect(find.byType(CircularProgressIndicator), findsOneWidget);
+      await tester.tap(find.text(en.customDates));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text(en.fromDate), findsOneWidget);
+      stats.gate!.complete();
+      await tester.pumpAndSettle();
+    });
+
+    testWidgets('the Custom chip reopens the sheet', (tester) async {
+      await pumpPage(tester);
+      await tester.tap(find.text(en.customDates));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(en.apply));
+      await tester.pumpAndSettle();
+      expect(find.text(en.fromDate), findsNothing);
+      await tester.tap(find.text(en.presetCustom));
+      await tester.pumpAndSettle();
+      expect(find.text(en.fromDate), findsOneWidget);
+      expect(find.text(en.apply), findsOneWidget);
+    });
+
+    testWidgets('an end date in the future says so, not "start before end"', (tester) async {
+      var now = testNow;
+      await pumpPage(tester, clock: () => now);
+      await tester.tap(find.text(en.customDates));
+      await tester.pumpAndSettle();
+      // Midnight rolls back under the open sheet: the sheet's end (the 5th) is now ahead of today.
+      now = DateTime(2025, 3, 4, 23, 59);
+      await tester.tap(find.text(en.apply));
+      await tester.pumpAndSettle();
+      expect(find.text(en.rangeInFuture), findsOneWidget);
+      expect(find.text(en.rangeInvalid), findsNothing);
+      expect(stats.calls, hasLength(1));
     });
 
     for (final inset in [34.0, 0.0]) {

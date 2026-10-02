@@ -1348,6 +1348,12 @@ abstract class AppLocalizations {
   /// **'The start date must be on or before the end date.'**
   String get rangeInvalid;
 
+  /// No description provided for @rangeInFuture.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick dates up to today.'**
+  String get rangeInFuture;
+
   /// No description provided for @byDay.
   ///
   /// In en, this message translates to:
