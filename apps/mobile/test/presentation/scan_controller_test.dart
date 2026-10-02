@@ -229,4 +229,51 @@ void main() {
     expect(state().singleMeals, 2);
     expect(state().familyMeals, 1);
   });
+
+  group('fix round 1', () {
+    test('the CIN check survives a failed lookup and its retry', () async {
+      repo.nextGetFailure = const NetworkFailure();
+      await controller().pickWithoutCard(101);
+      final failed = state().status;
+      expect(failed, isA<ScanFailed>());
+      expect((failed as ScanFailed).noCard, isTrue);
+      await controller().retry();
+      final status = state().status;
+      expect(status, isA<ScanReady>());
+      expect((status as ScanReady).noCard, isTrue);
+    });
+
+    test('the CIN check survives a failed confirm', () async {
+      await controller().pickWithoutCard(101);
+      repo.nextConfirmFailure = const NetworkFailure();
+      await controller().confirm();
+      final failed = state().status as ScanFailed;
+      expect(failed.duringConfirm, isTrue);
+      expect(failed.noCard, isTrue);
+    });
+
+    test('a stale cached copy never decides: the server verdict wins', () async {
+      await container.read(peopleListProvider.future); // cache: not taken
+      repo.people[101] = person(101, takenToday: true);
+      final seen = <ScanStatus>[];
+      container.listen(
+        scanControllerProvider.select((s) => s.status),
+        (_, next) => seen.add(next),
+      );
+      await controller().onDetected('101');
+      expect(seen.first, isA<ScanIdentifying>());
+      expect(seen.last, isA<ScanAlreadyTaken>());
+      expect(repo.confirmCalls, 0);
+    });
+
+    test('picking without a card waits while a confirm is unresolved', () async {
+      await controller().onDetected('101');
+      repo.nextConfirmFailure = const NetworkFailure();
+      await controller().confirm();
+      final before = state().status;
+      expect((before as ScanFailed).duringConfirm, isTrue);
+      await controller().pickWithoutCard(102);
+      expect(identical(state().status, before), isTrue);
+    });
+  });
 }

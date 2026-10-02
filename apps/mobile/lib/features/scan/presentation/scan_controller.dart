@@ -59,8 +59,9 @@ final class ScanReady extends ScanStatus {
 }
 
 final class ScanConfirming extends ScanStatus {
-  const ScanConfirming(this.person);
+  const ScanConfirming(this.person, {this.noCard = false});
   final FastingPerson person;
+  final bool noCard;
 }
 
 final class ScanConfirmed extends ScanStatus {
@@ -83,6 +84,7 @@ final class ScanFailed extends ScanStatus {
     this.person,
     this.pendingPhone,
     this.pendingComment,
+    this.noCard = false,
   });
   final AppFailure failure;
   final int personId;
@@ -91,6 +93,9 @@ final class ScanFailed extends ScanStatus {
   final FastingPerson? person;
   final String? pendingPhone;
   final String? pendingComment;
+
+  /// The CIN check still applies when this is retried.
+  final bool noCard;
 
   bool get duringConfirm => person != null;
 }
@@ -196,6 +201,8 @@ class ScanController extends Notifier<ScanState> {
   /// "Find someone without a card" (spec §4.7): same flow, plus the CIN check.
   Future<void> pickWithoutCard(int personId) async {
     if (_busy) return;
+    // An uncertain confirm must be resolved (retry or skip) first.
+    if (state.status case ScanFailed(duringConfirm: true)) return;
     _resumeTimer?.cancel();
     _confirmMayHaveReachedServer = false;
     _lastRaw = '$personId';
@@ -238,7 +245,9 @@ class ScanController extends Notifier<ScanState> {
       if (_stillLookingUp(personId)) _set(ScanNotFound(personId));
     } catch (e) {
       if (_stillLookingUp(personId)) {
-        _set(ScanFailed(toAppFailure(e), personId: personId));
+        _set(
+          ScanFailed(toAppFailure(e), personId: personId, noCard: noCard),
+        );
       }
     }
   }
@@ -268,19 +277,25 @@ class ScanController extends Notifier<ScanState> {
 
   /// "Confirm & scan next".
   Future<void> confirm() async {
-    final (person, phone, comment) = switch (state.status) {
-      ScanReady(:final person, :final phone, :final comment) => (
+    final (person, phone, comment, noCard) = switch (state.status) {
+      ScanReady(:final person, :final phone, :final comment, :final noCard) => (
         person,
         phone,
         comment,
+        noCard,
       ),
-      ScanFailed(:final person?, :final pendingPhone, :final pendingComment) =>
-        (person, pendingPhone, pendingComment),
-      _ => (null, null, null),
+      ScanFailed(
+        :final person?,
+        :final pendingPhone,
+        :final pendingComment,
+        :final noCard,
+      ) =>
+        (person, pendingPhone, pendingComment, noCard),
+      _ => (null, null, null, false),
     };
     if (person == null) return;
 
-    _set(ScanConfirming(person));
+    _set(ScanConfirming(person, noCard: noCard));
     try {
       final region = requireRegion(ref);
       final updated = await ref
@@ -319,6 +334,7 @@ class ScanController extends Notifier<ScanState> {
           person: person,
           pendingPhone: phone,
           pendingComment: comment,
+          noCard: noCard,
         ),
       );
     }
@@ -347,7 +363,7 @@ class ScanController extends Notifier<ScanState> {
     if (status.duringConfirm) {
       await confirm();
     } else {
-      await _lookup(status.personId);
+      await _lookup(status.personId, noCard: status.noCard);
     }
   }
 
