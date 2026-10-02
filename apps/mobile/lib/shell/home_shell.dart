@@ -4,8 +4,9 @@ import 'package:go_router/go_router.dart';
 import '../core/theme/app_colors.dart';
 import '../l10n/app_localizations.dart';
 
-/// Tabs on a sky-colored bar, with the raised mint scan button docked in the
-/// middle (spec §4.11).
+/// Tabs on a sky-colored bar, with the mint scan button in the middle of the
+/// bar. It sits inside the bar, not raised above it, so it never covers the
+/// page or its sheets (user decision, 2026-10-02).
 class HomeShell extends StatelessWidget {
   const HomeShell({super.key, required this.navigationShell});
 
@@ -23,15 +24,12 @@ class HomeShell extends StatelessWidget {
       body: navigationShell,
       extendBody: true,
       // Hidden while typing, as in the Ionic app.
-      floatingActionButton: keyboardOpen
-          ? null
-          : ScanButton(onPressed: () => context.push('/scan')),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: keyboardOpen
           ? null
           : AppBottomNav(
               currentIndex: navigationShell.currentIndex,
               onSelect: _go,
+              onScan: () => context.push('/scan'),
             ),
     );
   }
@@ -42,10 +40,15 @@ class AppBottomNav extends StatelessWidget {
     super.key,
     required this.currentIndex,
     required this.onSelect,
+    this.onScan,
   });
 
   final int currentIndex;
   final ValueChanged<int> onSelect;
+
+  /// Opens the scanner from the button in the middle of the bar. Null leaves
+  /// the middle slot empty.
+  final VoidCallback? onScan;
 
   static const _icons = [
     Icons.format_list_bulleted_rounded,
@@ -65,7 +68,21 @@ class AppBottomNav extends StatelessWidget {
       child: Row(
         children: [
           for (var i = 0; i < labels.length; i++) ...[
-            if (i == 2) const SizedBox(width: 84),
+            if (i == 2)
+              SizedBox(
+                width: 84,
+                child: onScan == null
+                    ? null
+                    // Raised 16 px: enough presence, never over the page.
+                    : OverflowBox(
+                        maxHeight: double.infinity,
+                        alignment: Alignment.center,
+                        child: Transform.translate(
+                          offset: const Offset(0, -16),
+                          child: ScanButton(onPressed: onScan!),
+                        ),
+                      ),
+              ),
             Expanded(
               child: _TabButton(
                 icon: _icons[i],
@@ -129,7 +146,8 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-/// 62 px mint circle in a 6 px sky ring; no gold ring (spec §4.11).
+/// 56 px mint circle set in a thin sky ring with a soft mint glow, raised a
+/// little above the bar; no gold ring (spec §4.11).
 class ScanButton extends StatelessWidget {
   const ScanButton({super.key, required this.onPressed});
 
@@ -138,27 +156,51 @@ class ScanButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = AppLocalizations.of(context).navScan;
-    return Container(
-      padding: const EdgeInsets.all(6),
-      decoration: const BoxDecoration(color: AppPalette.sky, shape: BoxShape.circle),
-      child: Semantics(
-        button: true,
-        label: label,
-        onTap: onPressed,
-        excludeSemantics: true,
-        child: Tooltip(
-          message: label,
-          excludeFromSemantics: true,
-          child: Material(
-            color: AppPalette.mint,
-            shape: const CircleBorder(),
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: onPressed,
-              child: const SizedBox.square(
-                dimension: 62,
-                child: Icon(Icons.qr_code_scanner_rounded, size: 28, color: AppPalette.sky),
-              ),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: AppPalette.sky,
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(
+            color: AppPalette.mint.withValues(alpha: 0.35),
+            blurRadius: 18,
+            spreadRadius: 1,
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(4),
+        child: _ScanCore(label: label, onPressed: onPressed),
+      ),
+    );
+  }
+}
+
+class _ScanCore extends StatelessWidget {
+  const _ScanCore({required this.label, required this.onPressed});
+
+  final String label;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: label,
+      onTap: onPressed,
+      excludeSemantics: true,
+      child: Tooltip(
+        message: label,
+        excludeFromSemantics: true,
+        child: Material(
+          color: AppPalette.mint,
+          shape: const CircleBorder(),
+          child: InkWell(
+            customBorder: const CircleBorder(),
+            onTap: onPressed,
+            child: const SizedBox.square(
+              dimension: 56,
+              child: Icon(Icons.qr_code_scanner_rounded, size: 28, color: AppPalette.sky),
             ),
           ),
         ),
