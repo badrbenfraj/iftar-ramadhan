@@ -1,7 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:iftar_mobile/core/router/app_router.dart';
 import 'package:iftar_mobile/features/auth/domain/user.dart';
+import 'package:iftar_mobile/features/auth/presentation/auth_controller.dart';
+import 'package:iftar_mobile/features/scan/presentation/session_summary_page.dart';
+import 'package:iftar_mobile/l10n/app_localizations.dart';
 
 import '../support/fakes.dart';
 
@@ -29,5 +34,59 @@ void main() {
     expect(authRedirect(signedIn, '/splash'), '/people');
     expect(authRedirect(signedIn, '/scan'), isNull);
     expect(authRedirect(signedIn, '/people/12'), isNull);
+  });
+
+  group('real /summary route', () {
+    Future<GoRouter> boot(WidgetTester tester) async {
+      final container = ProviderContainer(
+        retry: (_, _) => null,
+        overrides: testOverrides(FakePeopleRepository([person(1)])),
+      );
+      addTearDown(container.dispose);
+      await container.read(authControllerProvider.future);
+      final router = container.read(routerProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(
+            routerConfig: router,
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      router.go('/find');
+      await tester.pumpAndSettle();
+      expect(router.state.uri.path, '/find');
+      return router;
+    }
+
+    String path(GoRouter router) => router.state.uri.path;
+
+    testWidgets('without an extra it lands on /people', (tester) async {
+      final router = await boot(tester);
+      router.go('/summary');
+      await tester.pumpAndSettle();
+      expect(path(router), '/people');
+    });
+
+    testWidgets('with a wrong-type extra it lands on /people', (tester) async {
+      final router = await boot(tester);
+      router.go('/summary', extra: 'not a summary');
+      await tester.pumpAndSettle();
+      expect(path(router), '/people');
+    });
+
+    testWidgets('with a SessionSummary it stays on /summary', (tester) async {
+      final router = await boot(tester);
+      router.go(
+        '/summary',
+        extra: const SessionSummary(served: 3, singleMeals: 1, familyMeals: 2),
+      );
+      await tester.pumpAndSettle();
+      expect(path(router), '/summary');
+    });
   });
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 
 /// "Whoever gives iftar to a fasting person shares in their reward."
@@ -20,13 +21,13 @@ class BrandLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Ramadan Kareem',
+      label: AppLocalizations.of(context).ramadanKareem,
       image: true,
       child: Image.asset(
         'assets/images/ramadan.png',
         width: width,
         fit: BoxFit.contain,
-        color: onDark ? AppColors.gold : AppColors.night,
+        color: onDark ? AppPalette.gold : AppPalette.sky,
         colorBlendMode: BlendMode.srcIn,
       ),
     );

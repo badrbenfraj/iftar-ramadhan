@@ -42,34 +42,6 @@ abstract final class AppPalette {
   );
 }
 
-/// Legacy names from the first Flutter theme, re-pointed at the new
-/// palette so unmigrated screens keep compiling. Removed in Task 20; don't
-/// add new uses.
-abstract final class AppColors {
-  static const teal = Color(0xFF0D6B62);
-  static const tealShade = Color(0xFF0A5049);
-  static const tealTint = Color(0xFFDCEEE8);
-  static const tealDeep = Color(0xFF0A5049);
-  static const night = AppPalette.sky;
-  static const nightMid = AppPalette.skyMid;
-  static const nightGlow = AppPalette.horizon;
-  static const gold = AppPalette.gold;
-  static const goldSoft = AppPalette.goldSoft;
-  static const goldDeep = Color(0xFF86621A);
-  static const ivory = Color(0xFFF6F1E7);
-  static const surface = Color(0xFFFFFCF6);
-  static const outline = Color(0xFFE3D9C6);
-  static const ink = Color(0xFF1A2038);
-  static const inkMuted = Color(0xFF5D6377);
-  static const success = Color(0xFF0D6B62);
-  static const successSoft = Color(0xFFDCEEE8);
-  static const danger = Color(0xFFA8432A);
-  static const dangerSoft = Color(0xFFF5E2D8);
-  static const warning = Color(0xFF86621A);
-  static const warningSoft = Color(0xFFF3EBD6);
-  static const nightGradient = AppPalette.skyGradient;
-}
-
 /// Spacing scale (4-pt grid) shared by all screens.
 abstract final class AppSpacing {
   static const xs = 4.0;
