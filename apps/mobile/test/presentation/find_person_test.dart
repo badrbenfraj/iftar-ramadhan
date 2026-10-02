@@ -111,11 +111,20 @@ void main() {
     handle.dispose();
   });
 
-  testWidgets('keeps its label once text is typed', (tester) async {
+  testWidgets('keeps its label for screen readers once text is typed', (tester) async {
+    final handle = tester.ensureSemantics();
     await open(tester);
     await tester.enterText(find.byType(TextField), 'hedi');
     await tester.pumpAndSettle();
-    expect(find.text(en.findSearchHint), findsWidgets);
+    expect(find.bySemanticsLabel(RegExp(RegExp.escape(en.findSearchHint))), findsWidgets);
+    handle.dispose();
+  });
+
+  testWidgets('no floating label on the dark header, only a hint inside', (tester) async {
+    await open(tester);
+    final field = tester.widget<TextField>(find.byType(TextField));
+    expect(field.decoration!.labelText, isNull);
+    expect(field.decoration!.hintText, en.findSearchHint);
   });
 
   testWidgets('shows a spinner, not "no match", while the list loads', (tester) async {

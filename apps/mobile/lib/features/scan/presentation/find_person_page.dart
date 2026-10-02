@@ -92,17 +92,24 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
                 const SizedBox(height: 10),
                 Padding(
                   padding: const EdgeInsetsDirectional.only(start: 12),
-                  child: TextField(
-                    controller: _query,
-                    autofocus: true,
-                    onChanged: (_) => setState(() {}),
-                    textInputAction: TextInputAction.search,
-                    decoration: InputDecoration(
-                      labelText: l.findSearchHint,
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(AppRadii.field),
-                        borderSide: BorderSide.none,
+                  // A hint, not a floating label: above the field a label
+                  // would sit on the dark sky band, clipped and unreadable.
+                  // The Semantics label keeps the field named for screen
+                  // readers once text is typed.
+                  child: Semantics(
+                    label: l.findSearchHint,
+                    child: TextField(
+                      controller: _query,
+                      autofocus: true,
+                      onChanged: (_) => setState(() {}),
+                      textInputAction: TextInputAction.search,
+                      decoration: InputDecoration(
+                        hintText: l.findSearchHint,
+                        prefixIcon: const Icon(Icons.search_rounded),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(AppRadii.field),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
                     ),
                   ),
