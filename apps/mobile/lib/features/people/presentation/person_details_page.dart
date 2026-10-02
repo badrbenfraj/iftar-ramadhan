@@ -120,12 +120,15 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
             children: [
               InfoTile(label: l.identifier, value: ltr('${person.id}')),
               if (person.cin != null)
-                InfoTile(label: l.cinShortLabel, value: person.cin),
+                InfoTile(
+                  label: l.cinShortLabel,
+                  value: ltr(person.cin!),
+                ),
               InfoTile(label: l.firstName, value: isolate(person.firstName)),
               InfoTile(label: l.lastName, value: isolate(person.lastName)),
               InfoTile(
                 label: l.phone,
-                value: phone,
+                value: phone == null || phone.isEmpty ? null : ltr(phone),
                 trailing: taken ? null : _editIcon(l, person),
               ),
               InfoTile(
