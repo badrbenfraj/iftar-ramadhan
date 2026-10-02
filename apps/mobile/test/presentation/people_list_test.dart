@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:iftar_mobile/core/utils/formatters.dart';
 import 'package:iftar_mobile/features/people/presentation/people_list_page.dart';
 
 import '../support/app_harness.dart';
@@ -19,13 +20,13 @@ void main() {
 
     await tester.tap(find.text(en.filterWaiting));
     await tester.pumpAndSettle();
-    expect(find.text('Najwa Chalbi'), findsOneWidget);
-    expect(find.text('Aziza Ouerghi'), findsNothing);
+    expect(find.text(isolate('Najwa Chalbi')), findsOneWidget);
+    expect(find.text(isolate('Aziza Ouerghi')), findsNothing);
 
     await tester.tap(find.text(en.filterServed));
     await tester.pumpAndSettle();
-    expect(find.text('Najwa Chalbi'), findsNothing);
-    expect(find.text('Aziza Ouerghi'), findsOneWidget);
+    expect(find.text(isolate('Najwa Chalbi')), findsNothing);
+    expect(find.text(isolate('Aziza Ouerghi')), findsOneWidget);
 
     await tester.tap(find.text(en.filterAll));
     await tester.pumpAndSettle();
@@ -90,28 +91,64 @@ void main() {
         localizedApp(const PeopleListPage(), locale: locale, overrides: testOverrides(repo)),
       );
       await tester.pumpAndSettle();
-      expect(find.text('Mohamed Ali Ben Abdelkader Trabelsi'), findsNWidgets(2));
+      expect(find.text(isolate('Mohamed Ali Ben Abdelkader Trabelsi')), findsNWidgets(2));
       expect(tester.takeException(), isNull);
     });
   }
 
-  testWidgets('the last row clears the tab bar and the gesture inset', (tester) async {
-    tester.view.physicalSize = const Size(400, 800);
-    tester.view.devicePixelRatio = 1;
-    tester.view.viewPadding = const FakeViewPadding(bottom: 34);
-    tester.view.padding = const FakeViewPadding(bottom: 34);
+  for (final inset in [34.0, 0.0]) {
+    testWidgets('the last row clears the tab bar, scan button and a $inset px inset', (
+      tester,
+    ) async {
+      tester.view.physicalSize = const Size(400, 800);
+      tester.view.devicePixelRatio = 1;
+      tester.view.viewPadding = FakeViewPadding(bottom: inset);
+      tester.view.padding = FakeViewPadding(bottom: inset);
+      addTearDown(tester.view.reset);
+      final repo = FakePeopleRepository([
+        for (var i = 1; i <= 14; i++) person(i, first: 'Person', last: 'Number$i'),
+      ]);
+      await tester.pumpWidget(
+        localizedApp(const PeopleListPage(), overrides: testOverrides(repo)),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -5000));
+      await tester.pumpAndSettle();
+
+      final last = find.ancestor(
+        of: find.text(isolate('Person Number14')),
+        matching: find.byType(Card),
+      );
+      expect(last, findsOneWidget);
+      expect(tester.getBottomLeft(last).dy, lessThanOrEqualTo(800 - 72 - inset - 40 + 1));
+    });
+  }
+
+  testWidgets('filter chips share one row at 360 px and 1.3x text', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2280);
+    tester.view.devicePixelRatio = 3;
+    tester.platformDispatcher.textScaleFactorTestValue = 1.3;
     addTearDown(tester.view.reset);
-    final repo = FakePeopleRepository([
-      for (var i = 1; i <= 14; i++) person(i, first: 'Person', last: 'Number$i'),
-    ]);
+    addTearDown(tester.platformDispatcher.clearAllTestValues);
+    final repo = FakePeopleRepository([person(1), person(2, takenToday: true)]);
     await tester.pumpWidget(localizedApp(const PeopleListPage(), overrides: testOverrides(repo)));
     await tester.pumpAndSettle();
 
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -5000));
-    await tester.pumpAndSettle();
+    double top(String label) => tester
+        .getTopLeft(find.ancestor(of: find.text(label), matching: find.byType(InkWell)).first)
+        .dy;
+    expect(top(en.filterWaiting), top(en.filterAll));
+    expect(top(en.filterServed), top(en.filterAll));
+  });
 
-    final last = find.ancestor(of: find.text('Person Number14'), matching: find.byType(Card));
-    expect(last, findsOneWidget);
-    expect(tester.getBottomLeft(last).dy, lessThanOrEqualTo(800 - 72 - 34));
+  testWidgets('Served with nobody served says so instead of "no match"', (tester) async {
+    final repo = FakePeopleRepository([person(1)]);
+    await tester.pumpWidget(localizedApp(const PeopleListPage(), overrides: testOverrides(repo)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(en.filterServed));
+    await tester.pumpAndSettle();
+    expect(find.text(en.nobodyServedYet), findsOneWidget);
+    expect(find.textContaining('No one matches'), findsNothing);
   });
 }

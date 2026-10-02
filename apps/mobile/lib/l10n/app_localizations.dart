@@ -476,7 +476,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Ramadan {day}'**
-  String ramadanDay(int day);
+  String ramadanDay(String day);
 
   /// No description provided for @peopleTitle.
   ///
@@ -488,7 +488,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'{total} registered · {served} served today'**
-  String peopleCount(int total, int served);
+  String peopleCount(String total, String served);
 
   /// No description provided for @searchPeople.
   ///
@@ -543,6 +543,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Everyone has been served tonight.'**
   String get everyoneServed;
+
+  /// No description provided for @nobodyServedYet.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has been served yet tonight.'**
+  String get nobodyServedYet;
 
   /// No description provided for @noMatch.
   ///

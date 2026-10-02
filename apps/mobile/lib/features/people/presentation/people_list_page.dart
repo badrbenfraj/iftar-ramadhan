@@ -144,9 +144,11 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
           hasScrollBody: false,
           child: EmptyView(
             icon: noQuery ? Icons.nightlight_round : Icons.search_off_rounded,
-            title: noQuery && filter == PeopleFilter.waiting
-                ? l.everyoneServed
-                : l.noMatch(isolate(query.trim())),
+            title: switch ((noQuery, filter)) {
+              (true, PeopleFilter.waiting) => l.everyoneServed,
+              (true, PeopleFilter.served) => l.nobodyServedYet,
+              _ => l.noMatch(isolate(query.trim())),
+            },
             message: noQuery ? null : l.searchTip,
           ),
         ),
@@ -196,7 +198,7 @@ class _Header extends StatelessWidget {
                 const Icon(Icons.nightlight_round, size: 14, color: AppPalette.gold),
                 const SizedBox(width: 6),
                 Text(
-                  l.ramadanDay(ramadanDay!),
+                  l.ramadanDay(ltr('$ramadanDay')),
                   style: const TextStyle(fontSize: 12, color: AppPalette.gold),
                 ),
               ],
@@ -209,7 +211,7 @@ class _Header extends StatelessWidget {
           if (counts != null) ...[
             const SizedBox(height: 2),
             Text(
-              l.peopleCount(counts.total, counts.served),
+              l.peopleCount(ltr('${counts.total}'), ltr('${counts.served}')),
               style: const TextStyle(fontSize: 13, color: AppPalette.onSkyMuted),
             ),
             const SizedBox(height: 10),
@@ -315,23 +317,29 @@ class _FilterChip extends StatelessWidget {
         onTap: onTap,
         child: Container(
           constraints: const BoxConstraints(minHeight: 48),
-          alignment: Alignment.center,
           padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 7),
           decoration: BoxDecoration(
             color: selected ? AppPalette.sky : c.surface,
             border: Border.all(color: selected ? AppPalette.sky : c.line),
             borderRadius: BorderRadius.circular(999),
           ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(label, style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: fg)),
-              const SizedBox(width: 6),
-              Text(
-                ltr('$count'),
-                style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: fg),
-              ),
-            ],
+          child: Center(
+            widthFactor: 1,
+            heightFactor: 1,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: fg),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  ltr('$count'),
+                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: fg),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -386,7 +394,7 @@ class _PersonTile extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      person.fullName,
+                      isolate(person.fullName),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),

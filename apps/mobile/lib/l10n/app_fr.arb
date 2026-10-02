@@ -74,6 +74,7 @@
   "noPeopleMessage": "Ajoutez la première personne pour commencer la distribution.",
   "addPerson": "Ajouter une personne",
   "everyoneServed": "Tout le monde a été servi ce soir.",
+  "nobodyServedYet": "Personne n’a encore été servi ce soir.",
   "noMatch": "Personne ne correspond à « {query} ».",
   "searchTip": "Recherchez par nom, n°, CIN ou téléphone.",
   "offlineLastList": "Hors ligne. Affichage de la dernière liste chargée.",

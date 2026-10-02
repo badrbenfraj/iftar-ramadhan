@@ -74,6 +74,7 @@
   "noPeopleMessage": "أضف أول شخص لبدء التوزيع.",
   "addPerson": "إضافة شخص",
   "everyoneServed": "استلم الجميع الليلة.",
+  "nobodyServedYet": "لم يُخدم أحد بعد هذا المساء.",
   "noMatch": "لا أحد يطابق «{query}».",
   "searchTip": "ابحث بالاسم أو الرقم أو ب.ت.و أو الهاتف.",
   "offlineLastList": "دون اتصال. تُعرض آخر قائمة محمّلة.",

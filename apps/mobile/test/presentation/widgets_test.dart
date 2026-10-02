@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/core/network/app_failure.dart';
+import 'package:iftar_mobile/core/utils/formatters.dart';
 import 'package:iftar_mobile/core/widgets/meal_status_badge.dart';
 import 'package:iftar_mobile/features/auth/presentation/login_page.dart';
 import 'package:iftar_mobile/features/people/presentation/people_list_page.dart';
@@ -91,14 +92,14 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text(en.peopleTitle), findsOneWidget);
-    expect(find.text('2 registered · 1 served today'), findsOneWidget);
-    expect(find.text('Najwa Chalbi'), findsOneWidget);
-    expect(find.text('Aziza Ouerghi'), findsOneWidget);
+    expect(find.text(en.peopleCount(ltr('2'), ltr('1'))), findsOneWidget);
+    expect(find.text(isolate('Najwa Chalbi')), findsOneWidget);
+    expect(find.text(isolate('Aziza Ouerghi')), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'aziza');
     await tester.pumpAndSettle();
-    expect(find.text('Najwa Chalbi'), findsNothing);
-    expect(find.text('Aziza Ouerghi'), findsOneWidget);
+    expect(find.text(isolate('Najwa Chalbi')), findsNothing);
+    expect(find.text(isolate('Aziza Ouerghi')), findsOneWidget);
 
     await tester.enterText(find.byType(TextField), 'nobody');
     await tester.pumpAndSettle();

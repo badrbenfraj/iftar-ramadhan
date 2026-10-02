@@ -201,7 +201,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navScan => 'Scan a card';
 
   @override
-  String ramadanDay(int day) {
+  String ramadanDay(String day) {
     return 'Ramadan $day';
   }
 
@@ -209,7 +209,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get peopleTitle => 'Fasting people';
 
   @override
-  String peopleCount(int total, int served) {
+  String peopleCount(String total, String served) {
     return '$total registered · $served served today';
   }
 
@@ -240,6 +240,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get everyoneServed => 'Everyone has been served tonight.';
+
+  @override
+  String get nobodyServedYet => 'Nobody has been served yet tonight.';
 
   @override
   String noMatch(String query) {
