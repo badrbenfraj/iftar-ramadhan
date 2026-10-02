@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../network/app_failure.dart';
 import 'settings_storage.dart';
 
 class AppSettings {
@@ -21,12 +22,13 @@ class SettingsController extends AsyncNotifier<AppSettings> {
   static const localeKey = 'settings.locale';
   static const themeModeKey = 'settings.themeMode';
 
-  SettingsStorage get _storage => ref.read(settingsStorageProvider);
-
   @override
   Future<AppSettings> build() async {
-    final code = await _storage.read(localeKey);
-    final mode = await _storage.read(themeModeKey);
+    // Read the provider before the first await; a dependency read after an
+    // await can see a disposed ref.
+    final storage = ref.read(settingsStorageProvider);
+    final code = await storage.read(localeKey);
+    final mode = await storage.read(themeModeKey);
     return AppSettings(
       locale: code == null ? null : Locale(code),
       themeMode: ThemeMode.values.firstWhere(
@@ -36,16 +38,52 @@ class SettingsController extends AsyncNotifier<AppSettings> {
     );
   }
 
-  AppSettings get _current => state.value ?? const AppSettings();
-
-  Future<void> setLocale(Locale? locale) async {
-    state = AsyncData(_current.copyWith(locale: () => locale));
-    await _storage.write(localeKey, locale?.languageCode);
+  /// Waits for the stored settings, so a choice made while they are still
+  /// loading is not overwritten by the late load. A failed load falls back to
+  /// the defaults.
+  Future<AppSettings> _loaded() async {
+    try {
+      return await future;
+    } catch (_) {
+      return const AppSettings();
+    }
   }
 
-  Future<void> setThemeMode(ThemeMode mode) async {
-    state = AsyncData(_current.copyWith(themeMode: mode));
-    await _storage.write(themeModeKey, mode.name);
+  /// Applies [locale] now; null returns to the device language. The choice
+  /// stays in effect for this run even if it cannot be saved, in which case
+  /// the failure is returned (never thrown) for the caller to report.
+  Future<AppFailure?> setLocale(Locale? locale) async {
+    final storage = ref.read(settingsStorageProvider);
+    final loaded = await _loaded();
+    if (!ref.mounted) return null;
+    // Newer than [loaded] when another choice landed while this one waited.
+    final current = state.value ?? loaded;
+    state = AsyncData(current.copyWith(locale: () => locale));
+    return _persist(storage, localeKey, locale?.languageCode);
+  }
+
+  /// Like [setLocale], for the appearance.
+  Future<AppFailure?> setThemeMode(ThemeMode mode) async {
+    final storage = ref.read(settingsStorageProvider);
+    final loaded = await _loaded();
+    if (!ref.mounted) return null;
+    // Newer than [loaded] when another choice landed while this one waited.
+    final current = state.value ?? loaded;
+    state = AsyncData(current.copyWith(themeMode: mode));
+    return _persist(storage, themeModeKey, mode.name);
+  }
+
+  Future<AppFailure?> _persist(
+    SettingsStorage storage,
+    String key,
+    String? value,
+  ) async {
+    try {
+      await storage.write(key, value);
+      return null;
+    } catch (_) {
+      return const UnknownFailure();
+    }
   }
 }
 
