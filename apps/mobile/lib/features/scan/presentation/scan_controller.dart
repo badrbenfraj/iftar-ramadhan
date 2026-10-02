@@ -20,9 +20,19 @@ final class ScanIdle extends ScanStatus {
   const ScanIdle();
 }
 
+/// Not on this phone yet: only the ID is known while the server answers.
 final class ScanLookingUp extends ScanStatus {
-  const ScanLookingUp(this.personId);
+  const ScanLookingUp(this.personId, {this.noCard = false});
   final int personId;
+  final bool noCard;
+}
+
+/// On this phone: name and meals show now while tonight's status is
+/// checked with the server (spec §6.3). Display only, never a verdict.
+final class ScanIdentifying extends ScanStatus {
+  const ScanIdentifying(this.person, {this.noCard = false});
+  final FastingPerson person;
+  final bool noCard;
 }
 
 /// The code is not a person ID.
@@ -39,10 +49,13 @@ final class ScanNotFound extends ScanStatus {
 
 /// Eligible: has not collected today. Holds pending phone/comment edits.
 final class ScanReady extends ScanStatus {
-  const ScanReady(this.person, {this.phone, this.comment});
+  const ScanReady(this.person, {this.phone, this.comment, this.noCard = false});
   final FastingPerson person;
   final String? phone;
   final String? comment;
+
+  /// Found without a card: the volunteer checks the CIN's last digits.
+  final bool noCard;
 }
 
 final class ScanConfirming extends ScanStatus {
@@ -83,12 +96,21 @@ final class ScanFailed extends ScanStatus {
 }
 
 class ScanState {
-  const ScanState({this.status = const ScanIdle(), this.servedCount = 0});
+  const ScanState({
+    this.status = const ScanIdle(),
+    this.servedCount = 0,
+    this.singleMeals = 0,
+    this.familyMeals = 0,
+  });
 
   final ScanStatus status;
 
   /// Meals confirmed from this device since the scanner was opened.
   final int servedCount;
+
+  /// Meals handed over this session, for the closing summary.
+  final int singleMeals;
+  final int familyMeals;
 
   /// Whether a new camera detection should be processed right now.
   /// Busy or pending-decision states ignore the camera, so a volunteer never
@@ -100,12 +122,22 @@ class ScanState {
     ScanAlreadyTaken() ||
     ScanConfirmed() => true,
     ScanFailed(:final duringConfirm) => !duringConfirm,
-    ScanLookingUp() || ScanReady() || ScanConfirming() => false,
+    ScanLookingUp() ||
+    ScanIdentifying() ||
+    ScanReady() ||
+    ScanConfirming() => false,
   };
 
-  ScanState copyWith({ScanStatus? status, int? servedCount}) => ScanState(
+  ScanState copyWith({
+    ScanStatus? status,
+    int? servedCount,
+    int? singleMeals,
+    int? familyMeals,
+  }) => ScanState(
     status: status ?? this.status,
     servedCount: servedCount ?? this.servedCount,
+    singleMeals: singleMeals ?? this.singleMeals,
+    familyMeals: familyMeals ?? this.familyMeals,
   );
 }
 
@@ -148,12 +180,27 @@ class ScanController extends Notifier<ScanState> {
     await _handle(raw);
   }
 
-  /// Manual ID entry (damaged card, no camera permission).
+  bool get _busy => switch (state.status) {
+    ScanLookingUp() || ScanIdentifying() || ScanConfirming() => true,
+    _ => false,
+  };
+
+  /// Manual ID (damaged card) — also used by "Look up card #N" in Find.
   Future<void> submitManual(String input) async {
-    if (state.status is ScanLookingUp || state.status is ScanConfirming) return;
+    if (_busy) return;
     _lastRaw = input.trim();
     _lastSeenAt = _now();
     await _handle(input);
+  }
+
+  /// "Find someone without a card" (spec §4.7): same flow, plus the CIN check.
+  Future<void> pickWithoutCard(int personId) async {
+    if (_busy) return;
+    _resumeTimer?.cancel();
+    _confirmMayHaveReachedServer = false;
+    _lastRaw = '$personId';
+    _lastSeenAt = _now();
+    await _lookup(personId, noCard: true);
   }
 
   Future<void> _handle(String raw) async {
@@ -167,8 +214,13 @@ class ScanController extends Notifier<ScanState> {
     }
   }
 
-  Future<void> _lookup(int personId) async {
-    _set(ScanLookingUp(personId));
+  Future<void> _lookup(int personId, {bool noCard = false}) async {
+    final cached = _cached(personId);
+    _set(
+      cached == null
+          ? ScanLookingUp(personId, noCard: noCard)
+          : ScanIdentifying(cached, noCard: noCard),
+    );
     try {
       final region = requireRegion(ref);
       final person = await ref
@@ -176,10 +228,11 @@ class ScanController extends Notifier<ScanState> {
           .get(region.id, personId);
       if (!_stillLookingUp(personId)) return;
       ref.read(peopleListProvider.notifier).upsert(person);
+      // The verdict always comes from the server response.
       _set(
         person.isMealTakenToday(_now())
             ? ScanAlreadyTaken(person, person.lastTakenMeal)
-            : ScanReady(person),
+            : ScanReady(person, noCard: noCard),
       );
     } on NotFoundFailure {
       if (_stillLookingUp(personId)) _set(ScanNotFound(personId));
@@ -190,17 +243,26 @@ class ScanController extends Notifier<ScanState> {
     }
   }
 
+  FastingPerson? _cached(int id) {
+    for (final p
+        in ref.read(peopleListProvider).value ?? const <FastingPerson>[]) {
+      if (p.id == id) return p;
+    }
+    return null;
+  }
+
   bool _stillLookingUp(int id) =>
       ref.mounted &&
       switch (state.status) {
         ScanLookingUp(:final personId) => personId == id,
+        ScanIdentifying(:final person) => person.id == id,
         _ => false,
       };
 
   /// Pending phone/comment edits, sent with the confirmation.
   void editContact({required String phone, required String comment}) {
-    if (state.status case ScanReady(:final person)) {
-      _set(ScanReady(person, phone: phone, comment: comment));
+    if (state.status case ScanReady(:final person, :final noCard)) {
+      _set(ScanReady(person, phone: phone, comment: comment, noCard: noCard));
     }
   }
 
@@ -268,6 +330,8 @@ class ScanController extends Notifier<ScanState> {
     state = state.copyWith(
       status: ScanConfirmed(person),
       servedCount: state.servedCount + 1,
+      singleMeals: state.singleMeals + person.singleMeal,
+      familyMeals: state.familyMeals + person.familyMeal,
     );
     _resumeTimer?.cancel();
     _resumeTimer = Timer(confirmedHold, () {

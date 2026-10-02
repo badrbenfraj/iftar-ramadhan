@@ -88,7 +88,10 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         HapticFeedback.vibrate();
       case ScanInvalidCode() || ScanNotFound() || ScanFailed():
         HapticFeedback.vibrate();
-      case ScanIdle() || ScanLookingUp() || ScanConfirming():
+      case ScanIdle() ||
+          ScanLookingUp() ||
+          ScanIdentifying() ||
+          ScanConfirming():
         break;
     }
   }

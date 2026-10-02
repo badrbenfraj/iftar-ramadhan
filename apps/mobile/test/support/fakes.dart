@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:iftar_mobile/core/network/app_failure.dart';
 import 'package:iftar_mobile/core/providers.dart';
@@ -63,12 +65,20 @@ class FakePeopleRepository implements PeopleRepository {
   int confirmCalls = 0;
   ({String? phone, String? comment})? lastConfirmBody;
 
+  /// When set, the next `get` waits for it (then clears it).
+  Completer<void>? getGate;
+
   @override
   Future<List<FastingPerson>> list(int regionId) async =>
       people.values.toList();
 
   @override
   Future<FastingPerson> get(int regionId, int id) async {
+    final gate = getGate;
+    if (gate != null) {
+      getGate = null;
+      await gate.future;
+    }
     final failure = nextGetFailure;
     if (failure != null) {
       nextGetFailure = null;

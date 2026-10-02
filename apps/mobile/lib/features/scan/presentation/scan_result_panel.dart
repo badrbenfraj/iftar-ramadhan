@@ -47,6 +47,7 @@ class ScanResultPanel extends ConsumerWidget {
     ScanConfirmed(:final person) => 'done-${person.id}',
     ScanAlreadyTaken(:final person) => 'taken-${person.id}',
     ScanLookingUp(:final personId) => 'lookup-$personId',
+    ScanIdentifying(:final person) => 'ready-${person.id}',
     ScanNotFound(:final personId) => 'missing-$personId',
     ScanInvalidCode(:final raw) => 'invalid-$raw',
     ScanFailed(:final personId) => 'failed-$personId',
@@ -63,6 +64,14 @@ class ScanResultPanel extends ConsumerWidget {
           tone: _Tone.neutral,
           icon: Icons.search_rounded,
           title: 'Looking up #$personId…',
+          busy: true,
+        );
+
+      case ScanIdentifying(:final person):
+        return _PersonPanel(
+          person: person,
+          tone: _Tone.neutral,
+          headline: 'Checking…',
           busy: true,
         );
 

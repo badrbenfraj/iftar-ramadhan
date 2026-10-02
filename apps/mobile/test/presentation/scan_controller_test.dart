@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/core/network/app_failure.dart';
 import 'package:iftar_mobile/features/auth/presentation/auth_controller.dart';
+import 'package:iftar_mobile/features/people/presentation/people_controller.dart';
 import 'package:iftar_mobile/features/scan/presentation/scan_controller.dart';
 
 import '../support/fakes.dart';
@@ -169,5 +172,61 @@ void main() {
     final status = noRegion.read(scanControllerProvider).status;
     expect(status, isA<ScanFailed>());
     expect((status as ScanFailed).failure, isA<AppStateFailure>());
+  });
+
+  group('instant identify from the phone list', () {
+    test('a cached person shows their name first, then the server verdict', () async {
+      await container.read(peopleListProvider.future); // prime the cache
+      final seen = <ScanStatus>[];
+      container.listen(
+        scanControllerProvider.select((s) => s.status),
+        (_, next) => seen.add(next),
+      );
+      await controller().onDetected('101');
+      expect(seen.first, isA<ScanIdentifying>());
+      expect((seen.first as ScanIdentifying).person.fullName, 'Najwa Chalbi');
+      expect(seen.last, isA<ScanReady>());
+    });
+
+    test('a person not on the phone goes through looking up', () async {
+      final seen = <ScanStatus>[];
+      container.listen(
+        scanControllerProvider.select((s) => s.status),
+        (_, next) => seen.add(next),
+      );
+      await controller().onDetected('101');
+      expect(seen.first, isA<ScanLookingUp>());
+      expect(seen.last, isA<ScanReady>());
+    });
+
+    test('cards are ignored while identifying', () async {
+      await container.read(peopleListProvider.future);
+      final gate = Completer<void>();
+      repo.getGate = gate;
+      final pending = controller().onDetected('101');
+      expect(state().status, isA<ScanIdentifying>());
+      expect(state().acceptsScans, isFalse);
+      await controller().onDetected('102');
+      gate.complete();
+      await pending;
+      expect((state().status as ScanReady).person.id, 101);
+    });
+  });
+
+  test('picking someone without a card asks for the CIN check', () async {
+    await controller().pickWithoutCard(101);
+    final status = state().status;
+    expect(status, isA<ScanReady>());
+    expect((status as ScanReady).noCard, isTrue);
+    controller().editContact(phone: '22123456', comment: '');
+    expect((state().status as ScanReady).noCard, isTrue, reason: 'kept on edit');
+  });
+
+  test('session stats count the meals handed over', () async {
+    await controller().onDetected('101'); // person(): 2 single, 1 family
+    await controller().confirm();
+    expect(state().servedCount, 1);
+    expect(state().singleMeals, 2);
+    expect(state().familyMeals, 1);
   });
 }
