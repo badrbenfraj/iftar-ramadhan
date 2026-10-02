@@ -163,8 +163,10 @@ class ScanController extends Notifier<ScanState> {
   Timer? _resumeTimer;
 
   /// The person whose last confirm ended without an answer, so the server may
-  /// have recorded it. Only a 409 for this same person, soon after, is our
-  /// own write; anyone else's 409 is a real second pickup.
+  /// have recorded it. Only a 409 for this same person, soon after, and only
+  /// while still in the failed-confirm → retry flow, is our own write. Skip or
+  /// any lookup leaves that flow and clears the mark: from then on a 409 is a
+  /// real second pickup, even for the same person.
   int? _uncertainConfirmPersonId;
   DateTime? _uncertainConfirmAt;
 
@@ -213,6 +215,7 @@ class ScanController extends Notifier<ScanState> {
     // An uncertain confirm must be resolved (retry or skip) first.
     if (state.status case ScanFailed(duringConfirm: true)) return;
     _resumeTimer?.cancel();
+    _clearUncertain();
     _lastRaw = '$personId';
     _lastSeenAt = _now();
     await _lookup(personId, noCard: true);
@@ -220,6 +223,7 @@ class ScanController extends Notifier<ScanState> {
 
   Future<void> _handle(String raw) async {
     _resumeTimer?.cancel();
+    _clearUncertain();
     switch (QrPayload.parse(raw)) {
       case InvalidQr(:final raw):
         _set(ScanInvalidCode(raw));
@@ -229,6 +233,7 @@ class ScanController extends Notifier<ScanState> {
   }
 
   Future<void> _lookup(int personId, {bool noCard = false}) async {
+    _clearUncertain(); // a lookup is outside the failed-confirm flow
     final cached = _cached(personId);
     _set(
       cached == null
@@ -395,6 +400,7 @@ class ScanController extends Notifier<ScanState> {
   /// still in front of the lens is not re-read immediately.
   void scanNext() {
     _resumeTimer?.cancel();
+    _clearUncertain();
     _lastSeenAt = _now();
     _set(const ScanIdle());
   }

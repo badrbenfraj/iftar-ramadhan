@@ -83,8 +83,9 @@ void main() {
     WidgetTester tester, {
     MobileScannerController? camera,
     Locale locale = const Locale('en'),
+    Size size = const Size(1080, 2280),
   }) async {
-    tester.view.physicalSize = const Size(1080, 2280);
+    tester.view.physicalSize = size;
     tester.view.devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
@@ -222,6 +223,43 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle(const Duration(milliseconds: 200), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
     expect(find.text('summary stub'), findsOneWidget);
+  });
+
+  testWidgets('320×568 at 2.0x: the sheet scrolls as one unit and Confirm is reachable', (tester) async {
+    tester.platformDispatcher.textScaleFactorTestValue = 2.0;
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+    final long = FastingPerson(
+      id: 9,
+      firstName: 'Mohamed Ali Ben Abdelkader',
+      lastName: 'Trabelsi El Kairouani',
+      cin: '08123812',
+      phone: '+216 98 123 456',
+      comment: 'Lives near the mosque, comes with two children',
+      singleMeal: 2,
+      familyMeal: 1,
+      lastTakenMeal: testNow.subtract(const Duration(days: 1)),
+      region: testRegion,
+    );
+    repo = FakePeopleRepository([long]);
+    final container = await open(
+      tester,
+      size: const Size(960, 1704), // 320×568 at 3x
+    );
+    await container.read(authControllerProvider.future);
+    await container.read(scanControllerProvider.notifier).pickWithoutCard(9);
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.takeException(), isNull);
+    final confirm = find.ancestor(of: find.text(en.confirmHandOver), matching: find.byType(FilledButton));
+    await tester.ensureVisible(confirm);
+    await tester.pump(const Duration(milliseconds: 300));
+    const screen = Rect.fromLTWH(0, 0, 320, 568);
+    final r = tester.getRect(confirm);
+    expect(screen.contains(r.topLeft) && screen.contains(r.bottomRight - const Offset(0.01, 0.01)), isTrue, reason: '$r');
+    await tester.tap(confirm);
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(repo.confirmCalls, 1);
+    await tester.pump(const Duration(seconds: 2));
   });
 
   for (final lc in ['en', 'ar']) {

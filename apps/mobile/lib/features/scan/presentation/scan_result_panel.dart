@@ -349,41 +349,64 @@ class _Sheet extends StatelessWidget {
         constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
         child: SafeArea(
           top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              band,
-              if (header.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: header,
-                  ),
-                ),
-              if (body.isNotEmpty)
-                Flexible(
-                  child: SingleChildScrollView(
-                    padding: EdgeInsets.fromLTRB(18, header.isEmpty ? 14 : 4, 18, 8),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: body,
-                    ),
-                  ),
-                ),
-              if (footer.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: footer,
-                  ),
-                ),
-            ],
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Pinned header and footer need roughly 250 px per unit of text
+              // scale. Below that (small phone, huge text) pinning would
+              // overflow, so everything under the band scrolls as one unit;
+              // the verdict band always stays on screen.
+              final scale = MediaQuery.textScalerOf(context).scale(1);
+              final compact = constraints.maxHeight < 300 * scale;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  band,
+                  if (compact)
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [...header, ...body, const SizedBox(height: 8), ...footer],
+                        ),
+                      ),
+                    )
+                  else ...[
+                    if (header.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: header,
+                        ),
+                      ),
+                    if (body.isNotEmpty)
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(18, header.isEmpty ? 14 : 4, 18, 8),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: body,
+                          ),
+                        ),
+                      ),
+                    if (footer.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: footer,
+                        ),
+                      ),
+                  ],
+                ],
+              );
+            },
           ),
         ),
       ),

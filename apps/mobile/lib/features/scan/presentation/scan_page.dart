@@ -314,7 +314,9 @@ class _HintPill extends StatelessWidget {
         children: [
           const Icon(Icons.nightlight_round, size: 14, color: AppPalette.gold),
           const SizedBox(width: 6),
-          Text(text, style: const TextStyle(color: AppPalette.onSky, fontSize: 12.5)),
+          Flexible(
+            child: Text(text, style: const TextStyle(color: AppPalette.onSky, fontSize: 12.5)),
+          ),
         ],
       ),
     ),

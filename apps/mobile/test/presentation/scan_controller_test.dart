@@ -312,16 +312,42 @@ void main() {
         expect(state().servedCount, 0);
       });
 
-      test('skipping does not forget an uncertain confirm for that person', () async {
+      test('after Skip a rescan that finds them served is a refusal, not a confirmation', () async {
+        await controller().onDetected('101');
+        repo
+          ..nextConfirmFailure = const TimeoutFailure()
+          ..applyThenFailConfirm = true; // the write landed, the answer was lost
+        await controller().confirm();
+        expect((state().status as ScanFailed).duringConfirm, isTrue);
+        controller().scanNext();
+        now = now.add(const Duration(seconds: 10));
+        await controller().onDetected('101');
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
+
+      test('P15: Skip, rescan, another phone serves them, Confirm: refused', () async {
         await uncertainConfirmOn101();
         controller().scanNext();
         now = now.add(const Duration(seconds: 10));
         await controller().onDetected('101');
         expect(state().status, isA<ScanReady>());
-        repo.people[101] = takenJustNow(repo.people[101]!); // the first write landed
+        repo.people[101] = takenJustNow(repo.people[101]!); // another phone
         await controller().confirm();
-        expect(state().status, isA<ScanConfirmed>());
-        expect(state().servedCount, 1);
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
+
+      test('P15b: the same through Find without a card', () async {
+        await uncertainConfirmOn101();
+        controller().scanNext();
+        now = now.add(const Duration(seconds: 10));
+        await controller().pickWithoutCard(101);
+        expect(state().status, isA<ScanReady>());
+        repo.people[101] = takenJustNow(repo.people[101]!);
+        await controller().confirm();
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
       });
 
       test('after the window the same 409 is a real duplicate', () async {
