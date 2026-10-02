@@ -35,6 +35,13 @@ class ScanResultPanel extends ConsumerWidget {
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 220),
       switchInCurve: Curves.easeOutCubic,
+      // Only the current sheet is ever shown: an outgoing sheet would keep
+      // the previous person's opposite verdict (and a live Confirm) on screen.
+      layoutBuilder: (current, _) => Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1,
+        child: current ?? const SizedBox.shrink(),
+      ),
       transitionBuilder: (child, animation) => SlideTransition(
         position: Tween(begin: const Offset(0, 0.12), end: Offset.zero).animate(animation),
         child: FadeTransition(opacity: animation, child: child),
@@ -74,7 +81,7 @@ class ScanResultPanel extends ConsumerWidget {
       case ScanLookingUp(:final personId):
         return _Sheet(
           band: _Band(color: AppPalette.waitBand, seal: checking, title: l.lookingUp(personId), small: true),
-          children: const [_WaitBar()],
+          body: const [_WaitBar()],
         );
 
       case ScanIdentifying(:final person, :final noCard):
@@ -86,7 +93,7 @@ class ScanResultPanel extends ConsumerWidget {
             subtitle: l.checkingStatus,
             small: true,
           ),
-          children: [
+          body: [
             _PersonMeta(person),
             _Label(l.handOver),
             HandOverTiles(person: person),
@@ -131,17 +138,14 @@ class ScanResultPanel extends ConsumerWidget {
             subtitle: l.alreadyServedTonight,
             trailing: time,
           ),
-          children: [
-            _Name(person),
-            _PersonMeta(person),
-            Padding(
-              padding: const EdgeInsets.only(top: 10),
-              child: Text(
-                time == null ? l.alreadyServedNoteNoTime : l.alreadyServedNote(time),
-                style: TextStyle(fontSize: 13, color: c.clayInk),
-              ),
+          header: [_Name(person), _PersonMeta(person)],
+          body: [
+            Text(
+              time == null ? l.alreadyServedNoteNoTime : l.alreadyServedNote(time),
+              style: TextStyle(fontSize: 13, color: c.clayInk),
             ),
-            const SizedBox(height: 16),
+          ],
+          footer: [
             FilledButton.icon(
               style: FilledButton.styleFrom(
                 backgroundColor: AppPalette.sky,
@@ -168,7 +172,7 @@ class ScanResultPanel extends ConsumerWidget {
             subtitle: l.unknownCardMessage(region),
             small: true,
           ),
-          children: [
+          body: [
             FilledButton.icon(
               onPressed: () => context.go('/add?id=$personId'),
               icon: const Icon(Icons.person_add_alt_1_rounded),
@@ -187,7 +191,7 @@ class ScanResultPanel extends ConsumerWidget {
             subtitle: l.invalidCodeMessage,
             small: true,
           ),
-          children: [
+          body: [
             OutlinedButton.icon(
               onPressed: onFindWithoutCard,
               icon: const Icon(Icons.search_rounded),
@@ -207,20 +211,20 @@ class ScanResultPanel extends ConsumerWidget {
               subtitle: l.dontHandOverYet,
               small: true,
             ),
-            children: [
+            header: [
               if (person != null) ...[
                 _Name(person),
                 _PersonMeta(person),
                 if (noCard) _NoCardCheck(person),
               ],
-              Padding(
-                padding: const EdgeInsets.only(top: 10),
-                child: Text(
-                  '${failureText(l, failure)} ${l.notConfirmedExplanation}',
-                  style: TextStyle(fontSize: 13, color: c.ink),
-                ),
+            ],
+            body: [
+              Text(
+                '${failureText(l, failure)} ${l.notConfirmedExplanation}',
+                style: TextStyle(fontSize: 13, color: c.ink),
               ),
-              const SizedBox(height: 14),
+            ],
+            footer: [
               FilledButton.icon(
                 onPressed: controller.retry,
                 icon: const Icon(Icons.refresh_rounded),
@@ -238,7 +242,7 @@ class ScanResultPanel extends ConsumerWidget {
             subtitle: failureText(l, failure),
             small: true,
           ),
-          children: [
+          body: [
             FilledButton.icon(
               onPressed: controller.retry,
               icon: const Icon(Icons.refresh_rounded),
@@ -268,12 +272,16 @@ class ScanResultPanel extends ConsumerWidget {
         title: MealStatusWords.notTaken,
         subtitle: l.notServedTonight,
       ),
-      children: [
+      // Pinned: who and the CIN check. Scrolling: quantities and contact.
+      // Pinned below: the action, so Confirm never leaves the screen.
+      header: [
         _Name(person),
         _PersonMeta(person),
+        if (noCard) _NoCardCheck(person),
+      ],
+      body: [
         _Label(l.handOver),
         HandOverTiles(person: person),
-        if (noCard) _NoCardCheck(person),
         if (!busy)
           _ContactLine(
             phone: phone,
@@ -285,7 +293,8 @@ class ScanResultPanel extends ConsumerWidget {
               }
             },
           ),
-        const SizedBox(height: 14),
+      ],
+      footer: [
         FilledButton.icon(
           onPressed: busy ? null : controller.confirm,
           icon: busy
@@ -306,10 +315,23 @@ class ScanResultPanel extends ConsumerWidget {
 }
 
 class _Sheet extends StatelessWidget {
-  const _Sheet({required this.band, this.children = const [], this.background});
+  const _Sheet({
+    required this.band,
+    this.header = const [],
+    this.body = const [],
+    this.footer = const [],
+    this.background,
+  });
 
+  /// Pinned under the band: who this is.
   final Widget band;
-  final List<Widget> children;
+  final List<Widget> header;
+
+  /// Scrolls when the sheet would otherwise outgrow the screen.
+  final List<Widget> body;
+
+  /// Pinned at the bottom: the action the volunteer must always reach.
+  final List<Widget> footer;
   final Color? background;
 
   @override
@@ -321,10 +343,10 @@ class _Sheet extends StatelessWidget {
         color: background ?? context.colors.surface,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadii.sheet)),
       ),
-      // The sheet sits over the camera: at large text sizes the body scrolls
-      // inside it while the verdict band stays pinned.
+      // The sheet sits over the camera. At large text sizes only the middle
+      // scrolls; the band, the person and the action stay on screen.
       child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.72),
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
         child: SafeArea(
           top: false,
           child: Column(
@@ -332,15 +354,33 @@ class _Sheet extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               band,
-              if (children.isNotEmpty)
+              if (header.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: header,
+                  ),
+                ),
+              if (body.isNotEmpty)
                 Flexible(
                   child: SingleChildScrollView(
-                    padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
+                    padding: EdgeInsets.fromLTRB(18, header.isEmpty ? 14 : 4, 18, 8),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: children,
+                      children: body,
                     ),
+                  ),
+                ),
+              if (footer.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: footer,
                   ),
                 ),
             ],
@@ -431,47 +471,50 @@ class _DoneBand extends StatelessWidget {
         color: AppPalette.doneBand,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Seal(SealKind.done, semanticLabel: l.sealDone),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Semantics(
-                  liveRegion: true,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        blessingText,
-                        textDirection: TextDirection.rtl,
-                        style: TextStyle(
-                          fontFamily: AppTheme.brandFont,
-                          fontSize: 30,
-                          height: 1.15,
-                          color: AppPalette.gold,
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Seal(SealKind.done, semanticLabel: l.sealDone),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          blessingText,
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(
+                            fontFamily: AppTheme.brandFont,
+                            fontSize: 30,
+                            height: 1.15,
+                            color: AppPalette.gold,
+                          ),
                         ),
-                      ),
-                      Text(
-                        l.servedLine(isolate(person.fullName), person.totalPortions),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: Colors.white, fontSize: 12.5),
-                      ),
-                      if (l.blessingMeaning.isNotEmpty)
                         Text(
-                          l.blessingMeaning,
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12.5),
+                          l.servedLine(isolate(person.fullName), person.totalPortions),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 12.5),
                         ),
-                    ],
+                        if (l.blessingMeaning.isNotEmpty)
+                          Text(
+                            l.blessingMeaning,
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12.5),
+                          ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -579,7 +622,7 @@ class _NoCardCheck extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final digits = cinLastDigits(person.cin);
-    if (digits == null) return const SizedBox.shrink();
+    final l = AppLocalizations.of(context);
     final c = context.colors;
     return Container(
       margin: const EdgeInsets.only(top: 10),
@@ -591,7 +634,7 @@ class _NoCardCheck extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              AppLocalizations.of(context).noCardCheck(ltr(digits)),
+              digits == null ? l.noCinOnFile : l.noCardCheck(ltr(digits)),
               style: TextStyle(fontSize: 12.5, color: c.goldInk),
             ),
           ),

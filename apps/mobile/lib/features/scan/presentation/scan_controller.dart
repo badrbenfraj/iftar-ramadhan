@@ -161,7 +161,12 @@ class ScanController extends Notifier<ScanState> {
   String? _lastRaw;
   DateTime? _lastSeenAt;
   Timer? _resumeTimer;
-  bool _confirmMayHaveReachedServer = false;
+
+  /// The person whose last confirm ended without an answer, so the server may
+  /// have recorded it. Only a 409 for this same person, soon after, is our
+  /// own write; anyone else's 409 is a real second pickup.
+  int? _uncertainConfirmPersonId;
+  DateTime? _uncertainConfirmAt;
 
   DateTime _now() => ref.read(clockProvider)();
 
@@ -190,7 +195,8 @@ class ScanController extends Notifier<ScanState> {
     _ => false,
   };
 
-  /// Manual ID (damaged card) — also used by "Look up card #N" in Find.
+  /// Looks up a typed ID, bypassing the duplicate-scan filter. The scan screen
+  /// has no manual-entry control any more (Find covers damaged cards).
   Future<void> submitManual(String input) async {
     if (_busy) return;
     // An uncertain confirm must be resolved (retry or skip) first: a new
@@ -207,7 +213,6 @@ class ScanController extends Notifier<ScanState> {
     // An uncertain confirm must be resolved (retry or skip) first.
     if (state.status case ScanFailed(duringConfirm: true)) return;
     _resumeTimer?.cancel();
-    _confirmMayHaveReachedServer = false;
     _lastRaw = '$personId';
     _lastSeenAt = _now();
     await _lookup(personId, noCard: true);
@@ -215,7 +220,6 @@ class ScanController extends Notifier<ScanState> {
 
   Future<void> _handle(String raw) async {
     _resumeTimer?.cancel();
-    _confirmMayHaveReachedServer = false;
     switch (QrPayload.parse(raw)) {
       case InvalidQr(:final raw):
         _set(ScanInvalidCode(raw));
@@ -310,7 +314,7 @@ class ScanController extends Notifier<ScanState> {
       if (!ref.mounted) return;
       final takenAt = e.takenAt;
       final ours =
-          _confirmMayHaveReachedServer &&
+          _isUncertain(person.id) &&
           takenAt != null &&
           _now().difference(takenAt).abs() < _ownConfirmationWindow;
       if (ours) {
@@ -321,6 +325,7 @@ class ScanController extends Notifier<ScanState> {
           ),
         );
       } else {
+        if (_uncertainConfirmPersonId == person.id) _clearUncertain();
         _set(ScanAlreadyTaken(person, takenAt));
       }
     } catch (e) {
@@ -328,7 +333,8 @@ class ScanController extends Notifier<ScanState> {
       final failure = toAppFailure(e);
       // The request may have been applied even though we got no answer.
       if (failure is NetworkFailure || failure is TimeoutFailure) {
-        _confirmMayHaveReachedServer = true;
+        _uncertainConfirmPersonId = person.id;
+        _uncertainConfirmAt = _now();
       }
       _set(
         ScanFailed(
@@ -343,8 +349,23 @@ class ScanController extends Notifier<ScanState> {
     }
   }
 
+  bool _isUncertain(int personId) {
+    final at = _uncertainConfirmAt;
+    if (_uncertainConfirmPersonId != personId || at == null) return false;
+    if (_now().difference(at).abs() >= _ownConfirmationWindow) {
+      _clearUncertain();
+      return false;
+    }
+    return true;
+  }
+
+  void _clearUncertain() {
+    _uncertainConfirmPersonId = null;
+    _uncertainConfirmAt = null;
+  }
+
   void _onConfirmed(FastingPerson person) {
-    _confirmMayHaveReachedServer = false;
+    if (_uncertainConfirmPersonId == person.id) _clearUncertain();
     ref.read(peopleListProvider.notifier).upsert(person);
     state = state.copyWith(
       status: ScanConfirmed(person),
@@ -374,7 +395,6 @@ class ScanController extends Notifier<ScanState> {
   /// still in front of the lens is not re-read immediately.
   void scanNext() {
     _resumeTimer?.cancel();
-    _confirmMayHaveReachedServer = false;
     _lastSeenAt = _now();
     _set(const ScanIdle());
   }

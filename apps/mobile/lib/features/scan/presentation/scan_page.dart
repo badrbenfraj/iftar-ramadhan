@@ -43,6 +43,9 @@ class _ScanPageState extends ConsumerState<ScanPage> {
   }
 
   void _onDetect(BarcodeCapture capture) {
+    // The camera keeps running under Find (and any other page on top); a card
+    // read there must not replace what the volunteer is choosing.
+    if (ModalRoute.of(context)?.isCurrent != true) return;
     for (final barcode in capture.barcodes) {
       final raw = barcode.rawValue;
       if (raw != null) {
@@ -80,6 +83,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     }
   }
 
+  /// Only "ready" is re-created in place (contact edits); every other change
+  /// is news worth a buzz.
+  static bool _sameVerdict(ScanStatus a, ScanStatus b) =>
+      a is ScanReady && b is ScanReady && a.person.id == b.person.id;
+
   void _hapticsFor(ScanStatus status) {
     switch (status) {
       case ScanReady():
@@ -100,7 +108,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
   Widget build(BuildContext context) {
     ref.listen(
       scanControllerProvider.select((s) => s.status),
-      (_, next) => _hapticsFor(next),
+      (prev, next) {
+        // Editing the contact re-creates ScanReady for the same person.
+        if (prev != null && _sameVerdict(prev, next)) return;
+        _hapticsFor(next);
+      },
     );
     final l = AppLocalizations.of(context);
     final scan = ref.watch(scanControllerProvider);
@@ -110,69 +122,92 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     final servedTonight = countPeople(people, now).served;
     final frameColor = switch (scan.status) {
       ScanReady() || ScanConfirming() => AppPalette.mint,
-      ScanAlreadyTaken() => const Color(0xFFE8957A),
+      ScanAlreadyTaken() => AppPalette.clayFrame,
       ScanIdentifying() || ScanLookingUp() || ScanInvalidCode() || ScanFailed() => AppPalette.gold,
       ScanNotFound() => AppPalette.onSkyMuted,
       _ => AppPalette.onSky,
     };
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          MobileScanner(
-            controller: _camera,
-            onDetect: _onDetect,
-            // The fallback is drawn below, from this page's own build, so its
-            // "find" action follows the scan state.
-            errorBuilder: (context, error) => const SizedBox.expand(),
-          ),
-          ValueListenableBuilder<MobileScannerState>(
-            valueListenable: _camera,
-            builder: (context, camera, _) {
-              final available = camera.error == null;
-              final showHint = scan.status is ScanIdle || scan.status is ScanConfirmed;
-              return Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (camera.error case final error?)
-                    _CameraUnavailable(
-                      error: error,
-                      // Disabled, not hidden, while someone is pending.
-                      onFind: scan.acceptsScans ? _findWithoutCard : null,
-                    ),
-                  if (available)
-                    IgnorePointer(
-                      child: TweenAnimationBuilder<Color?>(
-                        tween: ColorTween(end: frameColor),
-                        duration: const Duration(milliseconds: 250),
-                        builder: (_, color, _) => CustomPaint(
-                          painter: ArchViewfinderPainter(color ?? frameColor),
+    // Android back after serving shows the summary like the close button.
+    return PopScope(
+      canPop: scan.servedCount == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _close();
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            MobileScanner(
+              controller: _camera,
+              onDetect: _onDetect,
+              // The fallback is drawn below, from this page's own build, so its
+              // "find" action follows the scan state.
+              errorBuilder: (context, error) => const SizedBox.expand(),
+            ),
+            ValueListenableBuilder<MobileScannerState>(
+              valueListenable: _camera,
+              builder: (context, camera, _) {
+                final available = camera.error == null;
+                final showHint = scan.status is ScanIdle || scan.status is ScanConfirmed;
+                return Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (camera.error case final error?)
+                      _CameraUnavailable(
+                        error: error,
+                        // Disabled, not hidden, while someone is pending.
+                        onFind: scan.acceptsScans ? _findWithoutCard : null,
+                      ),
+                    if (available)
+                      IgnorePointer(
+                        child: TweenAnimationBuilder<Color?>(
+                          tween: ColorTween(end: frameColor),
+                          duration: const Duration(milliseconds: 250),
+                          builder: (_, color, _) => CustomPaint(
+                            painter: ArchViewfinderPainter(color ?? frameColor),
+                          ),
                         ),
                       ),
-                    ),
-                  SafeArea(
-                    bottom: false,
-                    child: Column(
-                      children: [
-                        _TopBar(camera: _camera, servedTonight: servedTonight, onClose: _close),
-                        const Spacer(),
-                        if (available && showHint)
-                          Padding(
-                            padding: const EdgeInsets.only(bottom: 12),
-                            child: _HintPill(l.scanHint),
+                    SafeArea(
+                      bottom: false,
+                      child: Column(
+                        children: [
+                          _TopBar(camera: _camera, servedTonight: servedTonight, onClose: _close),
+                          // The sheet takes what it needs of the space below the
+                          // top bar and scrolls inside itself beyond that.
+                          Expanded(
+                            child: Align(
+                              alignment: Alignment.bottomCenter,
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  if (available && showHint)
+                                    Padding(
+                                      padding: const EdgeInsets.only(bottom: 12),
+                                      child: _HintPill(l.scanHint),
+                                    ),
+                                  if (available || scan.status is! ScanIdle)
+                                    Flexible(
+                                      child: ScanResultPanel(
+                                        status: scan.status,
+                                        onFindWithoutCard: _findWithoutCard,
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
                           ),
-                        if (available || scan.status is! ScanIdle)
-                          ScanResultPanel(status: scan.status, onFindWithoutCard: _findWithoutCard),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
-        ],
+                  ],
+                );
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -247,10 +282,14 @@ class _RoundIcon extends StatelessWidget {
     tooltip: tooltip,
     onPressed: onPressed,
     style: IconButton.styleFrom(
-      backgroundColor: active ? AppPalette.gold : Colors.black.withValues(alpha: 0.4),
-      foregroundColor: active ? AppPalette.sky : AppPalette.onSky,
+      // On is an onSky outline, not a gold fill (spec §3.1).
+      backgroundColor: Colors.black.withValues(alpha: 0.4),
+      foregroundColor: AppPalette.onSky,
       minimumSize: const Size.square(44),
-      side: BorderSide(color: AppPalette.onSky.withValues(alpha: 0.18)),
+      side: BorderSide(
+        color: AppPalette.onSky.withValues(alpha: active ? 0.9 : 0.18),
+        width: active ? 2 : 1,
+      ),
     ),
     icon: Icon(icon),
   );

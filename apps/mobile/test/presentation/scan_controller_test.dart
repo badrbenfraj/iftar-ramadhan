@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/core/network/app_failure.dart';
 import 'package:iftar_mobile/features/auth/presentation/auth_controller.dart';
+import 'package:iftar_mobile/features/people/domain/fasting_person.dart';
 import 'package:iftar_mobile/features/people/presentation/people_controller.dart';
 import 'package:iftar_mobile/features/scan/presentation/scan_controller.dart';
 
@@ -286,6 +287,54 @@ void main() {
       expect((before as ScanFailed).duringConfirm, isTrue);
       await controller().submitManual('102');
       expect(identical(state().status, before), isTrue);
+    });
+
+    group('own confirmation is keyed by person', () {
+      FastingPerson takenJustNow(FastingPerson p) =>
+          p.copyWith(lastTakenMeal: now, mealTakenTodayFromServer: true);
+
+      Future<void> uncertainConfirmOn101() async {
+        await controller().onDetected('101');
+        repo.nextConfirmFailure = const NetworkFailure();
+        await controller().confirm();
+        expect((state().status as ScanFailed).duringConfirm, isTrue);
+      }
+
+      test('another person\'s 409 is never our own confirmation', () async {
+        repo.people[103] = person(103, first: 'Hedi', last: 'Jlassi');
+        await uncertainConfirmOn101();
+        controller().scanNext();
+        await controller().onDetected('103');
+        expect(state().status, isA<ScanReady>());
+        repo.people[103] = takenJustNow(repo.people[103]!); // another phone won
+        await controller().confirm();
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
+
+      test('skipping does not forget an uncertain confirm for that person', () async {
+        await uncertainConfirmOn101();
+        controller().scanNext();
+        now = now.add(const Duration(seconds: 10));
+        await controller().onDetected('101');
+        expect(state().status, isA<ScanReady>());
+        repo.people[101] = takenJustNow(repo.people[101]!); // the first write landed
+        await controller().confirm();
+        expect(state().status, isA<ScanConfirmed>());
+        expect(state().servedCount, 1);
+      });
+
+      test('after the window the same 409 is a real duplicate', () async {
+        await uncertainConfirmOn101();
+        controller().scanNext();
+        now = now.add(const Duration(minutes: 4));
+        await controller().onDetected('101');
+        expect(state().status, isA<ScanReady>());
+        repo.people[101] = takenJustNow(repo.people[101]!);
+        await controller().confirm();
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
     });
   });
 }

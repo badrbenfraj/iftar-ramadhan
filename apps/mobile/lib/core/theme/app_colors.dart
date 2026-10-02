@@ -15,6 +15,9 @@ abstract final class AppPalette {
   static const goldSoft = Color(0xFFF1E3BF);
   static const mint = Color(0xFF43CEBB);
 
+  /// Viewfinder frame for "already served": a clay stop that reads on the sky.
+  static const clayFrame = Color(0xFFE8957A);
+
   // Scan verdict bands. White text, except the gold blessing on doneBand.
   static const serveBand = Color(0xFF0D6B62);
   static const serveBandNight = Color(0xFF0F7A70);

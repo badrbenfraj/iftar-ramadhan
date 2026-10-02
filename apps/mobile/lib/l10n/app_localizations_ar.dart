@@ -551,6 +551,10 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get noCinOnFile =>
+      'لا يوجد رقم بطاقة تعريف مسجّل — تحقّق من وثيقة أخرى.';
+
+  @override
   String servedLine(String name, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

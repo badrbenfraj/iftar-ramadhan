@@ -1054,6 +1054,12 @@ abstract class AppLocalizations {
   /// **'No card: ask for the CIN ending in {digits}'**
   String noCardCheck(String digits);
 
+  /// No description provided for @noCinOnFile.
+  ///
+  /// In en, this message translates to:
+  /// **'No ID card number on file — check another document.'**
+  String get noCinOnFile;
+
   /// No description provided for @servedLine.
   ///
   /// In en, this message translates to:

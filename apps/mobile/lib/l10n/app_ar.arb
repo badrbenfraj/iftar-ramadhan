@@ -159,6 +159,7 @@
   "skip": "تخطّي",
   "details": "التفاصيل",
   "noCardCheck": "بلا بطاقة: اطلب رقم ب.ت.و المنتهي بـ {digits}",
+  "noCinOnFile": "لا يوجد رقم بطاقة تعريف مسجّل — تحقّق من وثيقة أخرى.",
   "servedLine": "تم التسليم: {name} · {count, plural, =1{حصة واحدة} =2{حصتان} few{{count} حصص} other{{count} حصة}}",
   "alreadyServedTonight": "استلم الليلة",
   "alreadyServedNote": "لا شيء للتسليم. أخبره بلطف أنه استلم على الساعة {time}.",

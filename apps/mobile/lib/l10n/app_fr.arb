@@ -159,6 +159,7 @@
   "skip": "Passer",
   "details": "Détails",
   "noCardCheck": "Sans carte : demandez la CIN finissant par {digits}",
+  "noCinOnFile": "Aucun numéro de CIN enregistré — vérifiez une autre pièce.",
   "servedLine": "Servi : {name} · {count, plural, one{{count} portion} other{{count} portions}}",
   "alreadyServedTonight": "Déjà servi ce soir",
   "alreadyServedNote": "Rien à remettre. Indiquez-lui avec douceur que le repas a été retiré à {time}.",

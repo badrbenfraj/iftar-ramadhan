@@ -565,6 +565,10 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get noCinOnFile =>
+      'Aucun numéro de CIN enregistré — vérifiez une autre pièce.';
+
+  @override
   String servedLine(String name, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

@@ -551,6 +551,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get noCinOnFile =>
+      'No ID card number on file — check another document.';
+
+  @override
   String servedLine(String name, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

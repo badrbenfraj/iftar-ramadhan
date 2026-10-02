@@ -138,6 +138,35 @@ void main() {
       expect(check, findsOneWidget);
     });
 
+    testWidgets('no card and no CIN on file says to check another document', (tester) async {
+      const noCin = FastingPerson(id: 5, firstName: 'Sami', lastName: 'Gharbi', singleMeal: 1, familyMeal: 0);
+      const shortCin = FastingPerson(id: 6, firstName: 'Sami', lastName: 'Gharbi', cin: '12', singleMeal: 1, familyMeal: 0);
+      for (final p in [noCin, shortCin]) {
+        await pumpPanel(tester, ScanReady(p, noCard: true));
+        await tester.pump(const Duration(milliseconds: 400));
+        expect(find.text(en.noCinOnFile), findsOneWidget, reason: '${p.cin}');
+      }
+      await pumpPanel(tester, const ScanReady(noCin));
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(find.text(en.noCinOnFile), findsNothing, reason: 'a card scan needs no CIN check');
+    });
+
+    testWidgets('switching person never shows both verdicts at once', (tester) async {
+      final a = person(1, first: 'Aziza', last: 'Ouerghi', takenToday: true);
+      final b = person(2, first: 'Najwa', last: 'Chalbi');
+      await pumpPanel(tester, ScanAlreadyTaken(a, testNow));
+      await tester.pump(const Duration(milliseconds: 400));
+      await pumpPanel(tester, ScanReady(b));
+      for (var ms = 0; ms <= 300; ms += 20) {
+        final both = find.text(MealStatusWords.taken).evaluate().isNotEmpty &&
+            find.text(MealStatusWords.notTaken).evaluate().isNotEmpty;
+        expect(both, isFalse, reason: 'both verdicts visible at +${ms}ms');
+        expect(find.text('Aziza Ouerghi').evaluate().isNotEmpty && find.text('Najwa Chalbi').evaluate().isNotEmpty, isFalse);
+        await tester.pump(const Duration(milliseconds: 20));
+      }
+      expect(find.text(MealStatusWords.notTaken), findsOneWidget);
+    });
+
     testWidgets('a card scan shows no CIN check', (tester) async {
       await pumpPanel(tester, const ScanReady(withCin));
       expect(find.text(en.noCardCheck(ltr('812'))), findsNothing);
@@ -216,6 +245,13 @@ void main() {
             expect(tester.takeException(), isNull, reason: '$status');
             for (final t in texts) {
               expect(find.text(t), findsOneWidget, reason: '$status: $t');
+              final r = tester.getRect(find.text(t));
+              expect(
+                const Rect.fromLTWH(0, 0, 360, 760).contains(r.topLeft) &&
+                    const Rect.fromLTWH(0, 0, 360, 760).contains(r.bottomRight - const Offset(0.01, 0.01)),
+                isTrue,
+                reason: '$status: "$t" must be fully on screen, was $r',
+              );
             }
           }
         });

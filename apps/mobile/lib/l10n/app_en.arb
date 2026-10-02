@@ -179,6 +179,7 @@
   "details": "Details",
   "noCardCheck": "No card: ask for the CIN ending in {digits}",
   "@noCardCheck": {"placeholders": {"digits": {"type": "String"}}},
+  "noCinOnFile": "No ID card number on file — check another document.",
   "servedLine": "Served {name} · {count, plural, =1{1 portion} other{{count} portions}}",
   "@servedLine": {"placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
   "alreadyServedTonight": "Already served tonight",
