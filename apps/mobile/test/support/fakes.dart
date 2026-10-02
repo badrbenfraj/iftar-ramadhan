@@ -68,9 +68,15 @@ class FakePeopleRepository implements PeopleRepository {
   /// When set, the next `get` waits for it (then clears it).
   Completer<void>? getGate;
 
+  /// When set, `confirmMeal` waits for it (after counting the call).
+  Completer<void>? confirmGate;
+  int listCalls = 0;
+
   @override
-  Future<List<FastingPerson>> list(int regionId) async =>
-      people.values.toList();
+  Future<List<FastingPerson>> list(int regionId) async {
+    listCalls++;
+    return people.values.toList();
+  }
 
   @override
   Future<FastingPerson> get(int regionId, int id) async {
@@ -98,6 +104,8 @@ class FakePeopleRepository implements PeopleRepository {
   }) async {
     confirmCalls++;
     lastConfirmBody = (phone: phone, comment: comment);
+    final confirmGate = this.confirmGate;
+    if (confirmGate != null) await confirmGate.future;
     final failure = nextConfirmFailure;
     if (failure != null && !applyThenFailConfirm) {
       nextConfirmFailure = null;

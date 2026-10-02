@@ -19,12 +19,7 @@ import 'package:iftar_mobile/features/profile/presentation/profile_page.dart';
 import '../support/app_harness.dart';
 import '../support/fakes.dart';
 import '../support/fonts.dart';
-
-class _ThrowingWriteStorage extends MemorySettingsStorage {
-  @override
-  Future<void> write(String key, String? value) async =>
-      throw StateError('keychain unavailable');
-}
+import '../support/storage.dart';
 
 class _SpyAuth extends FakeAuthController {
   static int logouts = 0;
@@ -107,7 +102,7 @@ void main() {
 
   testWidgets('a storage failure keeps the choice and shows a localized snackbar', (tester) async {
     phone(tester);
-    await pumpProfile(tester, settings: _ThrowingWriteStorage());
+    await pumpProfile(tester, settings: ThrowingWriteStorage());
 
     await tester.tap(find.text(en.language));
     await tester.pumpAndSettle();

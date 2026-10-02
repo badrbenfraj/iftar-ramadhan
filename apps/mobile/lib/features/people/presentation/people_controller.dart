@@ -1,22 +1,45 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/app_failure.dart';
+import '../../../core/providers.dart';
+import '../../../core/utils/formatters.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/people_repository.dart';
 import '../domain/fasting_person.dart';
 
 /// The region's list of fasting people (Ionic tab "list").
 class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
+  /// When the list was last loaded from the server. The "served tonight"
+  /// flags in it describe that day only.
+  DateTime? loadedAt;
+
   @override
   Future<List<FastingPerson>> build() {
     // Reload when the signed-in user's region changes.
     ref.watch(authControllerProvider.select((a) => a.value?.region?.id));
+    loadedAt = null;
     return _load();
   }
 
   Future<List<FastingPerson>> _load() async {
     final region = requireRegion(ref);
-    return ref.read(peopleRepositoryProvider).list(region.id);
+    final people = await ref.read(peopleRepositoryProvider).list(region.id);
+    loadedAt = ref.read(clockProvider)();
+    return people;
+  }
+
+  /// Called when the app returns to the foreground: the phone gets no push
+  /// at midnight, so a list loaded on an earlier day is reloaded. A failed
+  /// reload keeps the list on screen (its stale flags already expire) and is
+  /// tried again at the next resume.
+  Future<void> reloadIfDayChanged() async {
+    final at = loadedAt;
+    if (at == null || isSameDay(at, ref.read(clockProvider)())) return;
+    try {
+      await refresh();
+    } on Object {
+      // Kept: see above.
+    }
   }
 
   /// Pull-to-refresh. On failure the previous list stays visible and the
@@ -57,17 +80,6 @@ final peopleListProvider =
     AsyncNotifierProvider<PeopleListController, List<FastingPerson>>(
       PeopleListController.new,
     );
-
-class PeopleSearchQuery extends Notifier<String> {
-  @override
-  String build() => '';
-
-  void update(String value) => state = value;
-}
-
-final peopleSearchQueryProvider = NotifierProvider<PeopleSearchQuery, String>(
-  PeopleSearchQuery.new,
-);
 
 /// One person, loaded fresh from the server (details screen).
 class PersonDetailsController extends AsyncNotifier<FastingPerson> {

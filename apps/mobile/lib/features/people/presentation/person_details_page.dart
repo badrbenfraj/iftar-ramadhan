@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/network/app_failure.dart';
 import '../../../core/network/failure_text.dart';
+import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
@@ -46,6 +47,8 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
   }
 
   Future<void> _confirm() async {
+    // A second tap before the button rebuilds must not send a second request.
+    if (_confirming) return;
     final l = AppLocalizations.of(context);
     setState(() => _confirming = true);
     try {
@@ -106,7 +109,7 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
 
   Widget _body(FastingPerson person) {
     final l = AppLocalizations.of(context);
-    final taken = person.isMealTakenToday();
+    final taken = person.isMealTakenToday(ref.watch(clockProvider)());
     final phone = _phone ?? person.phone;
     final comment = _comment ?? person.comment;
     return RefreshIndicator(

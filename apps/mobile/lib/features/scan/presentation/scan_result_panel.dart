@@ -174,7 +174,7 @@ class ScanResultPanel extends ConsumerWidget {
           ),
           body: [
             FilledButton.icon(
-              onPressed: () => context.go('/add?id=$personId'),
+              onPressed: () => _openOver(context, controller, '/register-card?id=$personId'),
               icon: const Icon(Icons.person_add_alt_1_rounded),
               label: Text(l.registerThisCard),
             ),
@@ -307,7 +307,7 @@ class ScanResultPanel extends ConsumerWidget {
         ),
         _Links([
           (l.skip, busy ? null : controller.scanNext),
-          (l.details, busy ? null : () => context.push('/people/${person.id}')),
+          (l.details, busy ? null : () => _openOver(context, controller, '/people/${person.id}')),
         ]),
       ],
     );
@@ -738,6 +738,18 @@ class _WaitBar extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Opens [location] on top of the scanner, which stays alive underneath with
+/// its session. On return the scanner looks the person up again, so it shows
+/// what Details or the registration form changed.
+Future<void> _openOver(
+  BuildContext context,
+  ScanController controller,
+  String location,
+) async {
+  await context.push<void>(location);
+  if (context.mounted) await controller.refreshCurrent();
 }
 
 class _Links extends StatelessWidget {

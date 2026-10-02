@@ -14,6 +14,7 @@ class StatisticsState {
     required this.from,
     required this.to,
     this.result = const AsyncLoading(),
+    this.reloading = false,
   });
 
   final StatsPreset preset;
@@ -21,16 +22,21 @@ class StatisticsState {
   final DateTime to;
   final AsyncValue<List<DailyStatistics>> result;
 
+  /// A refresh is in flight and [result] still holds the previous figures.
+  final bool reloading;
+
   StatisticsState copyWith({
     StatsPreset? preset,
     DateTime? from,
     DateTime? to,
     AsyncValue<List<DailyStatistics>>? result,
+    bool? reloading,
   }) => StatisticsState(
     preset: preset ?? this.preset,
     from: from ?? this.from,
     to: to ?? this.to,
     result: result ?? this.result,
+    reloading: reloading ?? this.reloading,
   );
 }
 
@@ -77,11 +83,28 @@ class StatisticsController extends Notifier<StatisticsState> {
     return true;
   }
 
-  Future<void> refresh() => _fetch();
+  /// Pull-to-refresh and "Try again". A preset is worked out again from the
+  /// current clock, so "Tonight" asked for after midnight is the new day. A
+  /// custom range stays as picked. The previous figures stay visible while
+  /// the new ones load.
+  Future<void> refresh() {
+    final preset = state.preset;
+    if (preset != StatsPreset.custom) {
+      final range = presetRange(
+        preset,
+        _now(),
+        ramadanStart: ref.read(appConfigProvider).ramadanStart,
+      );
+      state = state.copyWith(from: range.from, to: range.to);
+    }
+    return _fetch(keepPrevious: true);
+  }
 
-  Future<void> _fetch() async {
+  Future<void> _fetch({bool keepPrevious = false}) async {
     final request = ++_request;
-    state = state.copyWith(result: const AsyncLoading());
+    state = keepPrevious && state.result.hasValue
+        ? state.copyWith(reloading: true)
+        : state.copyWith(result: const AsyncLoading(), reloading: false);
     final result = await AsyncValue.guard(() {
       final region = requireRegion(ref);
       return ref
@@ -90,7 +113,7 @@ class StatisticsController extends Notifier<StatisticsState> {
     });
     // Ignore answers to older requests (quick preset taps).
     if (ref.mounted && request == _request) {
-      state = state.copyWith(result: result);
+      state = state.copyWith(result: result, reloading: false);
     }
   }
 }

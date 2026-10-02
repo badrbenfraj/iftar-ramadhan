@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/failure_text.dart';
 import '../../../core/settings/locale_resolution.dart';
 import '../../../core/settings/settings_controller.dart';
 import '../../../core/theme/app_colors.dart';
@@ -9,6 +10,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../../core/widgets/arch_window.dart';
 import '../../../core/widgets/brand.dart';
 import '../../../core/widgets/night_sky.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 
 /// Landing screen: always night (spec §4.1).
@@ -134,6 +136,20 @@ class _LanguagePicker extends ConsumerWidget {
 
   static const _order = ['en', 'fr', 'ar'];
 
+  /// The language is already in effect; only a failure to save it is
+  /// reported (as in Profile).
+  static Future<void> _pick(BuildContext context, WidgetRef ref, String code) async {
+    final failure = await ref
+        .read(settingsControllerProvider.notifier)
+        .setLocale(Locale(code));
+    if (failure == null || !context.mounted) return;
+    showAppSnackBar(
+      context,
+      failureText(AppLocalizations.of(context), failure),
+      isError: true,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     assert(_order.every(supportedLanguageCodes.contains));
@@ -149,9 +165,7 @@ class _LanguagePicker extends ConsumerWidget {
             selected: code == current,
             child: InkWell(
               borderRadius: BorderRadius.circular(999),
-              onTap: () => ref
-                  .read(settingsControllerProvider.notifier)
-                  .setLocale(Locale(code)),
+              onTap: () => _pick(context, ref, code),
               child: Container(
                 // Material's 48 px touch target (spec: at least 44).
                 constraints: const BoxConstraints(minHeight: 48),

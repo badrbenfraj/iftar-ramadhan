@@ -77,7 +77,18 @@ void main() {
     ],
   );
 
-  setUp(() => repo = FakePeopleRepository([person(101), person(102, first: 'Aziza', last: 'Ouerghi')]));
+  const scannerChannel = MethodChannel('dev.steenbakker.mobile_scanner/scanner/method');
+
+  setUp(() {
+    repo = FakePeopleRepository([person(101), person(102, first: 'Aziza', last: 'Ouerghi')]);
+    // The scanner plugin has no host in tests; every call answers at once.
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(scannerChannel, (_) async => null);
+  });
+  tearDown(
+    () => TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(scannerChannel, null),
+  );
 
   Future<ProviderContainer> open(
     WidgetTester tester, {
@@ -91,11 +102,11 @@ void main() {
     await tester.pumpWidget(
       localizedRouterApp(router(camera ?? _FakeCamera()), overrides: testOverrides(repo), locale: locale),
     );
-    await tester.pump(const Duration(milliseconds: 300));
-    // MobileScanner subscribes to the camera's stream after an async start.
-    for (var i = 0; i < 3; i++) {
-      await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
-      await tester.pump(const Duration(milliseconds: 50));
+    // MobileScanner subscribes to the camera's stream once its (mocked)
+    // plugin calls have answered; those are microtasks, so pumping frames
+    // is enough.
+    for (var i = 0; i < 5; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
     }
     return ProviderScope.containerOf(tester.element(find.byType(ScanPage)));
   }
@@ -223,6 +234,63 @@ void main() {
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle(const Duration(milliseconds: 200), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
     expect(find.text('summary stub'), findsOneWidget);
+  });
+
+  group('while a confirmation is in flight', () {
+    late GoRouter r;
+
+    Future<ProviderContainer> confirming(WidgetTester tester) async {
+      r = GoRouter(
+        initialLocation: '/home',
+        routes: [
+          GoRoute(path: '/home', builder: (_, _) => const Scaffold(body: Text('home'))),
+          GoRoute(
+            path: '/scan',
+            builder: (_, _) => ScanPage(camera: _BrokenCamera(MobileScannerErrorCode.genericError)),
+          ),
+          GoRoute(path: '/summary', builder: (_, _) => const Scaffold(body: Text('summary stub'))),
+        ],
+      );
+      await tester.pumpWidget(localizedRouterApp(r, overrides: testOverrides(repo)));
+      unawaited(r.push('/scan'));
+      await tester.pumpAndSettle();
+      final container = ProviderScope.containerOf(tester.element(find.byType(ScanPage)));
+      final scan = container.read(scanControllerProvider.notifier);
+      await scan.onDetected('101');
+      repo.confirmGate = Completer<void>();
+      unawaited(scan.confirm());
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(container.read(scanControllerProvider).status, isA<ScanConfirming>());
+      return container;
+    }
+
+    testWidgets('Close is disabled so the answer is not dropped', (tester) async {
+      await confirming(tester);
+      final close = tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.close_rounded));
+      expect(close.onPressed, isNull);
+      await tester.tap(find.byTooltip(en.closeScanner), warnIfMissed: false);
+      await tester.pump();
+      expect(find.byType(ScanPage), findsOneWidget);
+    });
+
+    testWidgets('system back is ignored, and works again once the answer arrives', (tester) async {
+      final container = await confirming(tester);
+      await tester.binding.handlePopRoute();
+      // The confirm button's spinner never settles; advance by frames.
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.byType(ScanPage), findsOneWidget);
+
+      repo.confirmGate!.complete();
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(container.read(scanControllerProvider).servedCount, 1);
+      expect(
+        tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.close_rounded)).onPressed,
+        isNotNull,
+      );
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle(const Duration(milliseconds: 200), EnginePhase.sendSemanticsUpdate, const Duration(seconds: 5));
+      expect(find.text('summary stub'), findsOneWidget);
+    });
   });
 
   testWidgets('320×568 at 2.0x: the sheet scrolls as one unit and Confirm is reachable', (tester) async {

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/app_failure.dart';
 import '../../../core/providers.dart';
+import '../../people/presentation/people_filter.dart';
 import '../data/auth_repository.dart';
 import '../domain/user.dart';
 
@@ -57,6 +58,10 @@ class AuthController extends AsyncNotifier<User?> {
     lastSignOutFailure = reason;
     await _repo.logout();
     state = const AsyncData(null);
+    // The next volunteer on this phone starts from a clean list screen.
+    ref
+      ..invalidate(peopleFilterProvider)
+      ..invalidate(peopleSearchQueryProvider);
   }
 }
 

@@ -128,11 +128,14 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       _ => AppPalette.onSky,
     };
 
+    // Leaving mid-confirmation would drop the answer: Close and back wait
+    // until it arrives.
+    final confirming = scan.status is ScanConfirming;
     // Android back after serving shows the summary like the close button.
     return PopScope(
-      canPop: scan.servedCount == 0,
+      canPop: scan.servedCount == 0 && !confirming,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _close();
+        if (!didPop && !confirming) _close();
       },
       child: Scaffold(
         backgroundColor: Colors.black,
@@ -174,7 +177,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                       bottom: false,
                       child: Column(
                         children: [
-                          _TopBar(camera: _camera, servedTonight: servedTonight, onClose: _close),
+                          _TopBar(
+                            camera: _camera,
+                            servedTonight: servedTonight,
+                            onClose: confirming ? null : _close,
+                          ),
                           // The sheet takes what it needs of the space below the
                           // top bar and scrolls inside itself beyond that.
                           Expanded(
@@ -218,7 +225,9 @@ class _TopBar extends StatelessWidget {
 
   final MobileScannerController camera;
   final int servedTonight;
-  final VoidCallback onClose;
+
+  /// Null while a confirmation is in flight.
+  final VoidCallback? onClose;
 
   @override
   Widget build(BuildContext context) {
@@ -274,7 +283,7 @@ class _RoundIcon extends StatelessWidget {
 
   final IconData icon;
   final String tooltip;
-  final VoidCallback onPressed;
+  final VoidCallback? onPressed;
   final bool active;
 
   @override

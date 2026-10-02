@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iftar_mobile/core/router/app_router.dart';
+import 'package:iftar_mobile/core/settings/settings_controller.dart';
+import 'package:iftar_mobile/core/settings/settings_storage.dart';
 import 'package:iftar_mobile/features/auth/domain/user.dart';
 import 'package:iftar_mobile/features/auth/presentation/auth_controller.dart';
 import 'package:iftar_mobile/features/scan/presentation/session_summary_page.dart';
@@ -28,6 +30,13 @@ void main() {
     expect(authRedirect(signedOut, '/register'), isNull);
   });
 
+  test('nothing shows before the saved settings are in', () {
+    expect(authRedirect(signedIn, '/people', settingsReady: false), '/splash');
+    expect(authRedirect(signedOut, '/welcome', settingsReady: false), '/splash');
+    expect(authRedirect(signedIn, '/splash', settingsReady: false), isNull);
+    expect(authRedirect(restoring, '/splash', settingsReady: false), isNull);
+  });
+
   test('signed-in users skip the auth screens', () {
     expect(authRedirect(signedIn, '/login'), '/people');
     expect(authRedirect(signedIn, '/welcome'), '/people');
@@ -40,7 +49,11 @@ void main() {
     Future<GoRouter> boot(WidgetTester tester) async {
       final container = ProviderContainer(
         retry: (_, _) => null,
-        overrides: testOverrides(FakePeopleRepository([person(1)])),
+        overrides: [
+          ...testOverrides(FakePeopleRepository([person(1)])),
+          // The router waits for the saved settings.
+          settingsStorageProvider.overrideWithValue(MemorySettingsStorage()),
+        ],
       );
       addTearDown(container.dispose);
       await container.read(authControllerProvider.future);

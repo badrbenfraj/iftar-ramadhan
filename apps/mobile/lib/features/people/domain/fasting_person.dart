@@ -18,10 +18,15 @@ class FastingPerson {
     this.lastTakenMeal,
     this.takenMeals = const [],
     this.mealTakenTodayFromServer,
+    this.receivedAt,
     this.region,
   });
 
-  factory FastingPerson.fromJson(Map<String, dynamic> json) {
+  /// [receivedAt] is when the response arrived; see [FastingPerson.receivedAt].
+  factory FastingPerson.fromJson(
+    Map<String, dynamic> json, {
+    DateTime? receivedAt,
+  }) {
     final region = json['region'];
     final lastTaken = json['lastTakenMeal'];
     return FastingPerson(
@@ -43,6 +48,7 @@ class FastingPerson {
               .toList()
             ..sort((a, b) => b.compareTo(a)),
       mealTakenTodayFromServer: json['mealTakenToday'] as bool?,
+      receivedAt: receivedAt,
       region: region is Map<String, dynamic> ? Region.fromJson(region) : null,
     );
   }
@@ -62,6 +68,11 @@ class FastingPerson {
 
   /// Server-computed (APP_TIMEZONE). Null when talking to an older backend.
   final bool? mealTakenTodayFromServer;
+
+  /// When the server flag above was received. The flag describes that
+  /// calendar day only; from the next day on it is ignored and the last
+  /// taken meal decides. Null (hand-built people) means "trust the flag".
+  final DateTime? receivedAt;
   final Region? region;
 
   String get fullName => '$firstName $lastName'.trim();
@@ -69,15 +80,20 @@ class FastingPerson {
   /// Portions to hand over at pickup (family meal = 4).
   int get totalPortions => singleMeal + familyMeal * 4;
 
-  /// The server is the source of truth; the device clock is only a fallback.
+  /// The server is the source of truth for the day it answered; after that
+  /// (the phone gets no push at midnight) the device clock decides, from the
+  /// last taken meal.
   bool isMealTakenToday([DateTime? now]) {
-    if (mealTakenTodayFromServer != null) return mealTakenTodayFromServer!;
+    final today = (now ?? DateTime.now()).toLocal();
+    final flag = mealTakenTodayFromServer;
+    final received = receivedAt;
+    if (flag != null &&
+        (received == null || isSameDay(received.toLocal(), today))) {
+      return flag;
+    }
     final taken = lastTakenMeal;
     if (taken == null) return false;
-    final today = (now ?? DateTime.now()).toLocal();
-    return taken.year == today.year &&
-        taken.month == today.month &&
-        taken.day == today.day;
+    return isSameDay(taken, today);
   }
 
   FastingPerson copyWith({
@@ -86,6 +102,7 @@ class FastingPerson {
     DateTime? lastTakenMeal,
     List<DateTime>? takenMeals,
     bool? mealTakenTodayFromServer,
+    DateTime? receivedAt,
   }) => FastingPerson(
     id: id,
     firstName: firstName,
@@ -99,6 +116,7 @@ class FastingPerson {
     takenMeals: takenMeals ?? this.takenMeals,
     mealTakenTodayFromServer:
         mealTakenTodayFromServer ?? this.mealTakenTodayFromServer,
+    receivedAt: receivedAt ?? this.receivedAt,
     region: region,
   );
 

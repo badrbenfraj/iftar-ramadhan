@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -123,6 +125,27 @@ void main() {
   testWidgets('a network failure shows the localized message', (tester) async {
     await pumpServe(tester, const NetworkFailure());
     expect(find.text(failureText(en, const NetworkFailure())), findsOneWidget);
+  });
+
+  testWidgets('a double tap on Confirm sends one request', (tester) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (_) async => null);
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    final repo = FakePeopleRepository([person(107)])..confirmGate = Completer<void>();
+    await tester.pumpWidget(localizedApp(
+      _afterSignIn(const PersonDetailsPage(personId: 107)),
+      overrides: testOverrides(repo),
+    ));
+    await tester.pumpAndSettle();
+    // Both taps land before the first one has rebuilt the button.
+    await tester.tap(find.text(en.confirmMeal));
+    await tester.tap(find.text(en.confirmMeal), warnIfMissed: false);
+    repo.confirmGate!.complete();
+    await tester.pumpAndSettle();
+    expect(repo.confirmCalls, 1);
+    expect(find.text(en.mealConfirmed), findsOneWidget);
   });
 
   testWidgets('phone and CIN stay left-to-right', (tester) async {

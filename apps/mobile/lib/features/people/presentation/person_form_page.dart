@@ -32,10 +32,19 @@ final _digitsOnly = <TextInputFormatter>[
 
 /// Add tab (spec §4.5).
 class AddPersonPage extends StatelessWidget {
-  const AddPersonPage({super.key, this.initialId, this.scanCardId});
+  const AddPersonPage({
+    super.key,
+    this.initialId,
+    this.scanCardId,
+    this.overScanner = false,
+  });
 
   final int? initialId;
   final CardIdScanner? scanCardId;
+
+  /// Opened over the scanner ("Register this card"): shows a way back, and
+  /// saving returns to the scanner instead of the people list.
+  final bool overScanner;
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +57,13 @@ class AddPersonPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 4),
+                if (overScanner)
+                  const Align(
+                    alignment: AlignmentDirectional.centerStart,
+                    child: BackButton(),
+                  )
+                else
+                  const SizedBox(height: 4),
                 Text(l.addTitle, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500)),
                 Text(l.addSubtitle, style: const TextStyle(fontSize: 13, color: AppPalette.onSkyMuted)),
               ],
@@ -59,6 +74,7 @@ class AddPersonPage extends StatelessWidget {
               key: ValueKey(initialId),
               initialId: initialId,
               scanCardId: scanCardId,
+              backToScanner: overScanner,
             ),
           ),
         ],
@@ -91,11 +107,20 @@ class EditPersonPage extends ConsumerWidget {
 }
 
 class PersonForm extends ConsumerStatefulWidget {
-  const PersonForm({super.key, this.person, this.initialId, this.scanCardId});
+  const PersonForm({
+    super.key,
+    this.person,
+    this.initialId,
+    this.scanCardId,
+    this.backToScanner = false,
+  });
 
   /// Null when creating.
   final FastingPerson? person;
   final int? initialId;
+
+  /// Saving pops back to the scanner underneath instead of going to the list.
+  final bool backToScanner;
 
   /// Injectable for tests; defaults to the camera sheet.
   final CardIdScanner? scanCardId;
@@ -213,7 +238,13 @@ class _PersonFormState extends ConsumerState<PersonForm> {
         context.pop();
       } else {
         _resetForNext();
-        if (!addAnother) context.go('/people');
+        if (!addAnother) {
+          if (widget.backToScanner && context.canPop()) {
+            context.pop();
+          } else {
+            context.go('/people');
+          }
+        }
       }
     } on MealAlreadyTakenFailure catch (e) {
       if (mounted) showAppSnackBar(context, failureText(l, e), isError: true);

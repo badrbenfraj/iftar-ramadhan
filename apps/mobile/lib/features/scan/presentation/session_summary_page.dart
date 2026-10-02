@@ -120,7 +120,9 @@ class SessionSummaryPage extends ConsumerWidget {
                             foregroundColor: AppPalette.onSky,
                             side: BorderSide(color: AppPalette.onSky.withValues(alpha: 0.35)),
                           ),
-                          onPressed: () => context.go('/scan'),
+                          // Replaces the summary, leaving /people under the
+                          // scanner so back does not leave the app.
+                          onPressed: () => context.pushReplacement('/scan'),
                           child: Text(l.keepScanning),
                         ),
                         const SizedBox(height: 24),

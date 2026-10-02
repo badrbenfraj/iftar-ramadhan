@@ -46,3 +46,14 @@ final peopleFilterProvider =
     NotifierProvider<PeopleFilterController, PeopleFilter>(
       PeopleFilterController.new,
     );
+
+class PeopleSearchQuery extends Notifier<String> {
+  @override
+  String build() => '';
+
+  void update(String value) => state = value;
+}
+
+final peopleSearchQueryProvider = NotifierProvider<PeopleSearchQuery, String>(
+  PeopleSearchQuery.new,
+);

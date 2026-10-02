@@ -11,6 +11,7 @@ import 'package:iftar_mobile/features/auth/presentation/welcome_page.dart';
 
 import '../support/app_harness.dart';
 import '../support/fonts.dart';
+import '../support/storage.dart';
 
 void main() {
   late MemorySettingsStorage storage;
@@ -62,6 +63,26 @@ void main() {
     await tester.tap(find.text('Français'));
     await tester.pump();
     expect(storage.values[SettingsController.localeKey], 'fr');
+  });
+
+  testWidgets('a language that cannot be saved is reported, as in Profile', (tester) async {
+    await tester.pumpWidget(
+      localizedApp(
+        const WelcomePage(),
+        overrides: [settingsStorageProvider.overrideWithValue(ThrowingWriteStorage())],
+      ),
+    );
+    await tester.tap(find.text('Français'));
+    await tester.pumpAndSettle();
+    expect(find.text(en.errUnknown), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a language that saves shows no message', (tester) async {
+    await tester.pumpWidget(app(const Locale('en')));
+    await tester.tap(find.text('Français'));
+    await tester.pumpAndSettle();
+    expect(find.text(en.errUnknown), findsNothing);
   });
 
   testWidgets('Arabic hides the translated hadith line', (tester) async {

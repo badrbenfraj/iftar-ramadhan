@@ -27,7 +27,8 @@ class StatisticsPage extends ConsumerWidget {
     final config = ref.watch(appConfigProvider);
     final day = ramadanDay(config.ramadanStart, ref.watch(clockProvider)());
     final days = stats.result.value;
-    final served = days == null ? 0 : StatisticsSummary(days).persons;
+    // A dash, not 0, until there is a figure to show.
+    final served = days == null ? '–' : ltr('${StatisticsSummary(days).persons}');
     final bottomClearance =
         _tabBarHeight + MediaQuery.viewPaddingOf(context).bottom + 40;
     final presets = [
@@ -72,8 +73,13 @@ class StatisticsPage extends ConsumerWidget {
                     fit: BoxFit.scaleDown,
                     alignment: AlignmentDirectional.centerStart,
                     child: Text(
-                      ltr('$served'),
-                      style: const TextStyle(fontSize: 56, fontWeight: FontWeight.w300, height: 1),
+                      served,
+                      style: const TextStyle(
+                        fontSize: 56,
+                        fontWeight: FontWeight.w300,
+                        height: 1,
+                        fontFeatures: [FontFeature.tabularFigures()],
+                      ),
                     ),
                   ),
                   Text(

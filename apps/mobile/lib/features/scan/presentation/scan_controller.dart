@@ -197,8 +197,9 @@ class ScanController extends Notifier<ScanState> {
     _ => false,
   };
 
-  /// Looks up a typed ID, bypassing the duplicate-scan filter. The scan screen
-  /// has no manual-entry control any more (Find covers damaged cards).
+  /// Looks up an ID given as text, bypassing the duplicate-scan filter. No
+  /// screen calls it today (Find covers damaged cards); it is the entry point
+  /// the controller tests drive.
   Future<void> submitManual(String input) async {
     if (_busy) return;
     // An uncertain confirm must be resolved (retry or skip) first: a new
@@ -219,6 +220,25 @@ class ScanController extends Notifier<ScanState> {
     _lastRaw = '$personId';
     _lastSeenAt = _now();
     await _lookup(personId, noCard: true);
+  }
+
+  /// Back from another screen (Details, the registration form): looks the
+  /// shown person up again when something there may have changed the answer.
+  /// A pending person is only re-checked when the list says they were served
+  /// meanwhile, so contact edits made here survive a look at Details. An
+  /// unknown card is looked up again (it may have just been registered).
+  Future<void> refreshCurrent() async {
+    switch (state.status) {
+      case ScanReady(:final person, :final noCard):
+        if (_cached(person.id)?.isMealTakenToday(_now()) != true) return;
+        _resumeTimer?.cancel();
+        await _lookup(person.id, noCard: noCard);
+      case ScanNotFound(:final personId):
+        _resumeTimer?.cancel();
+        await _lookup(personId);
+      default:
+        return;
+    }
   }
 
   Future<void> _handle(String raw) async {

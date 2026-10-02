@@ -7,6 +7,8 @@ import 'package:iftar_mobile/core/network/app_failure.dart';
 import 'package:iftar_mobile/core/settings/settings_controller.dart';
 import 'package:iftar_mobile/core/settings/settings_storage.dart';
 
+import '../support/storage.dart';
+
 /// Reads wait for [gate], like a slow keychain at startup.
 class _SlowReadStorage extends MemorySettingsStorage {
   final gate = Completer<void>();
@@ -16,12 +18,6 @@ class _SlowReadStorage extends MemorySettingsStorage {
     await gate.future;
     return super.read(key);
   }
-}
-
-class _ThrowingWriteStorage extends MemorySettingsStorage {
-  @override
-  Future<void> write(String key, String? value) async =>
-      throw StateError('keychain unavailable');
 }
 
 void main() {
@@ -69,7 +65,7 @@ void main() {
 
   test('a failing write keeps the choice, throws nothing, and reports the failure', () async {
     final c = ProviderContainer.test(
-      overrides: [settingsStorageProvider.overrideWithValue(_ThrowingWriteStorage())],
+      overrides: [settingsStorageProvider.overrideWithValue(ThrowingWriteStorage())],
     );
     await c.read(settingsControllerProvider.future);
     final notifier = c.read(settingsControllerProvider.notifier);

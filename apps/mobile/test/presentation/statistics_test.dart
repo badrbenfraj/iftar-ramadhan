@@ -179,6 +179,66 @@ void main() {
     });
   });
 
+  group('after midnight', () {
+    late DateTime now;
+
+    Future<ProviderContainer> containerAt({DateTime? ramadanStart}) async {
+      now = testNow;
+      final c = ProviderContainer.test(
+        overrides: [
+          ...testOverrides(FakePeopleRepository([]), clock: () => now),
+          statisticsRepositoryProvider.overrideWithValue(stats),
+          appConfigProvider.overrideWithValue(
+            AppConfig(apiBaseUrl: 'http://test', environment: 'test', ramadanStart: ramadanStart),
+          ),
+        ],
+      );
+      await c.read(authControllerProvider.future);
+      c.listen(statisticsControllerProvider, (_, _) {});
+      await pumpEventQueue();
+      return c;
+    }
+
+    test('refreshing Tonight asks for the new day', () async {
+      final c = await containerAt();
+      expect(stats.calls.single, (DateTime(2025, 3, 5), DateTime(2025, 3, 5)));
+      now = DateTime(2025, 3, 6, 0, 5);
+      await c.read(statisticsControllerProvider.notifier).refresh();
+      expect(stats.calls.last, (DateTime(2025, 3, 6), DateTime(2025, 3, 6)));
+      final state = c.read(statisticsControllerProvider);
+      expect((state.from, state.to), (DateTime(2025, 3, 6), DateTime(2025, 3, 6)));
+    });
+
+    test('refreshing the week moves to the new week', () async {
+      final c = await containerAt();
+      final ctl = c.read(statisticsControllerProvider.notifier);
+      now = DateTime(2025, 3, 8, 23, 50);
+      await ctl.select(StatsPreset.week);
+      expect(stats.calls.last, (DateTime(2025, 3, 2), DateTime(2025, 3, 8)));
+      now = DateTime(2025, 3, 9, 0, 10);
+      await ctl.refresh();
+      expect(stats.calls.last, (DateTime(2025, 3, 9), DateTime(2025, 3, 15)));
+    });
+
+    test('a custom range is refreshed as picked', () async {
+      final c = await containerAt();
+      final ctl = c.read(statisticsControllerProvider.notifier);
+      await ctl.setCustom(DateTime(2025, 3, 1), DateTime(2025, 3, 5));
+      now = DateTime(2025, 3, 6, 0, 5);
+      await ctl.refresh();
+      expect(stats.calls.last, (DateTime(2025, 3, 1), DateTime(2025, 3, 5)));
+    });
+
+    test('Ramadan keeps counting from its first day', () async {
+      final c = await containerAt(ramadanStart: DateTime(2025, 3, 1));
+      final ctl = c.read(statisticsControllerProvider.notifier);
+      await ctl.select(StatsPreset.ramadan);
+      now = DateTime(2025, 3, 6, 0, 5);
+      await ctl.refresh();
+      expect(stats.calls.last, (DateTime(2025, 3, 1), DateTime(2025, 3, 6)));
+    });
+  });
+
   group('page', () {
     Future<void> pumpPage(
       WidgetTester tester, {
@@ -351,6 +411,39 @@ void main() {
       expect(find.text(en.rangeInFuture), findsOneWidget);
       expect(find.text(en.rangeInvalid), findsNothing);
       expect(stats.calls, hasLength(1));
+    });
+
+    testWidgets('the header number does not read 0 while the first load is pending', (tester) async {
+      stats.gate = Completer<void>();
+      await pumpPage(tester, settle: false);
+      expect(find.text(ltr('0')), findsNothing);
+      expect(find.text('–'), findsOneWidget);
+      stats.gate!.complete();
+      await tester.pumpAndSettle();
+      expect(find.text(ltr('3')), findsOneWidget);
+      expect(find.text('–'), findsNothing);
+    });
+
+    testWidgets('a refresh keeps the previous header number until the new one lands', (tester) async {
+      await pumpPage(tester);
+      expect(find.text(ltr('3')), findsOneWidget);
+      stats.gate = Completer<void>();
+      final container = ProviderScope.containerOf(tester.element(find.byType(StatisticsPage)));
+      final refreshed = container.read(statisticsControllerProvider.notifier).refresh();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(container.read(statisticsControllerProvider).reloading, isTrue);
+      expect(find.text(ltr('3')), findsOneWidget);
+      expect(find.text(ltr('0')), findsNothing);
+      stats.gate!.complete();
+      await refreshed;
+      await tester.pumpAndSettle();
+      expect(find.text(ltr('3')), findsOneWidget);
+    });
+
+    testWidgets('the header number uses tabular figures', (tester) async {
+      await pumpPage(tester);
+      final text = tester.widget<Text>(find.text(ltr('3')).first);
+      expect(text.style!.fontFeatures, contains(const FontFeature.tabularFigures()));
     });
 
     for (final inset in [34.0, 0.0]) {
