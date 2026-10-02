@@ -193,6 +193,9 @@ class ScanController extends Notifier<ScanState> {
   /// Manual ID (damaged card) — also used by "Look up card #N" in Find.
   Future<void> submitManual(String input) async {
     if (_busy) return;
+    // An uncertain confirm must be resolved (retry or skip) first: a new
+    // lookup would forget that our own write may already be on the server.
+    if (state.status case ScanFailed(duringConfirm: true)) return;
     _lastRaw = input.trim();
     _lastSeenAt = _now();
     await _handle(input);

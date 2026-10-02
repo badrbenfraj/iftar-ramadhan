@@ -276,4 +276,16 @@ void main() {
       expect(identical(state().status, before), isTrue);
     });
   });
+
+  group('task 17', () {
+    test('manual entry waits while a confirm is unresolved', () async {
+      await controller().onDetected('101');
+      repo.nextConfirmFailure = const NetworkFailure();
+      await controller().confirm();
+      final before = state().status;
+      expect((before as ScanFailed).duringConfirm, isTrue);
+      await controller().submitManual('102');
+      expect(identical(state().status, before), isTrue);
+    });
+  });
 }

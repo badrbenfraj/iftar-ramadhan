@@ -4,26 +4,37 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../people/domain/fasting_person.dart';
+import '../../people/presentation/people_controller.dart';
+import '../../people/presentation/people_filter.dart';
 import 'scan_controller.dart';
 import 'scan_result_panel.dart';
+import 'session_summary_page.dart';
+import 'viewfinder.dart';
 
-/// Continuous QR scanner optimized for a volunteer serving a queue:
-/// the camera stays open, each card resolves to a clear result, and one tap
-/// confirms and returns to scanning.
+/// Continuous QR scanner for a volunteer serving a queue: the camera stays
+/// open, each card resolves to a clear verdict, and one tap confirms.
 class ScanPage extends ConsumerStatefulWidget {
-  const ScanPage({super.key});
+  const ScanPage({super.key, @visibleForTesting this.camera});
+
+  /// Replaces the real camera in tests; the page disposes it.
+  final MobileScannerController? camera;
 
   @override
   ConsumerState<ScanPage> createState() => _ScanPageState();
 }
 
 class _ScanPageState extends ConsumerState<ScanPage> {
-  final _camera = MobileScannerController(
-    formats: const [BarcodeFormat.qrCode],
-    detectionSpeed: DetectionSpeed.normal,
-    detectionTimeoutMs: 300,
-  );
+  late final MobileScannerController _camera =
+      widget.camera ??
+      MobileScannerController(
+        formats: const [BarcodeFormat.qrCode],
+        detectionSpeed: DetectionSpeed.normal,
+        detectionTimeoutMs: 300,
+      );
 
   @override
   void dispose() {
@@ -41,39 +52,31 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     }
   }
 
-  Future<void> _manualEntry() async {
-    final controller = TextEditingController();
-    final id = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Enter ID manually'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          keyboardType: TextInputType.number,
-          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-          decoration: const InputDecoration(
-            labelText: 'Identifier',
-            prefixIcon: Icon(Icons.pin_outlined),
-          ),
-          onSubmitted: (v) => Navigator.pop(context, v),
+  Future<void> _findWithoutCard() async {
+    if (!ref.read(scanControllerProvider).acceptsScans) return;
+    final id = await context.push<int>('/find');
+    // A card may have been read while the list was open; its pending
+    // decision must not be replaced by the person found there.
+    if (id != null && mounted && ref.read(scanControllerProvider).acceptsScans) {
+      await ref.read(scanControllerProvider.notifier).pickWithoutCard(id);
+    }
+  }
+
+  void _close() {
+    final scan = ref.read(scanControllerProvider);
+    if (scan.servedCount > 0) {
+      context.pushReplacement(
+        '/summary',
+        extra: SessionSummary(
+          served: scan.servedCount,
+          singleMeals: scan.singleMeals,
+          familyMeals: scan.familyMeals,
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(minimumSize: const Size(96, 44)),
-            onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Look up'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (id != null && id.trim().isNotEmpty) {
-      await ref.read(scanControllerProvider.notifier).submitManual(id);
+      );
+    } else if (context.canPop()) {
+      context.pop();
+    } else {
+      context.go('/people');
     }
   }
 
@@ -88,10 +91,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         HapticFeedback.vibrate();
       case ScanInvalidCode() || ScanNotFound() || ScanFailed():
         HapticFeedback.vibrate();
-      case ScanIdle() ||
-          ScanLookingUp() ||
-          ScanIdentifying() ||
-          ScanConfirming():
+      case ScanIdle() || ScanLookingUp() || ScanIdentifying() || ScanConfirming():
         break;
     }
   }
@@ -102,13 +102,18 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       scanControllerProvider.select((s) => s.status),
       (_, next) => _hapticsFor(next),
     );
+    final l = AppLocalizations.of(context);
     final scan = ref.watch(scanControllerProvider);
+    final now = ref.watch(clockProvider)();
+    // Watching the list also keeps it loaded for instant identify.
+    final people = ref.watch(peopleListProvider).value ?? const <FastingPerson>[];
+    final servedTonight = countPeople(people, now).served;
     final frameColor = switch (scan.status) {
-      ScanReady() || ScanConfirming() => AppColors.teal,
-      ScanConfirmed() => AppColors.success,
-      ScanAlreadyTaken() => AppColors.danger,
-      ScanInvalidCode() || ScanNotFound() || ScanFailed() => AppColors.warning,
-      _ => AppColors.gold,
+      ScanReady() || ScanConfirming() => AppPalette.mint,
+      ScanAlreadyTaken() => const Color(0xFFE8957A),
+      ScanIdentifying() || ScanLookingUp() || ScanInvalidCode() || ScanFailed() => AppPalette.gold,
+      ScanNotFound() => AppPalette.onSkyMuted,
+      _ => AppPalette.onSky,
     };
 
     return Scaffold(
@@ -119,37 +124,47 @@ class _ScanPageState extends ConsumerState<ScanPage> {
           MobileScanner(
             controller: _camera,
             onDetect: _onDetect,
-            errorBuilder: (context, error) =>
-                _CameraUnavailable(error: error, onManualEntry: _manualEntry),
+            // The fallback is drawn below, from this page's own build, so its
+            // "find" action follows the scan state.
+            errorBuilder: (context, error) => const SizedBox.expand(),
           ),
-          // Without a camera, the frame and the "align the card" hint would
-          // only obscure the fallback message; manual entry takes over.
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: _camera,
             builder: (context, camera, _) {
-              final cameraAvailable = camera.error == null;
+              final available = camera.error == null;
+              final showHint = scan.status is ScanIdle || scan.status is ScanConfirmed;
               return Stack(
                 fit: StackFit.expand,
                 children: [
-                  if (cameraAvailable)
-                    IgnorePointer(child: _ScanFrame(color: frameColor)),
+                  if (camera.error case final error?)
+                    _CameraUnavailable(
+                      error: error,
+                      // Disabled, not hidden, while someone is pending.
+                      onFind: scan.acceptsScans ? _findWithoutCard : null,
+                    ),
+                  if (available)
+                    IgnorePointer(
+                      child: TweenAnimationBuilder<Color?>(
+                        tween: ColorTween(end: frameColor),
+                        duration: const Duration(milliseconds: 250),
+                        builder: (_, color, _) => CustomPaint(
+                          painter: ArchViewfinderPainter(color ?? frameColor),
+                        ),
+                      ),
+                    ),
                   SafeArea(
+                    bottom: false,
                     child: Column(
                       children: [
-                        _TopBar(
-                          camera: _camera,
-                          servedCount: scan.servedCount,
-                          onClose: () => context.canPop()
-                              ? context.pop()
-                              : context.go('/people'),
-                          onManualEntry: _manualEntry,
-                        ),
+                        _TopBar(camera: _camera, servedTonight: servedTonight, onClose: _close),
                         const Spacer(),
-                        if (cameraAvailable || scan.status is! ScanIdle)
-                          ScanResultPanel(
-                            status: scan.status,
-                            onManualEntry: _manualEntry,
+                        if (available && showHint)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: _HintPill(l.scanHint),
                           ),
+                        if (available || scan.status is! ScanIdle)
+                          ScanResultPanel(status: scan.status, onFindWithoutCard: _findWithoutCard),
                       ],
                     ),
                   ),
@@ -164,52 +179,33 @@ class _ScanPageState extends ConsumerState<ScanPage> {
 }
 
 class _TopBar extends StatelessWidget {
-  const _TopBar({
-    required this.camera,
-    required this.servedCount,
-    required this.onClose,
-    required this.onManualEntry,
-  });
+  const _TopBar({required this.camera, required this.servedTonight, required this.onClose});
 
   final MobileScannerController camera;
-  final int servedCount;
+  final int servedTonight;
   final VoidCallback onClose;
-  final VoidCallback onManualEntry;
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.sm,
-        vertical: AppSpacing.xs,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Row(
         children: [
-          _RoundIcon(
-            icon: Icons.close_rounded,
-            tooltip: 'Close scanner',
-            onPressed: onClose,
-          ),
-          const SizedBox(width: AppSpacing.sm),
+          _RoundIcon(icon: Icons.close_rounded, tooltip: l.closeScanner, onPressed: onClose),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text(
-                  'Scan Code',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
+                Text(
+                  l.scanTitle,
+                  style: const TextStyle(color: AppPalette.onSky, fontSize: 15, fontWeight: FontWeight.w500),
                 ),
                 Text(
-                  'Served this session: $servedCount',
-                  style: const TextStyle(
-                    color: AppColors.goldSoft,
-                    fontSize: 13,
-                  ),
+                  l.servedTonight(servedTonight),
+                  style: const TextStyle(color: AppPalette.gold, fontSize: 11.5),
                 ),
               ],
             ),
@@ -217,23 +213,15 @@ class _TopBar extends StatelessWidget {
           ValueListenableBuilder<MobileScannerState>(
             valueListenable: camera,
             builder: (context, value, _) {
-              if (value.torchState == TorchState.unavailable) {
-                return const SizedBox.shrink();
-              }
+              if (value.torchState == TorchState.unavailable) return const SizedBox.shrink();
               final on = value.torchState == TorchState.on;
               return _RoundIcon(
                 icon: on ? Icons.flash_on_rounded : Icons.flash_off_rounded,
-                tooltip: on ? 'Turn torch off' : 'Turn torch on',
+                tooltip: on ? l.torchOff : l.torchOn,
                 active: on,
                 onPressed: camera.toggleTorch,
               );
             },
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          _RoundIcon(
-            icon: Icons.keyboard_alt_outlined,
-            tooltip: 'Enter ID manually',
-            onPressed: onManualEntry,
           ),
         ],
       ),
@@ -255,135 +243,85 @@ class _RoundIcon extends StatelessWidget {
   final bool active;
 
   @override
-  Widget build(BuildContext context) {
-    return IconButton.filled(
-      tooltip: tooltip,
-      onPressed: onPressed,
-      style: IconButton.styleFrom(
-        backgroundColor: active
-            ? AppColors.gold
-            : Colors.black.withValues(alpha: 0.45),
-        foregroundColor: active ? AppColors.night : Colors.white,
-        minimumSize: const Size.square(48),
-      ),
-      icon: Icon(icon),
-    );
-  }
+  Widget build(BuildContext context) => IconButton.filled(
+    tooltip: tooltip,
+    onPressed: onPressed,
+    style: IconButton.styleFrom(
+      backgroundColor: active ? AppPalette.gold : Colors.black.withValues(alpha: 0.4),
+      foregroundColor: active ? AppPalette.sky : AppPalette.onSky,
+      minimumSize: const Size.square(44),
+      side: BorderSide(color: AppPalette.onSky.withValues(alpha: 0.18)),
+    ),
+    icon: Icon(icon),
+  );
 }
 
-/// Dimmed backdrop with a clear square and lantern-gold corner brackets.
-class _ScanFrame extends StatelessWidget {
-  const _ScanFrame({required this.color});
+class _HintPill extends StatelessWidget {
+  const _HintPill(this.text);
 
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return TweenAnimationBuilder<Color?>(
-      tween: ColorTween(end: color),
-      duration: const Duration(milliseconds: 250),
-      builder: (context, animated, _) =>
-          CustomPaint(painter: _FramePainter(animated ?? color)),
-    );
-  }
-}
-
-class _FramePainter extends CustomPainter {
-  _FramePainter(this.color);
-
-  final Color color;
+  final String text;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final side = size.shortestSide * 0.68;
-    final rect = Rect.fromCenter(
-      center: Offset(size.width / 2, size.height * 0.38),
-      width: side,
-      height: side,
-    );
-    final window = RRect.fromRectAndRadius(rect, const Radius.circular(24));
-    canvas.drawPath(
-      Path.combine(
-        PathOperation.difference,
-        Path()..addRect(Offset.zero & size),
-        Path()..addRRect(window),
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      color: Colors.black.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(999),
+      border: Border.all(color: AppPalette.gold.withValues(alpha: 0.45)),
+    ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.nightlight_round, size: 14, color: AppPalette.gold),
+          const SizedBox(width: 6),
+          Text(text, style: const TextStyle(color: AppPalette.onSky, fontSize: 12.5)),
+        ],
       ),
-      Paint()..color = Colors.black.withValues(alpha: 0.5),
-    );
-
-    final paint = Paint()
-      ..color = color
-      ..strokeWidth = 5
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    const len = 34.0;
-    const r = 24.0;
-    final corners = [
-      (rect.topLeft, 1.0, 1.0),
-      (rect.topRight, -1.0, 1.0),
-      (rect.bottomLeft, 1.0, -1.0),
-      (rect.bottomRight, -1.0, -1.0),
-    ];
-    for (final (p, dx, dy) in corners) {
-      final path = Path()
-        ..moveTo(p.dx, p.dy + dy * (r + len))
-        ..lineTo(p.dx, p.dy + dy * r)
-        ..quadraticBezierTo(p.dx, p.dy, p.dx + dx * r, p.dy)
-        ..lineTo(p.dx + dx * (r + len), p.dy);
-      canvas.drawPath(path, paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _FramePainter old) => old.color != color;
+    ),
+  );
 }
 
 class _CameraUnavailable extends StatelessWidget {
-  const _CameraUnavailable({required this.error, required this.onManualEntry});
+  const _CameraUnavailable({required this.error, required this.onFind});
 
   final MobileScannerException error;
-  final VoidCallback onManualEntry;
+  final VoidCallback? onFind;
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final denied = error.errorCode == MobileScannerErrorCode.permissionDenied;
     return ColoredBox(
-      color: AppColors.night,
+      color: AppPalette.sky,
       child: Center(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.xxl),
+          padding: const EdgeInsets.all(32),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.no_photography_outlined,
-                size: 48,
-                color: AppColors.gold,
-              ),
-              const SizedBox(height: AppSpacing.lg),
+              const Icon(Icons.no_photography_outlined, size: 48, color: AppPalette.gold),
+              const SizedBox(height: 16),
               Text(
-                denied ? 'Camera access is off' : 'Camera unavailable',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                denied
-                    ? 'Allow camera access for this app in your phone settings '
-                          'to scan QR cards. You can still enter IDs manually.'
-                    : 'The camera could not be started. You can still enter '
-                          'IDs manually.',
+                denied ? l.cameraOffTitle : l.cameraUnavailableTitle,
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+                style: const TextStyle(color: AppPalette.onSky, fontSize: 18, fontWeight: FontWeight.w500),
               ),
-              const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: 8),
+              Text(
+                denied ? l.cameraOffMessage : l.cameraUnavailableMessage,
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppPalette.onSky.withValues(alpha: 0.8)),
+              ),
+              const SizedBox(height: 24),
               FilledButton.icon(
-                onPressed: onManualEntry,
-                icon: const Icon(Icons.keyboard_alt_outlined),
-                label: const Text('Enter ID manually'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: AppPalette.mint,
+                  foregroundColor: AppPalette.sky,
+                ),
+                onPressed: onFind,
+                icon: const Icon(Icons.search_rounded),
+                label: Text(l.findNoCard),
               ),
             ],
           ),
