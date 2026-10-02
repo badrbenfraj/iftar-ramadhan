@@ -575,6 +575,7 @@ class _FindBar extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(l.findNoCard, style: const TextStyle(fontSize: 14.5, fontWeight: FontWeight.w500)),
