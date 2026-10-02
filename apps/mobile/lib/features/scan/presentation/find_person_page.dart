@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/network/app_failure.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/iftar_colors.dart';
@@ -26,6 +27,14 @@ class FindPersonPage extends ConsumerStatefulWidget {
 
 class _FindPersonPageState extends ConsumerState<FindPersonPage> {
   final _query = TextEditingController();
+  bool _chosen = false;
+
+  /// One answer only: a second quick tap must not pop again.
+  void _choose(int? id) {
+    if (_chosen) return;
+    _chosen = true;
+    context.pop(id);
+  }
 
   @override
   void dispose() {
@@ -37,8 +46,8 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final c = context.colors;
-    final people =
-        ref.watch(peopleListProvider).value ?? const <FastingPerson>[];
+    final list = ref.watch(peopleListProvider);
+    final people = list.value ?? const <FastingPerson>[];
     final now = ref.watch(clockProvider)();
     final q = latinDigits(_query.text).trim();
     final digits = RegExp(r'^\d+$').hasMatch(q);
@@ -67,7 +76,7 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
                       tooltip: l.back,
                       color: AppPalette.onSky,
                       icon: const BackButtonIcon(),
-                      onPressed: () => context.pop(),
+                      onPressed: () => _choose(null),
                     ),
                     Expanded(
                       child: Text(
@@ -89,7 +98,7 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
                     onChanged: (_) => setState(() {}),
                     textInputAction: TextInputAction.search,
                     decoration: InputDecoration(
-                      hintText: l.findSearchHint,
+                      labelText: l.findSearchHint,
                       prefixIcon: const Icon(Icons.search_rounded),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(AppRadii.field),
@@ -110,23 +119,34 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
                       style: TextStyle(color: c.inkMuted),
                     ),
                   )
+                : !list.hasValue
+                ? Column(
+                    children: [
+                      if (offerLookUp)
+                        Padding(
+                          padding: const EdgeInsets.all(14),
+                          child: _lookUpCard(l, c, typedId),
+                        ),
+                      Expanded(
+                        child: switch (list) {
+                          AsyncError(:final error) => ErrorView(
+                            failure: toAppFailure(error),
+                            onRetry: () => ref.invalidate(peopleListProvider),
+                          ),
+                          _ => const LoadingView(),
+                        },
+                      ),
+                    ],
+                  )
                 : ListView(
                     padding: const EdgeInsets.all(14),
                     children: [
-                      if (offerLookUp)
-                        Card(
-                          child: ListTile(
-                            minTileHeight: 56,
-                            leading: Icon(Icons.badge_outlined, color: c.actInk),
-                            title: Text(l.findLookUpId(typedId)),
-                            onTap: () => context.pop(typedId),
-                          ),
-                        ),
+                      if (offerLookUp) _lookUpCard(l, c, typedId),
                       for (final p in results) ...[
                         _ResultRow(
                           person: p,
                           now: now,
-                          onTap: () => context.pop(p.id),
+                          onTap: () => _choose(p.id),
                         ),
                         const SizedBox(height: 10),
                       ],
@@ -142,6 +162,16 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
       ),
     );
   }
+
+  Widget _lookUpCard(AppLocalizations l, IftarColors c, int id) => Card(
+    margin: EdgeInsets.zero,
+    child: ListTile(
+      minTileHeight: 56,
+      leading: Icon(Icons.badge_outlined, color: c.actInk),
+      title: Text(l.findLookUpId(id)),
+      onTap: () => _choose(id),
+    ),
+  );
 }
 
 class _ResultRow extends StatelessWidget {

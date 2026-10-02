@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../../../core/utils/formatters.dart';
 import '../../auth/domain/user.dart';
 
@@ -100,41 +102,82 @@ class FastingPerson {
     region: region,
   );
 
-  /// Search by ID, names in any order, CIN or phone; case-, accent- and
-  /// space-insensitive ("  HEDI " finds "Hédi"). Arabic is folded too
-  /// (diacritics, tatweel, alef/yaa/taa-marbuta variants) and the query may
-  /// use Arabic-Indic digits.
-  bool matches(String query) {
-    final q = _fold(latinDigits(query).trim());
-    if (q.isEmpty) return true;
-    return '$id'.contains(q) ||
-        _fold(fullName).contains(q) ||
-        _fold('$lastName $firstName').contains(q) ||
-        (cin != null && _fold(latinDigits(cin!)).contains(q)) ||
-        (phone != null &&
-            _fold(latinDigits(phone!)).replaceAll(' ', '').contains(q.replaceAll(' ', '')));
+  /// Search by ID, names, CIN or phone. The query is split into words and
+  /// every word must appear somewhere in the person's data, in any order
+  /// ("fatma ali" finds "Fatma Ben Ali"). Case-, accent- and
+  /// space-insensitive ("  HEDI " finds "Hédi"); Arabic is folded too
+  /// (diacritics, tatweel, alef/yaa/taa-marbuta/hamza variants) and the
+  /// query may use Arabic-Indic digits.
+  bool matches(String query) => searchMatcher(query)(this);
+
+  /// Prepares [query] once (folding and splitting), for filtering a list.
+  static bool Function(FastingPerson) searchMatcher(String query) {
+    final words = _fold(latinDigits(query))
+        .split(_whitespace)
+        .where((w) => w.isNotEmpty)
+        .toList();
+    if (words.isEmpty) return (_) => true;
+    return (person) {
+      final key = person.searchKey;
+      for (final w in words) {
+        if (!key.contains(w)) return false;
+      }
+      return true;
+    };
+  }
+
+  static final Expando<String> _searchKeys = Expando<String>('searchKey');
+  static final RegExp _whitespace = RegExp(r'\s+');
+
+  /// ID, names (both orders), CIN and phone, folded; computed once per
+  /// person (the value class stays const, so the cache lives in an Expando).
+  @visibleForTesting
+  String get searchKey => _searchKeys[this] ??= _fold(
+    latinDigits(
+      [
+        '$id',
+        fullName,
+        '$lastName $firstName',
+        ?cin,
+        ?phone,
+        if (phone != null) phone!.replaceAll(' ', ''),
+      ].join(' '),
+    ),
+  );
+
+  static final Map<int, String> _folds = _buildFolds();
+
+  static Map<int, String> _buildFolds() {
+    const from = 'àâäáãåçéèêëíìîïñóòôöõúùûüýÿ';
+    const to = 'aaaaaaceeeeiiiinooooouuuuyy';
+    return {
+      for (var i = 0; i < from.length; i++) from.codeUnitAt(i): to[i],
+      0x153: 'oe', // œ
+      0xE6: 'ae', // æ
+      0x623: 'ا', 0x625: 'ا', 0x622: 'ا', 0x671: 'ا', // أ إ آ ٱ
+      0x649: 'ي', // ى
+      0x626: 'ي', // ئ
+      0x624: 'و', // ؤ
+      0x629: 'ه', // ة
+    };
   }
 
   static String _fold(String text) {
-    const from = 'àâäáãåçéèêëíìîïñóòôöõúùûüýÿ';
-    const to = 'aaaaaaceeeeiiiinooooouuuuyy';
     final out = StringBuffer();
-    for (final ch in text.toLowerCase().split('')) {
-      final unit = ch.codeUnitAt(0);
-      // Arabic tashkeel (064B-0652, 0670) and tatweel (0640): dropped.
-      if ((unit >= 0x064B && unit <= 0x0652) || unit == 0x0670 || unit == 0x0640) {
+    for (final unit in text.toLowerCase().codeUnits) {
+      // Combining marks, Arabic tashkeel (064B-0652, 0670) and tatweel (0640)
+      // are dropped.
+      if ((unit >= 0x300 && unit <= 0x36F) ||
+          (unit >= 0x64B && unit <= 0x652) ||
+          unit == 0x670 ||
+          unit == 0x640) {
         continue;
       }
-      switch (ch) {
-        case 'أ' || 'إ' || 'آ' || 'ٱ':
-          out.write('ا');
-        case 'ى':
-          out.write('ي');
-        case 'ة':
-          out.write('ه');
-        default:
-          final i = from.indexOf(ch);
-          out.write(i < 0 ? ch : to[i]);
+      final mapped = _folds[unit];
+      if (mapped == null) {
+        out.writeCharCode(unit);
+      } else {
+        out.write(mapped);
       }
     }
     return out.toString();

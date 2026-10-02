@@ -116,6 +116,46 @@ void main() {
       expect(p.matches('٩٩٩'), isFalse);
     });
 
+    test('every word of the query must match, in any order and spacing', () {
+      final p = FastingPerson.fromJson({...json, 'firstName': 'Fatma', 'lastName': 'Ben Ali'});
+      expect(p.matches('fatma ali'), isTrue);
+      expect(p.matches('ali   fatma'), isTrue);
+      expect(p.matches('fatma	ali'), isTrue);
+      expect(p.matches('fatma zied'), isFalse);
+      final h = FastingPerson.fromJson({...json, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(h.matches('hedi  jlassi'), isTrue);
+      expect(h.matches('jlassi hédi'), isTrue);
+      // Words may hit different fields: name + ID.
+      final q = FastingPerson.fromJson({...json, 'id': 55, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(q.matches('hedi 55'), isTrue);
+      expect(q.matches('hedi 56'), isFalse);
+    });
+
+    test('more folding: combining marks, ligatures, hamza carriers', () {
+      FastingPerson named(String first, String last) =>
+          FastingPerson.fromJson({...json, 'firstName': first, 'lastName': last});
+      expect(named('Hédi', 'Jlassi').matches('hedi'), isTrue);
+      expect(named('Hedi', 'Jlassi').matches('Hédi'), isTrue);
+      expect(named('Cœur', 'Jlassi').matches('coeur'), isTrue);
+      expect(named('Æon', 'Jlassi').matches('aeon'), isTrue);
+      expect(named('مؤمن', 'علي').matches('مومن'), isTrue);
+      expect(named('مومن', 'علي').matches('مؤمن'), isTrue);
+      expect(named('عائشة', 'علي').matches('عايشه'), isTrue);
+    });
+
+    test('the folded search key is computed once per person', () {
+      final p = FastingPerson.fromJson({...json, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(identical(p.searchKey, p.searchKey), isTrue);
+      expect(p.searchKey, contains('hedi'));
+    });
+
+    test('a prepared matcher agrees with matches', () {
+      final p = FastingPerson.fromJson({...json, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(FastingPerson.searchMatcher('HEDI jlassi')(p), isTrue);
+      expect(FastingPerson.searchMatcher('')(p), isTrue);
+      expect(FastingPerson.searchMatcher('nope')(p), isFalse);
+    });
+
     test('the server flag wins over the device clock', () {
       final p = FastingPerson.fromJson({...json, 'mealTakenToday': false});
       expect(p.isMealTakenToday(DateTime(2025, 3, 3, 20)), isFalse);

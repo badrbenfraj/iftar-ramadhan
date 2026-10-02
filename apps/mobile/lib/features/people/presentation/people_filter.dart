@@ -21,16 +21,19 @@ List<FastingPerson> applyPeopleFilter(
   required PeopleFilter filter,
   required String query,
   required DateTime now,
-}) => [
-  for (final p in people)
-    if (p.matches(query) &&
-        switch (filter) {
-          PeopleFilter.all => true,
-          PeopleFilter.waiting => !p.isMealTakenToday(now),
-          PeopleFilter.served => p.isMealTakenToday(now),
-        })
-      p,
-];
+}) {
+  final matches = FastingPerson.searchMatcher(query);
+  return [
+    for (final p in people)
+      if (matches(p) &&
+          switch (filter) {
+            PeopleFilter.all => true,
+            PeopleFilter.waiting => !p.isMealTakenToday(now),
+            PeopleFilter.served => p.isMealTakenToday(now),
+          })
+        p,
+  ];
+}
 
 class PeopleFilterController extends Notifier<PeopleFilter> {
   @override

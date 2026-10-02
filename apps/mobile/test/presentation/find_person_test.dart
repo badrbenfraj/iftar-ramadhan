@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:iftar_mobile/core/network/app_failure.dart';
 import 'package:iftar_mobile/core/utils/formatters.dart';
+import 'package:iftar_mobile/core/widgets/state_views.dart';
 import 'package:iftar_mobile/features/people/domain/fasting_person.dart';
+import 'package:iftar_mobile/features/people/presentation/people_controller.dart';
 import 'package:iftar_mobile/features/scan/presentation/find_person_page.dart';
 
 import '../support/app_harness.dart';
@@ -106,6 +111,104 @@ void main() {
     handle.dispose();
   });
 
+  testWidgets('keeps its label once text is typed', (tester) async {
+    await open(tester);
+    await tester.enterText(find.byType(TextField), 'hedi');
+    await tester.pumpAndSettle();
+    expect(find.text(en.findSearchHint), findsWidgets);
+  });
+
+  testWidgets('shows a spinner, not "no match", while the list loads', (tester) async {
+    final gate = Completer<List<FastingPerson>>();
+    await tester.pumpWidget(
+      localizedRouterApp(
+        router(),
+        overrides: [
+          ...testOverrides(repo),
+          peopleListProvider.overrideWith(() => _StubList(gate.future)),
+        ],
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+    await tester.enterText(find.byType(TextField), 'hedi');
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(find.byType(LoadingView), findsOneWidget);
+    expect(find.text(en.noMatch(isolate('hedi'))), findsNothing);
+  });
+
+  testWidgets('a failed list shows the error with retry', (tester) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      localizedRouterApp(
+        router(),
+        overrides: [
+          ...testOverrides(repo),
+          peopleListProvider.overrideWith(() => _StubList(null, onBuild: () => calls++)),
+        ],
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'hedi');
+    await tester.pumpAndSettle();
+    expect(find.byType(ErrorView), findsOneWidget);
+    expect(find.text(en.noMatch(isolate('hedi'))), findsNothing);
+    final before = calls;
+    await tester.tap(find.text(en.tryAgain));
+    await tester.pumpAndSettle();
+    expect(calls, greaterThan(before));
+  });
+
+  testWidgets('the header back button pops null', (tester) async {
+    picked = -1;
+    await open(tester);
+    await tester.tap(find.byTooltip(en.back));
+    await tester.pumpAndSettle();
+    expect(picked, isNull);
+    expect(find.text('open'), findsOneWidget);
+  });
+
+  testWidgets('system back pops null', (tester) async {
+    picked = -1;
+    await open(tester);
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+    expect(picked, isNull);
+    expect(find.text('open'), findsOneWidget);
+  });
+
+  testWidgets('tapping a result twice quickly pops once with the ID', (tester) async {
+    var pops = 0;
+    final r = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, _) => Scaffold(
+            body: TextButton(
+              onPressed: () async {
+                picked = await context.push<int>('/find');
+                pops++;
+              },
+              child: const Text('open'),
+            ),
+          ),
+        ),
+        GoRoute(path: '/find', builder: (_, _) => const FindPersonPage()),
+      ],
+    );
+    await open(tester, r: r);
+    await tester.enterText(find.byType(TextField), 'hedi');
+    await tester.pumpAndSettle();
+    final row = find.text(isolate('Hédi Jlassi'));
+    await tester.tap(row);
+    await tester.tap(row, warnIfMissed: false);
+    await tester.pumpAndSettle();
+    expect(picked, 201);
+    expect(pops, 1);
+  });
+
   for (final locale in [const Locale('ar'), const Locale('fr')]) {
     testWidgets('long names lay out at 360x760, text 1.3, ${locale.languageCode}', (tester) async {
       tester.view.physicalSize = const Size(360, 760);
@@ -130,5 +233,19 @@ void main() {
       );
       expect(tester.takeException(), isNull);
     });
+  }
+}
+
+/// Loads never (when given a future) or fails (when null).
+class _StubList extends PeopleListController {
+  _StubList(this._pending, {this.onBuild});
+
+  final Future<List<FastingPerson>>? _pending;
+  final void Function()? onBuild;
+
+  @override
+  Future<List<FastingPerson>> build() {
+    onBuild?.call();
+    return _pending ?? Future.error(const NetworkFailure());
   }
 }
