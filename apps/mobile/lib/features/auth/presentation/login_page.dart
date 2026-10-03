@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/app_failure.dart';
-import '../../../core/theme/app_colors.dart';
+import '../../../core/network/failure_text.dart';
+import '../../../core/theme/iftar_colors.dart';
 import '../../../core/widgets/pill_text_field.dart';
+import '../../../l10n/app_localizations.dart';
 import 'auth_controller.dart';
 import 'auth_scaffold.dart';
 
@@ -21,12 +23,12 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _password = TextEditingController();
   bool _submitting = false;
   bool _obscure = true;
-  String? _error;
+  AppFailure? _failure;
 
   @override
   void initState() {
     super.initState();
-    _error = ref.read(authControllerProvider.notifier).lastSignOutReason;
+    _failure = ref.read(authControllerProvider.notifier).lastSignOutFailure;
   }
 
   @override
@@ -41,7 +43,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
       _submitting = true;
-      _error = null;
+      _failure = null;
     });
     try {
       await ref
@@ -49,7 +51,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           .login(_username.text, _password.text);
       // The router redirects to the app once signed in.
     } on AppFailure catch (e) {
-      if (mounted) setState(() => _error = e.message);
+      if (mounted) setState(() => _failure = e);
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -57,9 +59,11 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     return AuthScaffold(
-      title: 'Welcome back',
-      switchLabel: 'Sign up',
+      title: l.welcomeBack,
+      lead: l.loginLead,
+      switchLabel: l.newVolunteerCreateAccount,
       onSwitch: () => context.pushReplacement('/register'),
       child: AutofillGroup(
         child: Form(
@@ -69,48 +73,44 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             children: [
               PillTextField(
                 controller: _username,
-                hint: 'Username',
+                hint: l.username,
                 icon: Icons.person_outline_rounded,
                 textInputAction: TextInputAction.next,
                 autofillHints: const [AutofillHints.username],
-                validator: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Username is required.'
-                    : null,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? l.usernameRequired : null,
               ),
               PillTextField(
                 controller: _password,
-                hint: 'Password',
+                hint: l.password,
                 icon: Icons.lock_outline_rounded,
                 obscureText: _obscure,
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.password],
                 onSubmitted: (_) => _submit(),
                 suffix: IconButton(
-                  tooltip: _obscure ? 'Show password' : 'Hide password',
+                  tooltip: _obscure ? l.showPassword : l.hidePassword,
                   icon: Icon(
-                    _obscure
-                        ? Icons.visibility_outlined
-                        : Icons.visibility_off_outlined,
-                    color: AppColors.inkMuted,
+                    _obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                    color: context.colors.inkMuted,
                   ),
                   onPressed: () => setState(() => _obscure = !_obscure),
                 ),
-                validator: (v) =>
-                    (v == null || v.isEmpty) ? 'Password is required.' : null,
+                validator: (v) => (v == null || v.isEmpty) ? l.passwordRequired : null,
               ),
-              if (_error != null) FormErrorBanner(_error!),
-              const SizedBox(height: AppSpacing.lg),
+              if (_failure != null) FormErrorBanner(failureText(l, _failure!)),
+              const SizedBox(height: 16),
               FilledButton(
                 onPressed: _submitting ? null : _submit,
                 child: _submitting
-                    ? const SizedBox.square(
+                    ? SizedBox.square(
                         dimension: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2.5,
-                          color: Colors.white,
+                          color: context.colors.onAct,
                         ),
                       )
-                    : const Text('Login'),
+                    : Text(l.signIn),
               ),
             ],
           ),

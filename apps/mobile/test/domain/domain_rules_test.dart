@@ -88,6 +88,74 @@ void main() {
       expect(p.totalPortions, 6); // family meal = 4 portions
     });
 
+    test('search ignores case, accents and surrounding spaces', () {
+      final p = FastingPerson.fromJson({...json, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(p.matches('  HEDI '), isTrue);
+      expect(p.matches('jlassi hédi'), isTrue);
+      expect(p.matches('hadi'), isFalse);
+    });
+
+    test('Arabic search ignores diacritics, tatweel and letter variants', () {
+      FastingPerson named(String first, String last) =>
+          FastingPerson.fromJson({...json, 'firstName': first, 'lastName': last});
+      expect(named('محمد', 'بن علي').matches('مُحَمَّد'), isTrue);
+      expect(named('أحمد', 'بن علي').matches('احمد'), isTrue);
+      expect(named('احمد', 'بن علي').matches('إحمد'), isTrue);
+      expect(named('مُحَمَّد', 'بن علي').matches('محمد'), isTrue);
+      expect(named('مـحمد', 'بن علي').matches('محمد'), isTrue);
+      expect(named('منى', 'بن علي').matches('منى'), isTrue);
+      expect(named('منى', 'بن علي').matches('مني'), isTrue);
+      expect(named('فاطمة', 'بن علي').matches('فاطمه'), isTrue);
+      expect(named('فاطمة', 'بن علي').matches('خديجة'), isFalse);
+    });
+
+    test('an ID or CIN typed with Arabic-Indic digits matches', () {
+      final p = FastingPerson.fromJson({...json, 'id': 101, 'cin': '09876543'});
+      expect(p.matches('١٠١'), isTrue);
+      expect(p.matches('٥٤٣'), isTrue);
+      expect(p.matches('٩٩٩'), isFalse);
+    });
+
+    test('every word of the query must match, in any order and spacing', () {
+      final p = FastingPerson.fromJson({...json, 'firstName': 'Fatma', 'lastName': 'Ben Ali'});
+      expect(p.matches('fatma ali'), isTrue);
+      expect(p.matches('ali   fatma'), isTrue);
+      expect(p.matches('fatma	ali'), isTrue);
+      expect(p.matches('fatma zied'), isFalse);
+      final h = FastingPerson.fromJson({...json, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(h.matches('hedi  jlassi'), isTrue);
+      expect(h.matches('jlassi hédi'), isTrue);
+      // Words may hit different fields: name + ID.
+      final q = FastingPerson.fromJson({...json, 'id': 55, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(q.matches('hedi 55'), isTrue);
+      expect(q.matches('hedi 56'), isFalse);
+    });
+
+    test('more folding: combining marks, ligatures, hamza carriers', () {
+      FastingPerson named(String first, String last) =>
+          FastingPerson.fromJson({...json, 'firstName': first, 'lastName': last});
+      expect(named('Hédi', 'Jlassi').matches('hedi'), isTrue);
+      expect(named('Hedi', 'Jlassi').matches('Hédi'), isTrue);
+      expect(named('Cœur', 'Jlassi').matches('coeur'), isTrue);
+      expect(named('Æon', 'Jlassi').matches('aeon'), isTrue);
+      expect(named('مؤمن', 'علي').matches('مومن'), isTrue);
+      expect(named('مومن', 'علي').matches('مؤمن'), isTrue);
+      expect(named('عائشة', 'علي').matches('عايشه'), isTrue);
+    });
+
+    test('the folded search key is computed once per person', () {
+      final p = FastingPerson.fromJson({...json, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(identical(p.searchKey, p.searchKey), isTrue);
+      expect(p.searchKey, contains('hedi'));
+    });
+
+    test('a prepared matcher agrees with matches', () {
+      final p = FastingPerson.fromJson({...json, 'firstName': 'Hédi', 'lastName': 'Jlassi'});
+      expect(FastingPerson.searchMatcher('HEDI jlassi')(p), isTrue);
+      expect(FastingPerson.searchMatcher('')(p), isTrue);
+      expect(FastingPerson.searchMatcher('nope')(p), isFalse);
+    });
+
     test('the server flag wins over the device clock', () {
       final p = FastingPerson.fromJson({...json, 'mealTakenToday': false});
       expect(p.isMealTakenToday(DateTime(2025, 3, 3, 20)), isFalse);
@@ -184,6 +252,14 @@ void main() {
       final s = StatisticsSummary(days);
       expect(s.persons, 3);
       expect(s.totalMeals, 12);
+    });
+
+    test('day labels parse to dates; unparseable labels stay null', () {
+      final ok = DailyStatistics.fromJson({'date': 'Mon Mar 03 2025', 'statistics': {}});
+      expect(ok.date, DateTime(2025, 3, 3));
+      final odd = DailyStatistics.fromJson({'date': '2025-W10', 'statistics': {}});
+      expect(odd.date, isNull);
+      expect(odd.label, '2025-W10');
     });
   });
 }

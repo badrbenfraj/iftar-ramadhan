@@ -1,3 +1,5 @@
+import 'package:intl/intl.dart';
+
 import '../../../core/utils/formatters.dart';
 
 enum StatsPeriod {
@@ -44,6 +46,39 @@ enum StatsPeriod {
   }
 }
 
+/// What the Statistics screen offers (spec section 4.9). Applying a preset fetches
+/// immediately; there is no "Validate Period" step.
+enum StatsPreset { tonight, week, ramadan, custom }
+
+/// Ramadan has 30 days at most; the preset never runs past the last one nor
+/// reaches into the future.
+({DateTime from, DateTime to}) presetRange(
+  StatsPreset preset,
+  DateTime now, {
+  DateTime? ramadanStart,
+  DateTime? customFrom,
+  DateTime? customTo,
+}) {
+  switch (preset) {
+    case StatsPreset.tonight:
+      return StatsPeriod.daily.rangeFor(now);
+    case StatsPreset.week:
+      return StatsPeriod.weekly.rangeFor(now);
+    case StatsPreset.ramadan:
+      final today = dateOnly(now);
+      final first = dateOnly(ramadanStart ?? now);
+      final last = DateTime(first.year, first.month, first.day + 29);
+      final to = last.isBefore(today) ? last : today;
+      return (from: first.isAfter(to) ? to : first, to: to);
+    case StatsPreset.custom:
+      return StatsPeriod.custom.rangeFor(
+        now,
+        customFrom: customFrom,
+        customTo: customTo,
+      );
+  }
+}
+
 class DailyStatistics {
   const DailyStatistics({
     required this.label,
@@ -69,6 +104,12 @@ class DailyStatistics {
 
   /// Server label, e.g. "Mon Mar 03 2025".
   final String label;
+
+  /// The label as a date ("Mon Mar 03 2025"), or null if the server sent
+  /// something else. Screens fall back to [label].
+  DateTime? get date =>
+      DateFormat('EEE MMM dd yyyy', 'en_US').tryParse(label);
+
   final int totalPersons;
 
   /// Served persons that day.

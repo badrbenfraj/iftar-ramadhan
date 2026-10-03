@@ -2,525 +2,722 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/network/app_failure.dart';
+import '../../../core/network/failure_text.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_theme.dart';
+import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
-import '../../../core/widgets/meal_status_badge.dart';
+import '../../../core/utils/masking.dart';
+import '../../../core/widgets/brand.dart';
+import '../../../core/widgets/hand_over_tiles.dart';
+import '../../../core/widgets/seal.dart';
+import '../../../core/widgets/status_chip.dart';
+import '../../../l10n/app_localizations.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../people/domain/fasting_person.dart';
 import '../../people/presentation/person_widgets.dart';
 import 'scan_controller.dart';
 
-/// Bottom card showing the outcome of the current scan.
+/// Bottom of the scan screen. The band and seal give the verdict at a
+/// glance; the body says what to do next (spec §4.6).
 class ScanResultPanel extends ConsumerWidget {
   const ScanResultPanel({
     super.key,
     required this.status,
-    required this.onManualEntry,
+    required this.onFindWithoutCard,
   });
 
   final ScanStatus status;
-  final VoidCallback onManualEntry;
+  final VoidCallback onFindWithoutCard;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final controller = ref.read(scanControllerProvider.notifier);
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 220),
       switchInCurve: Curves.easeOutCubic,
+      // Only the current sheet is ever shown: an outgoing sheet would keep
+      // the previous person's opposite verdict (and a live Confirm) on screen.
+      layoutBuilder: (current, _) => Align(
+        alignment: Alignment.bottomCenter,
+        heightFactor: 1,
+        child: current ?? const SizedBox.shrink(),
+      ),
       transitionBuilder: (child, animation) => SlideTransition(
-        position: Tween(
-          begin: const Offset(0, 0.15),
-          end: Offset.zero,
-        ).animate(animation),
+        position: Tween(begin: const Offset(0, 0.12), end: Offset.zero).animate(animation),
         child: FadeTransition(opacity: animation, child: child),
       ),
       child: KeyedSubtree(
         key: ValueKey(_keyFor(status)),
-        child: _content(context, controller),
+        child: _content(context, ref),
       ),
     );
   }
 
+  /// Identifying → Ready keeps the same key so the sheet updates in place.
   static String _keyFor(ScanStatus s) => switch (s) {
+    ScanIdle() => 'idle',
+    ScanLookingUp(:final personId) => 'lookup-$personId',
+    ScanIdentifying(:final person) => 'ready-${person.id}',
     ScanReady(:final person) => 'ready-${person.id}',
-    ScanConfirming(:final person) => 'ready-${person.id}', // same card
+    ScanConfirming(:final person) => 'ready-${person.id}',
     ScanConfirmed(:final person) => 'done-${person.id}',
     ScanAlreadyTaken(:final person) => 'taken-${person.id}',
-    ScanLookingUp(:final personId) => 'lookup-$personId',
     ScanNotFound(:final personId) => 'missing-$personId',
     ScanInvalidCode(:final raw) => 'invalid-$raw',
     ScanFailed(:final personId) => 'failed-$personId',
-    ScanIdle() => 'idle',
   };
 
-  Widget _content(BuildContext context, ScanController controller) {
+  Widget _content(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final c = context.colors;
+    final controller = ref.read(scanControllerProvider.notifier);
+    final problem = Seal(SealKind.problem, semanticLabel: l.sealProblem);
+    final checking = Seal(SealKind.checking, semanticLabel: l.sealChecking);
+
     switch (status) {
       case ScanIdle():
-        return const _Hint('Align the QR card inside the frame');
+        // Only the camera while waiting: people without a card are served
+        // from the people list, outside the scanner.
+        return const SizedBox.shrink();
 
       case ScanLookingUp(:final personId):
-        return _Panel(
-          tone: _Tone.neutral,
-          icon: Icons.search_rounded,
-          title: 'Looking up #$personId…',
-          busy: true,
+        return _Sheet(
+          band: _Band(color: AppPalette.waitBand, seal: checking, title: l.lookingUp(personId), small: true),
+          body: const [_WaitBar()],
         );
 
-      case ScanInvalidCode(:final raw):
-        return _Panel(
-          tone: _Tone.warning,
-          icon: Icons.qr_code_2_rounded,
-          title: 'Invalid QR code',
-          message: raw.isEmpty
-              ? 'The code could not be read.'
-              : 'This code does not contain a person ID.',
-          actions: [
-            _Action.primary('Scan again', controller.scanNext),
-            _Action.secondary('Enter ID', onManualEntry),
+      case ScanIdentifying(:final person, :final noCard):
+        return _Sheet(
+          band: _Band(
+            color: AppPalette.waitBand,
+            seal: checking,
+            title: person.fullName,
+            subtitle: l.checkingStatus,
+            small: true,
+          ),
+          body: [
+            _PersonMeta(person),
+            _Label(l.handOver),
+            HandOverTiles(person: person),
+            if (noCard) _NoCardCheck(person),
+            const _WaitBar(),
           ],
         );
 
-      case ScanNotFound(:final personId):
-        return _Panel(
-          tone: _Tone.warning,
-          icon: Icons.person_search_rounded,
-          title: 'Person #$personId not found',
-          message: 'Nobody with this ID is registered in your region.',
-          actions: [
-            _Action.primary('Scan again', controller.scanNext),
-            _Action.secondary(
-              'Register',
-              () => context.go('/add?id=$personId'),
-            ),
-          ],
-        );
-
-      case ScanReady(:final person, :final phone, :final comment):
-        return _PersonPanel(
-          person: person,
-          tone: _Tone.go,
-          headline: 'Can collect today',
+      case ScanReady(:final person, :final phone, :final comment, :final noCard):
+        return _ready(
+          context,
+          controller,
+          person,
           phone: phone ?? person.phone,
           comment: comment ?? person.comment,
-          onEditContact: () async {
-            final result = await showContactEditor(
-              context,
-              phone: phone ?? person.phone,
-              comment: comment ?? person.comment,
-            );
-            if (result != null) {
-              controller.editContact(
-                phone: result.phone,
-                comment: result.comment,
-              );
-            }
-          },
-          actions: [
-            _Action.primary(
-              'Confirm & scan next',
-              controller.confirm,
-              icon: Icons.restaurant_rounded,
-            ),
-            _Action.secondary('Skip', controller.scanNext),
-            _Action.secondary(
-              'Details',
-              () => context.push('/people/${person.id}'),
-            ),
-          ],
+          noCard: noCard,
+          busy: false,
         );
 
-      case ScanConfirming(:final person):
-        return _PersonPanel(
-          person: person,
-          tone: _Tone.go,
-          headline: 'Confirming…',
+      case ScanConfirming(:final person, :final noCard):
+        return _ready(
+          context,
+          controller,
+          person,
+          phone: person.phone,
+          comment: person.comment,
+          noCard: noCard,
           busy: true,
         );
 
       case ScanConfirmed(:final person):
-        return _Panel(
-          tone: _Tone.success,
-          icon: Icons.check_circle_rounded,
-          title: 'Meal confirmed',
-          message:
-              '${isolate(person.fullName)}\n'
-              'Hand over ${person.singleMeal} single · '
-              '${person.familyMeal} family',
-        );
+        return _DoneBand(person: person);
 
       case ScanAlreadyTaken(:final person, :final takenAt):
-        return _PersonPanel(
-          person: person,
-          tone: _Tone.stop,
-          headline: takenAt == null
-              ? 'Already collected today'
-              : 'Already collected today at ${formatTime(takenAt)}',
-          actions: [
-            _Action.primary(
-              'Scan next',
-              controller.scanNext,
-              icon: Icons.qr_code_scanner_rounded,
+        final time = takenAt == null ? null : ltr(formatTime(takenAt));
+        return _Sheet(
+          background: c.claySoft,
+          band: _Band(
+            color: AppPalette.pausedBand,
+            seal: Seal(SealKind.served, semanticLabel: l.sealServed),
+            title: MealStatusWords.taken,
+            subtitle: l.alreadyServedTonight,
+            trailing: time,
+          ),
+          header: [_Name(person), _PersonMeta(person)],
+          body: [
+            Text(
+              time == null ? l.alreadyServedNoteNoTime : l.alreadyServedNote(time),
+              style: TextStyle(fontSize: 13, color: c.clayInk),
             ),
-            _Action.secondary(
-              'History',
-              () => showMealHistory(context, person),
+          ],
+          footer: [
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: AppPalette.sky,
+                foregroundColor: AppPalette.onSky,
+              ),
+              onPressed: controller.scanNext,
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              label: Text(l.scanNextCard),
             ),
-            _Action.secondary(
-              'Details',
-              () => context.push('/people/${person.id}'),
-            ),
+            _Links([
+              (l.history, () => showMealHistory(context, person)),
+              (l.details, () => context.push('/people/${person.id}')),
+            ]),
           ],
         );
 
-      case ScanFailed(:final failure, :final duringConfirm):
-        final offline = failure is NetworkFailure || failure is TimeoutFailure;
-        return _Panel(
-          tone: _Tone.warning,
-          icon: offline ? Icons.wifi_off_rounded : Icons.cloud_off_rounded,
-          title: offline
-              ? 'No connection'
-              : failure is ServerFailure
-              ? 'Server error'
-              : 'Something went wrong',
-          message: duringConfirm
-              ? '${failure.message}\nThe meal is not confirmed until the '
-                    'server answers — retry, do not serve twice.'
-              : failure.message,
-          actions: [
-            _Action.primary('Retry', controller.retry, icon: Icons.refresh),
-            _Action.secondary('Cancel', controller.scanNext),
+      case ScanNotFound(:final personId):
+        final region = ref.read(authControllerProvider).value?.region?.name ?? '';
+        return _Sheet(
+          band: _Band(
+            color: c.systemBand,
+            seal: problem,
+            title: l.unknownCardTitle(personId),
+            subtitle: l.unknownCardMessage(region),
+            small: true,
+          ),
+          body: [
+            FilledButton.icon(
+              onPressed: () => _openOver(context, controller, '/register-card?id=$personId'),
+              icon: const Icon(Icons.person_add_alt_1_rounded),
+              label: Text(l.registerThisCard),
+            ),
+            _Links([(l.scanAgain, controller.scanNext)]),
+          ],
+        );
+
+      case ScanInvalidCode():
+        return _Sheet(
+          band: _Band(
+            color: c.systemBand,
+            seal: problem,
+            title: l.invalidCodeTitle,
+            subtitle: l.invalidCodeMessage,
+            small: true,
+          ),
+          body: [
+            OutlinedButton.icon(
+              onPressed: onFindWithoutCard,
+              icon: const Icon(Icons.search_rounded),
+              label: Text(l.findNoCard),
+            ),
+            _Links([(l.scanAgain, controller.scanNext)]),
+          ],
+        );
+
+      case ScanFailed(:final failure, :final person, :final duringConfirm, :final noCard):
+        if (duringConfirm) {
+          return _Sheet(
+            band: _Band(
+              color: c.systemBand,
+              seal: problem,
+              title: l.notConfirmedYet,
+              subtitle: l.dontHandOverYet,
+              small: true,
+            ),
+            header: [
+              if (person != null) ...[
+                _Name(person),
+                _PersonMeta(person),
+                if (noCard) _NoCardCheck(person),
+              ],
+            ],
+            body: [
+              Text(
+                '${failureText(l, failure)} ${l.notConfirmedExplanation}',
+                style: TextStyle(fontSize: 13, color: c.ink),
+              ),
+            ],
+            footer: [
+              FilledButton.icon(
+                onPressed: controller.retry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(l.retry),
+              ),
+              _Links([(l.skip, controller.scanNext)]),
+            ],
+          );
+        }
+        return _Sheet(
+          band: _Band(
+            color: c.systemBand,
+            seal: problem,
+            title: failureTitle(l, failure),
+            subtitle: failureText(l, failure),
+            small: true,
+          ),
+          body: [
+            FilledButton.icon(
+              onPressed: controller.retry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(l.retry),
+            ),
+            _Links([(l.cancel, controller.scanNext)]),
           ],
         );
     }
   }
-}
 
-enum _Tone { neutral, go, success, stop, warning }
-
-extension on _Tone {
-  Color get color => switch (this) {
-    _Tone.neutral => AppColors.night,
-    _Tone.go => AppColors.teal,
-    _Tone.success => AppColors.success,
-    _Tone.stop => AppColors.danger,
-    _Tone.warning => AppColors.warning,
-  };
-
-  Color get soft => switch (this) {
-    _Tone.neutral => AppColors.ivory,
-    _Tone.go => const Color(0xFFE0F6F2),
-    _Tone.success => AppColors.successSoft,
-    _Tone.stop => AppColors.dangerSoft,
-    _Tone.warning => AppColors.warningSoft,
-  };
-}
-
-class _Action {
-  const _Action._(this.label, this.onPressed, this.primary, this.icon);
-
-  factory _Action.primary(
-    String label,
-    VoidCallback onPressed, {
-    IconData? icon,
-  }) => _Action._(label, onPressed, true, icon);
-
-  factory _Action.secondary(String label, VoidCallback onPressed) =>
-      _Action._(label, onPressed, false, null);
-
-  final String label;
-  final VoidCallback onPressed;
-  final bool primary;
-  final IconData? icon;
-}
-
-class _Hint extends StatelessWidget {
-  const _Hint(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-        decoration: BoxDecoration(
-          color: Colors.black.withValues(alpha: 0.55),
-          borderRadius: BorderRadius.circular(AppRadii.pill),
-          border: Border.all(color: AppColors.gold.withValues(alpha: 0.5)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.nightlight_round, color: AppColors.gold, size: 18),
-            const SizedBox(width: AppSpacing.sm),
-            Text(text, style: const TextStyle(color: Colors.white)),
-          ],
-        ),
+  Widget _ready(
+    BuildContext context,
+    ScanController controller,
+    FastingPerson person, {
+    required String? phone,
+    required String? comment,
+    required bool noCard,
+    required bool busy,
+  }) {
+    final l = AppLocalizations.of(context);
+    final c = context.colors;
+    return _Sheet(
+      band: _Band(
+        color: c.serveBand,
+        seal: Seal(SealKind.serve, semanticLabel: l.sealServe),
+        title: MealStatusWords.notTaken,
+        subtitle: l.notServedTonight,
       ),
+      // Pinned: who and the CIN check. Scrolling: quantities and contact.
+      // Pinned below: the action, so Confirm never leaves the screen.
+      header: [
+        _Name(person),
+        _PersonMeta(person),
+        if (noCard) _NoCardCheck(person),
+      ],
+      body: [
+        _Label(l.handOver),
+        HandOverTiles(person: person),
+        if (!busy)
+          _ContactLine(
+            phone: phone,
+            comment: comment,
+            onEdit: () async {
+              final result = await showContactEditor(context, phone: phone, comment: comment);
+              if (result != null) {
+                controller.editContact(phone: result.phone, comment: result.comment);
+              }
+            },
+          ),
+      ],
+      footer: [
+        FilledButton.icon(
+          onPressed: busy ? null : controller.confirm,
+          icon: busy
+              ? SizedBox.square(
+                  dimension: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2.2, color: c.onAct),
+                )
+              : const Icon(Icons.check_rounded),
+          label: Text(busy ? l.confirming : l.confirmHandOver),
+        ),
+        _Links([
+          (l.skip, busy ? null : controller.scanNext),
+          (l.details, busy ? null : () => _openOver(context, controller, '/people/${person.id}')),
+        ]),
+      ],
     );
   }
 }
 
 class _Sheet extends StatelessWidget {
-  const _Sheet({required this.tone, required this.child});
+  const _Sheet({
+    required this.band,
+    this.header = const [],
+    this.body = const [],
+    this.footer = const [],
+    this.background,
+  });
 
-  final _Tone tone;
-  final Widget child;
+  /// Pinned under the band: who this is.
+  final Widget band;
+  final List<Widget> header;
+
+  /// Scrolls when the sheet would otherwise outgrow the screen.
+  final List<Widget> body;
+
+  /// Pinned at the bottom: the action the volunteer must always reach.
+  final List<Widget> footer;
+  final Color? background;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      margin: const EdgeInsets.all(AppSpacing.md),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: BorderRadius.circular(AppRadii.card + 4),
-        border: Border(top: BorderSide(color: tone.color, width: 6)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x40000000),
-            blurRadius: 24,
-            offset: Offset(0, 8),
-          ),
-        ],
+        color: background ?? context.colors.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(AppRadii.sheet)),
       ),
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.gutter,
-        AppSpacing.lg,
-        AppSpacing.gutter,
-        AppSpacing.gutter,
-      ),
-      child: child,
-    );
-  }
-}
-
-class _Panel extends StatelessWidget {
-  const _Panel({
-    required this.tone,
-    required this.icon,
-    required this.title,
-    this.message,
-    this.actions = const [],
-    this.busy = false,
-  });
-
-  final _Tone tone;
-  final IconData icon;
-  final String title;
-  final String? message;
-  final List<_Action> actions;
-  final bool busy;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Sheet(
-      tone: tone,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: tone.soft,
-                  shape: BoxShape.circle,
-                ),
-                child: busy
-                    ? SizedBox.square(
-                        dimension: 26,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 3,
-                          color: tone.color,
+      // The sheet sits over the camera. At large text sizes only the middle
+      // scrolls; the band, the person and the action stay on screen.
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+        child: SafeArea(
+          top: false,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              // Pinned header and footer need roughly 250 px per unit of text
+              // scale. Below that (small phone, huge text) pinning would
+              // overflow, so everything under the band scrolls as one unit;
+              // the verdict band always stays on screen.
+              final scale = MediaQuery.textScalerOf(context).scale(1);
+              final compact = constraints.maxHeight < 300 * scale;
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  band,
+                  if (compact)
+                    Flexible(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 12),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [...header, ...body, const SizedBox(height: 8), ...footer],
                         ),
-                      )
-                    : Icon(icon, color: tone.color, size: 26),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: tone.color,
-                  ),
-                ),
-              ),
-            ],
+                      ),
+                    )
+                  else ...[
+                    if (header.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 0),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: header,
+                        ),
+                      ),
+                    if (body.isNotEmpty)
+                      Flexible(
+                        child: SingleChildScrollView(
+                          padding: EdgeInsets.fromLTRB(18, header.isEmpty ? 14 : 4, 18, 8),
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: body,
+                          ),
+                        ),
+                      ),
+                    if (footer.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 8, 18, 12),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: footer,
+                        ),
+                      ),
+                  ],
+                ],
+              );
+            },
           ),
-          if (message != null) ...[
-            const SizedBox(height: AppSpacing.md),
-            Text(message!, style: const TextStyle(fontSize: 15)),
-          ],
-          if (actions.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
-            _Actions(actions: actions, tone: tone),
-          ],
-        ],
+        ),
       ),
     );
   }
 }
 
-class _PersonPanel extends StatelessWidget {
-  const _PersonPanel({
-    required this.person,
-    required this.tone,
-    required this.headline,
-    this.phone,
-    this.comment,
-    this.onEditContact,
-    this.actions = const [],
-    this.busy = false,
+class _Band extends StatelessWidget {
+  const _Band({
+    required this.color,
+    required this.seal,
+    required this.title,
+    this.subtitle,
+    this.trailing,
+    this.small = false,
   });
 
-  final FastingPerson person;
-  final _Tone tone;
-  final String headline;
-  final String? phone;
-  final String? comment;
-  final VoidCallback? onEditContact;
-  final List<_Action> actions;
-  final bool busy;
+  final Color color;
+  final Widget seal;
+  final String title;
+  final String? subtitle;
+  final String? trailing;
+  final bool small;
 
   @override
   Widget build(BuildContext context) {
-    final taken = tone == _Tone.stop;
-    return _Sheet(
-      tone: tone,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                taken ? Icons.block_rounded : Icons.verified_rounded,
-                color: tone.color,
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(
-                  headline,
-                  style: TextStyle(
-                    color: tone.color,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-              MealStatusBadge(takenToday: taken, large: true),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            person.fullName,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w800),
-          ),
-          Text(
-            [
-              '#${person.id}',
-              if (person.cin != null) 'CIN ${person.cin}',
-            ].join(' · '),
-            style: const TextStyle(color: AppColors.inkMuted),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          MealAllotment(person: person),
-          if (phone != null || comment != null || onEditContact != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            InkWell(
-              onTap: onEditContact,
-              borderRadius: BorderRadius.circular(AppRadii.chip),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Row(
+    return ColoredBox(
+      color: color,
+      child: Padding(
+        padding: const EdgeInsetsDirectional.fromSTEB(18, 14, 18, 14),
+        child: Row(
+          children: [
+            seal,
+            const SizedBox(width: 12),
+            Expanded(
+              // Screen readers announce each new verdict (spec §8).
+              child: Semantics(
+                liveRegion: true,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
-                      Icons.phone_outlined,
-                      size: 16,
-                      color: AppColors.inkMuted,
-                    ),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        [phone ?? 'No phone', ?comment].join(' · '),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(color: AppColors.inkMuted),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: small ? 19 : 24,
+                        fontWeight: small ? FontWeight.w500 : FontWeight.w600,
+                        height: 1.15,
                       ),
                     ),
-                    if (onEditContact != null)
-                      const Icon(
-                        Icons.edit_rounded,
-                        size: 16,
-                        color: AppColors.tealDeep,
+                    if (subtitle != null)
+                      Text(
+                        subtitle!,
+                        style: TextStyle(color: Colors.white.withValues(alpha: 0.92), fontSize: 12.5),
                       ),
                   ],
                 ),
               ),
             ),
+            if (trailing != null)
+              Text(
+                trailing!,
+                style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w500),
+              ),
           ],
-          if (busy) ...[
-            const SizedBox(height: AppSpacing.lg),
-            const LinearProgressIndicator(minHeight: 4),
-          ] else if (actions.isNotEmpty) ...[
-            const SizedBox(height: AppSpacing.lg),
-            _Actions(actions: actions, tone: tone),
-          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DoneBand extends StatelessWidget {
+  const _DoneBand({required this.person});
+
+  final FastingPerson person;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppPalette.doneBand,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.85),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
+            padding: const EdgeInsetsDirectional.fromSTEB(18, 16, 18, 18),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Seal(SealKind.done, semanticLabel: l.sealDone),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          blessingText,
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(
+                            fontFamily: AppTheme.brandFont,
+                            fontSize: 30,
+                            height: 1.15,
+                            color: AppPalette.gold,
+                          ),
+                        ),
+                        Text(
+                          l.servedLine(isolate(person.fullName), person.totalPortions),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(color: Colors.white, fontSize: 12.5),
+                        ),
+                        if (l.blessingMeaning.isNotEmpty)
+                          Text(
+                            l.blessingMeaning,
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12.5),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Name extends StatelessWidget {
+  const _Name(this.person);
+
+  final FastingPerson person;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    person.fullName,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
+    style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w500),
+  );
+}
+
+class _PersonMeta extends StatelessWidget {
+  const _PersonMeta(this.person);
+
+  final FastingPerson person;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final masked = maskCin(person.cin);
+    return Text(
+      [
+        ltr('#${person.id}'),
+        if (masked != null) '${l.cinShortLabel} ${ltr(masked)}',
+      ].join(' · '),
+      style: TextStyle(fontSize: 12.5, color: context.colors.inkMuted),
+    );
+  }
+}
+
+class _Label extends StatelessWidget {
+  const _Label(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(top: 12, bottom: 6),
+    child: Text(text, style: TextStyle(fontSize: 12, color: context.colors.inkMuted)),
+  );
+}
+
+class _NoCardCheck extends StatelessWidget {
+  const _NoCardCheck(this.person);
+
+  final FastingPerson person;
+
+  @override
+  Widget build(BuildContext context) {
+    final digits = cinLastDigits(person.cin);
+    final l = AppLocalizations.of(context);
+    final c = context.colors;
+    return Container(
+      margin: const EdgeInsets.only(top: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(color: c.warnSoft, borderRadius: BorderRadius.circular(10)),
+      child: Row(
+        children: [
+          Icon(Icons.badge_outlined, size: 16, color: c.goldInk),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              digits == null ? l.noCinOnFile : l.noCardCheck(ltr(digits)),
+              style: TextStyle(fontSize: 12.5, color: c.goldInk),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-class _Actions extends StatelessWidget {
-  const _Actions({required this.actions, required this.tone});
+class _ContactLine extends StatelessWidget {
+  const _ContactLine({required this.phone, required this.comment, required this.onEdit});
 
-  final List<_Action> actions;
-  final _Tone tone;
+  final String? phone;
+  final String? comment;
+  final VoidCallback onEdit;
 
   @override
   Widget build(BuildContext context) {
-    final primary = actions.where((a) => a.primary);
-    final secondary = actions.where((a) => !a.primary).toList();
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (final a in primary)
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: tone == _Tone.stop
-                  ? AppColors.night
-                  : tone.color,
-              minimumSize: const Size.fromHeight(56),
-              textStyle: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            onPressed: a.onPressed,
-            icon: Icon(a.icon ?? Icons.arrow_forward_rounded),
-            label: Text(a.label),
-          ),
-        if (secondary.isNotEmpty) ...[
-          const SizedBox(height: AppSpacing.sm),
-          Row(
+    final c = context.colors;
+    final text = [
+      if (phone != null && phone!.isNotEmpty) ltr(phone!),
+      if (comment != null && comment!.isNotEmpty) comment!,
+    ].join(' · ');
+    return Semantics(
+      button: true,
+      label: AppLocalizations.of(context).editContact,
+      child: InkWell(
+        onTap: onEdit,
+        child: Padding(
+          padding: const EdgeInsets.only(top: 10),
+          child: Row(
             children: [
-              for (final a in secondary)
-                Expanded(
-                  child: TextButton(
-                    onPressed: a.onPressed,
-                    child: Text(a.label),
-                  ),
+              Icon(Icons.phone_outlined, size: 15, color: c.inkMuted),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  text,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(fontSize: 12.5, color: c.inkMuted),
                 ),
+              ),
+              Icon(Icons.edit_rounded, size: 15, color: c.actInk),
             ],
           ),
-        ],
-      ],
+        ),
+      ),
     );
   }
+}
+
+class _WaitBar extends StatelessWidget {
+  const _WaitBar();
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.colors;
+    return Container(
+      margin: const EdgeInsets.only(top: 14),
+      height: 52,
+      decoration: BoxDecoration(
+        border: Border.all(color: c.line),
+        borderRadius: BorderRadius.circular(AppRadii.button),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text(
+              AppLocalizations.of(context).checkingStatus,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(fontSize: 14, color: c.inkMuted),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Opens [location] on top of the scanner, which stays alive underneath with
+/// its session. On return the scanner looks the person up again, so it shows
+/// what Details or the registration form changed.
+Future<void> _openOver(
+  BuildContext context,
+  ScanController controller,
+  String location,
+) async {
+  await context.push<void>(location);
+  if (context.mounted) await controller.refreshCurrent();
+}
+
+class _Links extends StatelessWidget {
+  const _Links(this.links);
+
+  final List<(String, VoidCallback?)> links;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    children: [
+      for (final (label, onTap) in links)
+        Flexible(child: TextButton(onPressed: onTap, child: Text(label))),
+    ],
+  );
 }

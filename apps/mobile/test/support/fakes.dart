@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:iftar_mobile/core/network/app_failure.dart';
 import 'package:iftar_mobile/core/providers.dart';
@@ -63,12 +65,26 @@ class FakePeopleRepository implements PeopleRepository {
   int confirmCalls = 0;
   ({String? phone, String? comment})? lastConfirmBody;
 
+  /// When set, the next `get` waits for it (then clears it).
+  Completer<void>? getGate;
+
+  /// When set, `confirmMeal` waits for it (after counting the call).
+  Completer<void>? confirmGate;
+  int listCalls = 0;
+
   @override
-  Future<List<FastingPerson>> list(int regionId) async =>
-      people.values.toList();
+  Future<List<FastingPerson>> list(int regionId) async {
+    listCalls++;
+    return people.values.toList();
+  }
 
   @override
   Future<FastingPerson> get(int regionId, int id) async {
+    final gate = getGate;
+    if (gate != null) {
+      getGate = null;
+      await gate.future;
+    }
     final failure = nextGetFailure;
     if (failure != null) {
       nextGetFailure = null;
@@ -88,6 +104,8 @@ class FakePeopleRepository implements PeopleRepository {
   }) async {
     confirmCalls++;
     lastConfirmBody = (phone: phone, comment: comment);
+    final confirmGate = this.confirmGate;
+    if (confirmGate != null) await confirmGate.future;
     final failure = nextConfirmFailure;
     if (failure != null && !applyThenFailConfirm) {
       nextConfirmFailure = null;
@@ -114,13 +132,54 @@ class FakePeopleRepository implements PeopleRepository {
     return updated;
   }
 
-  @override
-  Future<FastingPerson> create(int regionId, PersonDraft draft) =>
-      throw UnimplementedError();
+  int createCalls = 0;
 
   @override
-  Future<FastingPerson> update(Region region, PersonDraft draft) =>
-      throw UnimplementedError();
+  Future<FastingPerson> create(int regionId, PersonDraft draft) async {
+    createCalls++;
+    if (people.containsKey(draft.id)) throw const ConflictFailure('exists');
+    final cin = draft.cin?.trim();
+    final p = FastingPerson(
+      id: draft.id,
+      firstName: draft.firstName.trim(),
+      lastName: draft.lastName.trim(),
+      cin: (cin == null || cin.isEmpty) ? null : cin,
+      singleMeal: draft.singleMeal,
+      familyMeal: draft.familyMeal,
+      lastTakenMeal: draft.cameToday ? testNow : null,
+      mealTakenTodayFromServer: draft.cameToday,
+      takenMeals: draft.cameToday ? [testNow] : const [],
+      region: testRegion,
+    );
+    people[p.id] = p;
+    return p;
+  }
+
+  int updateCalls = 0;
+
+  @override
+  Future<FastingPerson> update(Region region, PersonDraft draft) async {
+    updateCalls++;
+    final old = people[draft.id];
+    if (old == null) throw const NotFoundFailure();
+    final cin = draft.cin?.trim();
+    final updated = FastingPerson(
+      id: old.id,
+      firstName: draft.firstName.trim(),
+      lastName: draft.lastName.trim(),
+      cin: (cin == null || cin.isEmpty) ? null : cin,
+      phone: draft.phone,
+      comment: draft.comment,
+      singleMeal: draft.singleMeal,
+      familyMeal: draft.familyMeal,
+      lastTakenMeal: old.lastTakenMeal,
+      takenMeals: old.takenMeals,
+      mealTakenTodayFromServer: old.mealTakenTodayFromServer,
+      region: old.region,
+    );
+    people[updated.id] = updated;
+    return updated;
+  }
 
   @override
   Future<void> delete(int regionId, int id) async => people.remove(id);

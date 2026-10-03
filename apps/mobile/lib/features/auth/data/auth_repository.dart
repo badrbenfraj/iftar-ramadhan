@@ -57,18 +57,15 @@ class ApiAuthRepository implements AuthRepository {
         refreshToken: tokens['refreshToken'] as String?,
       );
     } on UnauthorizedFailure catch (e) {
-      final disabled = e.message.toLowerCase().contains('disabled');
-      throw UnauthorizedFailure(
-        disabled
-            ? 'This account has been disabled.'
-            : 'Wrong username or password.',
-      );
+      throw e.message.toLowerCase().contains('disabled')
+          ? const AccountDisabledFailure()
+          : const InvalidCredentialsFailure();
     }
 
     final user = await fetchProfile();
     if (user.isAccountDisabled) {
       await _storage.clear();
-      throw const UnauthorizedFailure('This account has been disabled.');
+      throw const AccountDisabledFailure();
     }
     return user;
   }
@@ -102,7 +99,10 @@ class ApiAuthRepository implements AuthRepository {
         extra: _public,
       );
     } on ConflictFailure {
-      throw const ConflictFailure('Username or email is already in use');
+      throw const ConflictFailure(
+        'Username or email is already in use',
+        code: ConflictFailure.usernameTaken,
+      );
     }
   }
 

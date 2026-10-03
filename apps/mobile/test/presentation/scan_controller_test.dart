@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iftar_mobile/core/network/app_failure.dart';
 import 'package:iftar_mobile/features/auth/presentation/auth_controller.dart';
+import 'package:iftar_mobile/features/people/domain/fasting_person.dart';
+import 'package:iftar_mobile/features/people/presentation/people_controller.dart';
 import 'package:iftar_mobile/features/scan/presentation/scan_controller.dart';
 
 import '../support/fakes.dart';
@@ -169,5 +173,194 @@ void main() {
     final status = noRegion.read(scanControllerProvider).status;
     expect(status, isA<ScanFailed>());
     expect((status as ScanFailed).failure, isA<AppStateFailure>());
+  });
+
+  group('instant identify from the phone list', () {
+    test('a cached person shows their name first, then the server verdict', () async {
+      await container.read(peopleListProvider.future); // prime the cache
+      final seen = <ScanStatus>[];
+      container.listen(
+        scanControllerProvider.select((s) => s.status),
+        (_, next) => seen.add(next),
+      );
+      await controller().onDetected('101');
+      expect(seen.first, isA<ScanIdentifying>());
+      expect((seen.first as ScanIdentifying).person.fullName, 'Najwa Chalbi');
+      expect(seen.last, isA<ScanReady>());
+    });
+
+    test('a person not on the phone goes through looking up', () async {
+      final seen = <ScanStatus>[];
+      container.listen(
+        scanControllerProvider.select((s) => s.status),
+        (_, next) => seen.add(next),
+      );
+      await controller().onDetected('101');
+      expect(seen.first, isA<ScanLookingUp>());
+      expect(seen.last, isA<ScanReady>());
+    });
+
+    test('cards are ignored while identifying', () async {
+      await container.read(peopleListProvider.future);
+      final gate = Completer<void>();
+      repo.getGate = gate;
+      final pending = controller().onDetected('101');
+      expect(state().status, isA<ScanIdentifying>());
+      expect(state().acceptsScans, isFalse);
+      await controller().onDetected('102');
+      gate.complete();
+      await pending;
+      expect((state().status as ScanReady).person.id, 101);
+    });
+  });
+
+  test('picking someone without a card asks for the CIN check', () async {
+    await controller().pickWithoutCard(101);
+    final status = state().status;
+    expect(status, isA<ScanReady>());
+    expect((status as ScanReady).noCard, isTrue);
+    controller().editContact(phone: '22123456', comment: '');
+    expect((state().status as ScanReady).noCard, isTrue, reason: 'kept on edit');
+  });
+
+  test('session stats count the meals handed over', () async {
+    await controller().onDetected('101'); // person(): 2 single, 1 family
+    await controller().confirm();
+    expect(state().servedCount, 1);
+    expect(state().singleMeals, 2);
+    expect(state().familyMeals, 1);
+  });
+
+  group('fix round 1', () {
+    test('the CIN check survives a failed lookup and its retry', () async {
+      repo.nextGetFailure = const NetworkFailure();
+      await controller().pickWithoutCard(101);
+      final failed = state().status;
+      expect(failed, isA<ScanFailed>());
+      expect((failed as ScanFailed).noCard, isTrue);
+      await controller().retry();
+      final status = state().status;
+      expect(status, isA<ScanReady>());
+      expect((status as ScanReady).noCard, isTrue);
+    });
+
+    test('the CIN check survives a failed confirm', () async {
+      await controller().pickWithoutCard(101);
+      repo.nextConfirmFailure = const NetworkFailure();
+      await controller().confirm();
+      final failed = state().status as ScanFailed;
+      expect(failed.duringConfirm, isTrue);
+      expect(failed.noCard, isTrue);
+    });
+
+    test('a stale cached copy never decides: the server verdict wins', () async {
+      await container.read(peopleListProvider.future); // cache: not taken
+      repo.people[101] = person(101, takenToday: true);
+      final seen = <ScanStatus>[];
+      container.listen(
+        scanControllerProvider.select((s) => s.status),
+        (_, next) => seen.add(next),
+      );
+      await controller().onDetected('101');
+      expect(seen.first, isA<ScanIdentifying>());
+      expect(seen.last, isA<ScanAlreadyTaken>());
+      expect(repo.confirmCalls, 0);
+    });
+
+    test('picking without a card waits while a confirm is unresolved', () async {
+      await controller().onDetected('101');
+      repo.nextConfirmFailure = const NetworkFailure();
+      await controller().confirm();
+      final before = state().status;
+      expect((before as ScanFailed).duringConfirm, isTrue);
+      await controller().pickWithoutCard(102);
+      expect(identical(state().status, before), isTrue);
+    });
+  });
+
+  group('task 17', () {
+    test('manual entry waits while a confirm is unresolved', () async {
+      await controller().onDetected('101');
+      repo.nextConfirmFailure = const NetworkFailure();
+      await controller().confirm();
+      final before = state().status;
+      expect((before as ScanFailed).duringConfirm, isTrue);
+      await controller().submitManual('102');
+      expect(identical(state().status, before), isTrue);
+    });
+
+    group('own confirmation is keyed by person', () {
+      FastingPerson takenJustNow(FastingPerson p) =>
+          p.copyWith(lastTakenMeal: now, mealTakenTodayFromServer: true);
+
+      Future<void> uncertainConfirmOn101() async {
+        await controller().onDetected('101');
+        repo.nextConfirmFailure = const NetworkFailure();
+        await controller().confirm();
+        expect((state().status as ScanFailed).duringConfirm, isTrue);
+      }
+
+      test('another person\'s 409 is never our own confirmation', () async {
+        repo.people[103] = person(103, first: 'Hedi', last: 'Jlassi');
+        await uncertainConfirmOn101();
+        controller().scanNext();
+        await controller().onDetected('103');
+        expect(state().status, isA<ScanReady>());
+        repo.people[103] = takenJustNow(repo.people[103]!); // another phone won
+        await controller().confirm();
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
+
+      test('after Skip a rescan that finds them served is a refusal, not a confirmation', () async {
+        await controller().onDetected('101');
+        repo
+          ..nextConfirmFailure = const TimeoutFailure()
+          ..applyThenFailConfirm = true; // the write landed, the answer was lost
+        await controller().confirm();
+        expect((state().status as ScanFailed).duringConfirm, isTrue);
+        controller().scanNext();
+        now = now.add(const Duration(seconds: 10));
+        await controller().onDetected('101');
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
+
+      test('P15: Skip, rescan, another phone serves them, Confirm: refused', () async {
+        await uncertainConfirmOn101();
+        controller().scanNext();
+        now = now.add(const Duration(seconds: 10));
+        await controller().onDetected('101');
+        expect(state().status, isA<ScanReady>());
+        repo.people[101] = takenJustNow(repo.people[101]!); // another phone
+        await controller().confirm();
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
+
+      test('P15b: the same through Find without a card', () async {
+        await uncertainConfirmOn101();
+        controller().scanNext();
+        now = now.add(const Duration(seconds: 10));
+        await controller().pickWithoutCard(101);
+        expect(state().status, isA<ScanReady>());
+        repo.people[101] = takenJustNow(repo.people[101]!);
+        await controller().confirm();
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
+
+      test('after the window the same 409 is a real duplicate', () async {
+        await uncertainConfirmOn101();
+        controller().scanNext();
+        now = now.add(const Duration(minutes: 4));
+        await controller().onDetected('101');
+        expect(state().status, isA<ScanReady>());
+        repo.people[101] = takenJustNow(repo.people[101]!);
+        await controller().confirm();
+        expect(state().status, isA<ScanAlreadyTaken>());
+        expect(state().servedCount, 0);
+      });
+    });
   });
 }

@@ -41,6 +41,16 @@ final class UnauthorizedFailure extends AppFailure {
   ]);
 }
 
+/// 401 on login: wrong username or password.
+final class InvalidCredentialsFailure extends UnauthorizedFailure {
+  const InvalidCredentialsFailure() : super('Wrong username or password.');
+}
+
+/// The account exists but an administrator disabled it.
+final class AccountDisabledFailure extends UnauthorizedFailure {
+  const AccountDisabledFailure() : super('This account has been disabled.');
+}
+
 final class ForbiddenFailure extends AppFailure {
   const ForbiddenFailure([
     super.message = 'You are not allowed to perform this action.',
@@ -54,6 +64,8 @@ final class NotFoundFailure extends AppFailure {
 /// 409 with a machine-readable `code` from the API (`error.details.code`).
 final class ConflictFailure extends AppFailure {
   const ConflictFailure(super.message, {this.code});
+
+  static const usernameTaken = 'USERNAME_TAKEN';
 
   final String? code;
 }
@@ -86,7 +98,11 @@ final class ServerFailure extends AppFailure {
 
 /// A precondition of the app itself (e.g. the account has no region).
 final class AppStateFailure extends AppFailure {
-  const AppStateFailure(super.message);
+  const AppStateFailure(super.message, {this.code});
+
+  static const noRegion = 'NO_REGION';
+
+  final String? code;
 }
 
 final class UnknownFailure extends AppFailure {

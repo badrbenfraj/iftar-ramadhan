@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/iftar_colors.dart';
+import '../utils/typography.dart';
 
 /// "Label: value" row, the building block of the Ionic detail screens.
 class InfoTile extends StatelessWidget {
@@ -23,43 +25,67 @@ class InfoTile extends StatelessWidget {
   /// Show a dash when [value] is empty (off for action rows).
   final bool showPlaceholder;
 
+  /// At this text scale a label and its value no longer fit side by side.
+  static const _stackAtScale = 1.5;
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: 14,
-        ),
-        child: Row(
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 20, color: AppColors.goldDeep),
-              const SizedBox(width: AppSpacing.md),
-            ],
-            Text(
-              label,
-              style: const TextStyle(color: AppColors.inkMuted, fontSize: 14),
+    final c = context.colors;
+    final shown = (value == null || value!.isEmpty)
+        ? (showPlaceholder ? '—' : '')
+        : value!;
+    final stacked =
+        MediaQuery.textScalerOf(context).scale(14) / 14 >= _stackAtScale;
+    final labelText = Text(
+      label,
+      style: TextStyle(color: c.inkMuted, fontSize: 14),
+    );
+    final valueText = Text(
+      shown,
+      textAlign: stacked ? TextAlign.start : TextAlign.end,
+      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+    );
+    final Widget body = stacked
+        ? Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [labelText, if (shown.isNotEmpty) valueText],
             ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: Text(
-                (value == null || value!.isEmpty)
-                    ? (showPlaceholder ? '—' : '')
-                    : value!,
-                textAlign: TextAlign.end,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+          )
+        : shown.isEmpty
+        // An action row has no value: the label may use the whole row.
+        ? Expanded(child: labelText)
+        : Expanded(
+            child: Row(
+              children: [
+                labelText,
+                const SizedBox(width: AppSpacing.md),
+                Expanded(child: valueText),
+              ],
             ),
-            if (trailing != null) ...[
-              const SizedBox(width: AppSpacing.sm),
-              trailing!,
+          );
+    return Semantics(
+      button: onTap != null,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: 14,
+          ),
+          child: Row(
+            children: [
+              if (icon != null) ...[
+                Icon(icon, size: 20, color: c.goldInk),
+                const SizedBox(width: AppSpacing.md),
+              ],
+              body,
+              if (trailing != null) ...[
+                const SizedBox(width: AppSpacing.sm),
+                trailing!,
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
@@ -90,11 +116,11 @@ class InfoCard extends StatelessWidget {
               ),
               child: Text(
                 title!.toUpperCase(),
-                style: const TextStyle(
-                  color: AppColors.goldDeep,
+                style: TextStyle(
+                  color: context.colors.goldInk,
                   fontSize: 12,
-                  letterSpacing: 1.1,
-                  fontWeight: FontWeight.w700,
+                  letterSpacing: labelTracking(context, 1.1),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),

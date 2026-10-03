@@ -24,9 +24,15 @@ abstract interface class PeopleRepository {
 }
 
 class ApiPeopleRepository implements PeopleRepository {
-  ApiPeopleRepository(this._api);
+  ApiPeopleRepository(this._api, {DateTime Function()? clock})
+    : _clock = clock ?? DateTime.now;
 
   final ApiClient _api;
+  final DateTime Function() _clock;
+
+  /// Stamps the answer's arrival: the served flag is only good for that day.
+  FastingPerson _person(Map<String, dynamic> json) =>
+      FastingPerson.fromJson(json, receivedAt: _clock());
 
   static const _pageSize = 500;
 
@@ -39,7 +45,7 @@ class ApiPeopleRepository implements PeopleRepository {
         '/fastings/$regionId',
         query: {'limit': _pageSize, 'offset': offset},
       );
-      final page = envelope.list.map(FastingPerson.fromJson).toList();
+      final page = envelope.list.map(_person).toList();
       people.addAll(page);
       final total = (envelope.meta['count'] as num?)?.toInt();
       offset += page.length;
@@ -51,7 +57,7 @@ class ApiPeopleRepository implements PeopleRepository {
   @override
   Future<FastingPerson> get(int regionId, int id) async {
     final envelope = await _api.get('/fastings/$regionId/$id');
-    return FastingPerson.fromJson(envelope.object);
+    return _person(envelope.object);
   }
 
   @override
@@ -71,7 +77,7 @@ class ApiPeopleRepository implements PeopleRepository {
         'cameToday': draft.cameToday,
       },
     );
-    return FastingPerson.fromJson(envelope.object);
+    return _person(envelope.object);
   }
 
   @override
@@ -90,7 +96,7 @@ class ApiPeopleRepository implements PeopleRepository {
         'region': region.toJson(),
       },
     );
-    return FastingPerson.fromJson(envelope.object);
+    return _person(envelope.object);
   }
 
   @override
@@ -109,7 +115,7 @@ class ApiPeopleRepository implements PeopleRepository {
       '/fastings/confirm/$regionId/$id',
       body: {'phone': ?phone?.trim(), 'comment': ?comment?.trim()},
     );
-    return FastingPerson.fromJson(envelope.object);
+    return _person(envelope.object);
   }
 
   static String? _opt(String? value) {
@@ -119,5 +125,8 @@ class ApiPeopleRepository implements PeopleRepository {
 }
 
 final peopleRepositoryProvider = Provider<PeopleRepository>(
-  (ref) => ApiPeopleRepository(ref.watch(apiClientProvider)),
+  (ref) => ApiPeopleRepository(
+    ref.watch(apiClientProvider),
+    clock: ref.watch(clockProvider),
+  ),
 );
