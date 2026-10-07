@@ -51,10 +51,23 @@ final class AccountDisabledFailure extends UnauthorizedFailure {
   const AccountDisabledFailure() : super('This account has been disabled.');
 }
 
-final class ForbiddenFailure extends AppFailure {
+class ForbiddenFailure extends AppFailure {
   const ForbiddenFailure([
     super.message = 'You are not allowed to perform this action.',
   ]);
+}
+
+/// 403 on undo: someone else's meal, or too late (spec 2A §4.2).
+final class UndoRefusedFailure extends ForbiddenFailure {
+  const UndoRefusedFailure(this.code)
+    : super('This meal can no longer be undone.');
+
+  static const windowExpired = 'UNDO_WINDOW_EXPIRED';
+  static const notAllowed = 'UNDO_NOT_ALLOWED';
+
+  final String code;
+
+  bool get tooLate => code == windowExpired;
 }
 
 final class NotFoundFailure extends AppFailure {
@@ -72,12 +85,15 @@ final class ConflictFailure extends AppFailure {
 
 /// The person already collected today's meal (409 MEAL_ALREADY_TAKEN).
 final class MealAlreadyTakenFailure extends ConflictFailure {
-  const MealAlreadyTakenFailure({this.takenAt})
+  const MealAlreadyTakenFailure({this.takenAt, this.servedByName})
     : super('Meal already collected today', code: codeValue);
 
   static const codeValue = 'MEAL_ALREADY_TAKEN';
 
   final DateTime? takenAt;
+
+  /// Who served it, when the server knows (spec 2A §4.1).
+  final String? servedByName;
 }
 
 /// 400 — the server rejected the input.
@@ -160,14 +176,25 @@ AppFailure failureFromResponse(int? status, Object? body) {
             : message,
       );
     case 403:
+      if (code == UndoRefusedFailure.windowExpired ||
+          code == UndoRefusedFailure.notAllowed) {
+        return UndoRefusedFailure(code!);
+      }
       return const ForbiddenFailure();
     case 404:
       return NotFoundFailure(message ?? 'Not found.');
     case 409:
       if (code == MealAlreadyTakenFailure.codeValue) {
-        final at = details is Map ? details['lastTakenMeal'] : null;
+        final at = details is Map
+            ? (details['servedAt'] ?? details['lastTakenMeal'])
+            : null;
+        final servedBy = details is Map ? details['servedBy'] : null;
+        final name = servedBy is Map ? servedBy['name'] : null;
         return MealAlreadyTakenFailure(
           takenAt: at is String ? DateTime.tryParse(at)?.toLocal() : null,
+          servedByName: name is String && name.trim().isNotEmpty
+              ? name.trim()
+              : null,
         );
       }
       return ConflictFailure(message ?? 'Conflict.', code: code);

@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../../../core/utils/formatters.dart';
 import '../../auth/domain/user.dart';
+import 'meal_event.dart';
 
 /// A registered beneficiary. `singleMeal` / `familyMeal` are how many of each
 /// the person receives per pickup; a family meal counts as 4 portions.
@@ -20,15 +21,20 @@ class FastingPerson {
     this.mealTakenTodayFromServer,
     this.receivedAt,
     this.region,
+    this.todayMeal,
+    this.meals = const [],
   });
 
   /// [receivedAt] is when the response arrived; see [FastingPerson.receivedAt].
+  /// A copy saved on the phone (see [toJson]) carries its own, under
+  /// [receivedAtKey].
   factory FastingPerson.fromJson(
     Map<String, dynamic> json, {
     DateTime? receivedAt,
   }) {
     final region = json['region'];
     final lastTaken = json['lastTakenMeal'];
+    final savedReceivedAt = json[receivedAtKey];
     return FastingPerson(
       id: (json['id'] as num).toInt(),
       firstName: ((json['firstName'] as String?) ?? '').trim(),
@@ -48,10 +54,22 @@ class FastingPerson {
               .toList()
             ..sort((a, b) => b.compareTo(a)),
       mealTakenTodayFromServer: json['mealTakenToday'] as bool?,
-      receivedAt: receivedAt,
+      receivedAt:
+          receivedAt ??
+          (savedReceivedAt is String
+              ? DateTime.tryParse(savedReceivedAt)?.toLocal()
+              : null),
       region: region is Map<String, dynamic> ? Region.fromJson(region) : null,
+      todayMeal: MealEvent.tryParse(json['todayMeal']),
+      meals: [
+        for (final m in (json['meals'] as List?) ?? const [])
+          ?MealEvent.tryParse(m),
+      ],
     );
   }
+
+  /// Key of [receivedAt] in [toJson].
+  static const receivedAtKey = '_receivedAt';
 
   final int id;
   final String firstName;
@@ -75,6 +93,13 @@ class FastingPerson {
   final DateTime? receivedAt;
   final Region? region;
 
+  /// Tonight's meal as the server last described it: who served it, and its
+  /// ID for Undo. Null from an older backend.
+  final MealEvent? todayMeal;
+
+  /// Every meal, newest first. Only a single-person read fills it.
+  final List<MealEvent> meals;
+
   String get fullName => '$firstName $lastName'.trim();
 
   /// Portions to hand over at pickup (family meal = 4).
@@ -96,6 +121,39 @@ class FastingPerson {
     return isSameDay(taken, today);
   }
 
+  /// [todayMeal] while it can still be trusted: like the served flag, it
+  /// describes the day it was received only.
+  MealEvent? todayMealAt(DateTime now) {
+    final meal = todayMeal;
+    if (meal == null || !meal.isActive) return null;
+    final received = receivedAt;
+    if (received != null && !isSameDay(received.toLocal(), now.toLocal())) {
+      return null;
+    }
+    return meal;
+  }
+
+  /// Server-shaped JSON, for the copy of the list saved on the phone
+  /// (spec 2A §5.4). [receivedAt] travels with it, so a served flag still
+  /// expires at midnight.
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'firstName': firstName,
+    'lastName': lastName,
+    'cin': cin,
+    'phone': phone,
+    'comment': comment,
+    'singleMeal': singleMeal,
+    'familyMeal': familyMeal,
+    'lastTakenMeal': lastTakenMeal?.toUtc().toIso8601String(),
+    'takenMeals': [for (final t in takenMeals) t.toUtc().toIso8601String()],
+    'mealTakenToday': mealTakenTodayFromServer,
+    'todayMeal': todayMeal?.toJson(),
+    'meals': [for (final m in meals) m.toJson()],
+    'region': region?.toJson(),
+    receivedAtKey: receivedAt?.toUtc().toIso8601String(),
+  };
+
   FastingPerson copyWith({
     String? phone,
     String? comment,
@@ -103,6 +161,9 @@ class FastingPerson {
     List<DateTime>? takenMeals,
     bool? mealTakenTodayFromServer,
     DateTime? receivedAt,
+    MealEvent? todayMeal,
+    bool clearTodayMeal = false,
+    List<MealEvent>? meals,
   }) => FastingPerson(
     id: id,
     firstName: firstName,
@@ -118,6 +179,8 @@ class FastingPerson {
         mealTakenTodayFromServer ?? this.mealTakenTodayFromServer,
     receivedAt: receivedAt ?? this.receivedAt,
     region: region,
+    todayMeal: clearTodayMeal ? null : (todayMeal ?? this.todayMeal),
+    meals: meals ?? this.meals,
   );
 
   /// Search by ID, names, CIN or phone. The query is split into words and
