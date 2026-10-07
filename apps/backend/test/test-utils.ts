@@ -13,7 +13,7 @@ import { UserService } from '../src/user/services/user.service';
 
 export const TEST_DB_NAME = process.env.E2E_DB_NAME || 'e2e_test_db';
 
-const connectionOptions = {
+export const connectionOptions = {
   type: 'postgres' as const,
   host: process.env.DB_HOST || 'localhost',
   port: parseInt(process.env.DB_PORT || '5432', 10),
@@ -90,3 +90,9 @@ export const closeDBAfterTest = async (): Promise<void> => {
   await entitiesDataSource?.destroy();
   entitiesDataSource = undefined;
 };
+
+/** Raw SQL against the e2e database (set up by createDBEntities). */
+export const dbQuery = <T = any>(
+  sql: string,
+  params: unknown[] = [],
+): Promise<T[]> => entitiesDataSource.query(sql, params);

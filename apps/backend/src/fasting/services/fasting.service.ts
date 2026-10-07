@@ -23,6 +23,7 @@ import {
 } from '../../shared/utils/local-day';
 import { User } from '../../user/entities/user.entity';
 import { UserService } from '../../user/services/user.service';
+import { FASTING_ERROR_CODES } from '../constants/error-codes';
 import {
   ConfirmMealInput,
   CreateFastingInput,
@@ -33,12 +34,7 @@ import { Fasting } from '../entities/fasting.entity';
 import { FastingRepository } from '../repositories/fasting.repository';
 import { FastingAclService } from './fasting-acl.service';
 
-/** Machine-readable error codes returned in `error.details.code`. */
-export const FASTING_ERROR_CODES = {
-  MEAL_ALREADY_TAKEN: 'MEAL_ALREADY_TAKEN',
-  PERSON_ID_TAKEN: 'PERSON_ID_TAKEN',
-  PERSON_NOT_FOUND: 'PERSON_NOT_FOUND',
-} as const;
+export { FASTING_ERROR_CODES };
 
 /** A family meal is served as four portions. */
 export const FAMILY_MEAL_PORTIONS = 4;
