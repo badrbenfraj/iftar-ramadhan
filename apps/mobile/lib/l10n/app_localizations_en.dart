@@ -606,6 +606,14 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get undoTonightsMeal => 'Undo tonight’s meal';
+
+  @override
+  String servedBy(String name) {
+    return 'by $name';
+  }
+
+  @override
   String get scanNextCard => 'Scan next card';
 
   @override

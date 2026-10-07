@@ -171,6 +171,8 @@
   "undoTooLate": "فات وقت التراجع. اطلب ذلك من المشرف.",
   "undoNeedsConnection": "التراجع يحتاج إلى اتصال. حاول مجددًا من السجل.",
   "servedAtBy": "استلم على الساعة {time}، قدّمها {name}",
+  "undoTonightsMeal": "التراجع عن وجبة الليلة",
+  "servedBy": "قدّمها {name}",
   "scanNextCard": "البطاقة التالية",
   "history": "السجل",
   "unknownCardTitle": "البطاقة رقم {id} غير مسجّلة",

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/failure_text.dart';
+import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/iftar_colors.dart';
@@ -17,6 +18,7 @@ import '../../../core/widgets/status_chip.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../people/domain/fasting_person.dart';
+import '../../people/domain/undo_rules.dart';
 import '../../people/presentation/person_widgets.dart';
 import 'scan_controller.dart';
 
@@ -179,7 +181,19 @@ class ScanResultPanel extends ConsumerWidget {
               label: Text(l.scanNextCard),
             ),
             _Links([
-              (l.history, () => showMealHistory(context, person)),
+              (
+                l.history,
+                () => showMealHistory(
+                  context,
+                  person,
+                  undoable: undoableMeal(
+                    person,
+                    ref.read(authControllerProvider).value,
+                    ref.read(clockProvider)(),
+                  ),
+                  onUndo: (meal) => controller.undoFromHistory(person, meal),
+                ),
+              ),
               (l.details, () => context.push('/people/${person.id}')),
             ]),
           ],

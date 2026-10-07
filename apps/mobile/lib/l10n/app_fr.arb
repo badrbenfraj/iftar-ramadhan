@@ -171,6 +171,8 @@
   "undoTooLate": "Il est trop tard pour annuler. Demandez à un administrateur.",
   "undoNeedsConnection": "L’annulation nécessite une connexion. Réessayez depuis l’historique.",
   "servedAtBy": "Servi à {time} par {name}",
+  "undoTonightsMeal": "Annuler le repas de ce soir",
+  "servedBy": "par {name}",
   "scanNextCard": "Carte suivante",
   "history": "Historique",
   "unknownCardTitle": "La carte n° {id} n’est pas inscrite",

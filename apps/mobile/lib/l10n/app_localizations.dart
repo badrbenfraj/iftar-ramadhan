@@ -1126,6 +1126,18 @@ abstract class AppLocalizations {
   /// **'Served at {time} by {name}'**
   String servedAtBy(String time, String name);
 
+  /// No description provided for @undoTonightsMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo tonight’s meal'**
+  String get undoTonightsMeal;
+
+  /// No description provided for @servedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'by {name}'**
+  String servedBy(String name);
+
   /// No description provided for @scanNextCard.
   ///
   /// In en, this message translates to:

@@ -608,6 +608,14 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get undoTonightsMeal => 'التراجع عن وجبة الليلة';
+
+  @override
+  String servedBy(String name) {
+    return 'قدّمها $name';
+  }
+
+  @override
   String get scanNextCard => 'البطاقة التالية';
 
   @override

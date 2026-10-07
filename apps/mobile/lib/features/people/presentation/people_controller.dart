@@ -2,10 +2,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/app_failure.dart';
 import '../../../core/providers.dart';
+import '../../../core/storage/device_id.dart';
 import '../../../core/utils/formatters.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/people_repository.dart';
 import '../domain/fasting_person.dart';
+import '../domain/meal_event.dart';
 
 /// The region's list of fasting people (Ionic tab "list").
 class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
@@ -98,14 +100,27 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
     await future;
   }
 
-  /// Confirms today's meal. On "already taken" the person is reloaded so the
-  /// screen reflects the server state, and the failure is rethrown.
-  Future<FastingPerson> confirmMeal({String? phone, String? comment}) async {
+  /// Confirms today's meal. [clientEventId] must be reused when the same
+  /// confirm is retried (spec 2A §5.1). On "already taken" the person is
+  /// reloaded so the screen reflects the server state, and the failure is
+  /// rethrown.
+  Future<FastingPerson> confirmMeal({
+    String? phone,
+    String? comment,
+    String? clientEventId,
+  }) async {
     final region = requireRegion(ref);
     try {
       final updated = await ref
           .read(peopleRepositoryProvider)
-          .confirmMeal(region.id, personId, phone: phone, comment: comment);
+          .confirmMeal(
+            region.id,
+            personId,
+            phone: phone,
+            comment: comment,
+            clientEventId: clientEventId,
+            deviceId: await ref.read(deviceIdProvider.future),
+          );
       state = AsyncData(updated);
       ref.read(peopleListProvider.notifier).upsert(updated);
       return updated;
@@ -117,6 +132,16 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
       ref.read(peopleListProvider.notifier).upsert(fresh);
       rethrow;
     }
+  }
+
+  /// Undoes tonight's meal (spec 2A §4.2). Failures are rethrown.
+  Future<FastingPerson> undoMeal(MealEvent meal) async {
+    final updated = await ref
+        .read(peopleRepositoryProvider)
+        .revokeMeal(meal.eventId);
+    state = AsyncData(updated);
+    ref.read(peopleListProvider.notifier).upsert(updated);
+    return updated;
   }
 }
 

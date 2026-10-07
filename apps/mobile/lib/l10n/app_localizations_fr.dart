@@ -622,6 +622,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get undoTonightsMeal => 'Annuler le repas de ce soir';
+
+  @override
+  String servedBy(String name) {
+    return 'par $name';
+  }
+
+  @override
   String get scanNextCard => 'Carte suivante';
 
   @override

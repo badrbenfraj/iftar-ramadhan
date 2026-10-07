@@ -5,9 +5,16 @@ import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../l10n/app_localizations.dart';
 import '../domain/fasting_person.dart';
+import '../domain/meal_event.dart';
 
 /// Bottom sheet: "List of taken meals for …" (Ionic modal on the badge).
-Future<void> showMealHistory(BuildContext context, FastingPerson person) {
+/// With [undoable] and [onUndo], it offers "Undo tonight's meal" (spec 2A §5.2).
+Future<void> showMealHistory(
+  BuildContext context,
+  FastingPerson person, {
+  MealEvent? undoable,
+  Future<void> Function(MealEvent meal)? onUndo,
+}) {
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -18,6 +25,12 @@ Future<void> showMealHistory(BuildContext context, FastingPerson person) {
       maxChildSize: 0.85,
       builder: (context, scroll) {
         final l = AppLocalizations.of(context);
+        // Who served each meal, matched by instant (single-person reads).
+        final servedBy = <int, String>{
+          for (final m in [...person.meals, ?person.todayMeal])
+            if (m.isActive && m.servedByName != null)
+              m.servedAt.millisecondsSinceEpoch: m.servedByName!,
+        };
         if (person.takenMeals.isEmpty) {
           return Center(
             child: Padding(
@@ -39,13 +52,30 @@ Future<void> showMealHistory(BuildContext context, FastingPerson person) {
               i == 0 ? const SizedBox.shrink() : const Divider(),
           itemBuilder: (context, i) {
             if (i == 0) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                child: Text(
-                  l.mealHistoryTitle(isolate(person.fullName)),
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                    child: Text(
+                      l.mealHistoryTitle(isolate(person.fullName)),
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                  ),
+                  if (undoable != null && onUndo != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                      child: FilledButton.tonalIcon(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          onUndo(undoable);
+                        },
+                        icon: const Icon(Icons.undo_rounded),
+                        label: Text(l.undoTonightsMeal),
+                      ),
+                    ),
+                ],
               );
             }
             final date = person.takenMeals[i - 1];
@@ -56,6 +86,10 @@ Future<void> showMealHistory(BuildContext context, FastingPerson person) {
                 color: context.colors.goldInk,
               ),
               title: Text(formatDate(date)),
+              subtitle: switch (servedBy[date.millisecondsSinceEpoch]) {
+                final name? => Text(l.servedBy(isolate(name))),
+                null => null,
+              },
               trailing: Text(
                 ltr(formatTime(date)),
                 style: TextStyle(color: context.colors.inkMuted),
