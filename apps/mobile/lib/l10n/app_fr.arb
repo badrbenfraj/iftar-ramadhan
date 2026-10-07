@@ -156,6 +156,7 @@
   "none": "aucun",
   "confirmHandOver": "Confirmer la remise",
   "confirming": "Confirmation…",
+  "sendingSlow": "Envoi… connexion lente",
   "skip": "Passer",
   "details": "Détails",
   "noCardCheck": "Sans carte : demandez la CIN finissant par {digits}",

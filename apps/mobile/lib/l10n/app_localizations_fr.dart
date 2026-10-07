@@ -554,6 +554,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get confirming => 'Confirmation…';
 
   @override
+  String get sendingSlow => 'Envoi… connexion lente';
+
+  @override
   String get skip => 'Passer';
 
   @override

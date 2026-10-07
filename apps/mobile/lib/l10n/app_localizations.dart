@@ -1036,6 +1036,12 @@ abstract class AppLocalizations {
   /// **'Confirming…'**
   String get confirming;
 
+  /// No description provided for @sendingSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending… slow connection'**
+  String get sendingSlow;
+
   /// No description provided for @skip.
   ///
   /// In en, this message translates to:

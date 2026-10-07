@@ -540,6 +540,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirming => 'Confirming…';
 
   @override
+  String get sendingSlow => 'Sending… slow connection';
+
+  @override
   String get skip => 'Skip';
 
   @override

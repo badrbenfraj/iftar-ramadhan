@@ -540,6 +540,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirming => 'جارٍ التأكيد…';
 
   @override
+  String get sendingSlow => 'جارٍ الإرسال… الاتصال بطيء';
+
+  @override
   String get skip => 'تخطّي';
 
   @override

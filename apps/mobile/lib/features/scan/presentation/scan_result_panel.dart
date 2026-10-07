@@ -115,7 +115,7 @@ class ScanResultPanel extends ConsumerWidget {
           busy: false,
         );
 
-      case ScanConfirming(:final person, :final noCard):
+      case ScanConfirming(:final person, :final noCard, :final slow):
         return _ready(
           context,
           controller,
@@ -124,6 +124,7 @@ class ScanResultPanel extends ConsumerWidget {
           comment: person.comment,
           noCard: noCard,
           busy: true,
+          slow: slow,
         );
 
       case ScanConfirmed(:final person):
@@ -264,16 +265,25 @@ class ScanResultPanel extends ConsumerWidget {
     required String? comment,
     required bool noCard,
     required bool busy,
+    bool slow = false,
   }) {
     final l = AppLocalizations.of(context);
     final c = context.colors;
     return _Sheet(
-      band: _Band(
-        color: c.serveBand,
-        seal: Seal(SealKind.serve, semanticLabel: l.sealServe),
-        title: MealStatusWords.notTaken,
-        subtitle: l.notServedTonight,
-      ),
+      band: slow
+          ? _Band(
+              color: AppPalette.waitBand,
+              seal: Seal(SealKind.checking, semanticLabel: l.sealChecking),
+              title: l.sendingSlow,
+              subtitle: l.dontHandOverYet,
+              small: true,
+            )
+          : _Band(
+              color: c.serveBand,
+              seal: Seal(SealKind.serve, semanticLabel: l.sealServe),
+              title: MealStatusWords.notTaken,
+              subtitle: l.notServedTonight,
+            ),
       // Pinned: who and the CIN check. Scrolling: quantities and contact.
       // Pinned below: the action, so Confirm never leaves the screen.
       header: [

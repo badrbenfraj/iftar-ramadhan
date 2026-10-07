@@ -175,6 +175,7 @@
   "none": "none",
   "confirmHandOver": "Confirm hand-over",
   "confirming": "Confirming…",
+  "sendingSlow": "Sending… slow connection",
   "skip": "Skip",
   "details": "Details",
   "noCardCheck": "No card: ask for the CIN ending in {digits}",

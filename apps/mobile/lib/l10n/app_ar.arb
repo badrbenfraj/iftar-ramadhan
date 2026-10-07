@@ -156,6 +156,7 @@
   "none": "لا شيء",
   "confirmHandOver": "تأكيد التسليم",
   "confirming": "جارٍ التأكيد…",
+  "sendingSlow": "جارٍ الإرسال… الاتصال بطيء",
   "skip": "تخطّي",
   "details": "التفاصيل",
   "noCardCheck": "بلا بطاقة: اطلب رقم ب.ت.و المنتهي بـ {digits}",
