@@ -219,6 +219,7 @@ class ScanController extends Notifier<ScanState> {
   Timer? _resumeTimer;
   Timer? _slowTimer;
   Timer? _autoRetryTimer;
+  bool _historyUndoInFlight = false;
 
   /// The confirm already retried automatically. One automatic retry per
   /// confirm; after that the volunteer decides.
@@ -505,13 +506,25 @@ class ScanController extends Notifier<ScanState> {
   }
 
   /// History → "Undo tonight's meal" on an Already-served sheet: undo, then
-  /// look the person up again so the sheet shows the new answer.
+  /// look the person up again so the sheet shows the new answer. Ignored
+  /// while another History undo is in flight, and the lookup only happens if
+  /// the scanner still shows this same person.
   Future<void> undoFromHistory(FastingPerson person, MealEvent meal) async {
-    if (state.status is! ScanAlreadyTaken) return;
-    final notice = await _revoke(meal.eventId, person);
-    if (!ref.mounted) return;
-    state = state.copyWith(notice: notice);
-    if (notice.kind == ScanNoticeKind.undone) await _lookup(person.id);
+    if (_historyUndoInFlight || state.status is! ScanAlreadyTaken) return;
+    _historyUndoInFlight = true;
+    try {
+      final notice = await _revoke(meal.eventId, person);
+      if (!ref.mounted) return;
+      state = state.copyWith(notice: notice);
+      if (notice.kind == ScanNoticeKind.undone) {
+        if (state.status case ScanAlreadyTaken(person: final shown)
+            when shown.id == person.id) {
+          await _lookup(person.id);
+        }
+      }
+    } finally {
+      _historyUndoInFlight = false;
+    }
   }
 
   Future<ScanNotice> _revoke(String eventId, FastingPerson person) async {
