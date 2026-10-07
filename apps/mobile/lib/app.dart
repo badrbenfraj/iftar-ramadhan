@@ -10,6 +10,9 @@ import 'core/settings/settings_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/startup_permissions.dart';
 import 'features/people/presentation/people_controller.dart';
+import 'features/update/domain/app_version_info.dart';
+import 'features/update/presentation/update_controller.dart';
+import 'features/update/presentation/update_views.dart';
 import 'l10n/app_localizations.dart';
 
 class IftarApp extends ConsumerStatefulWidget {
@@ -29,12 +32,15 @@ class _IftarAppState extends ConsumerState<IftarApp> {
     super.initState();
     _lifecycle = AppLifecycleListener(onResume: _onResume);
     // After the first frame, so the system dialog appears over the app UI.
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => requestStartupPermissions(),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      requestStartupPermissions();
+      // In the background: an offline start is never held up by it.
+      unawaited(ref.read(updateControllerProvider.notifier).check());
+    });
   }
 
   void _onResume() {
+    unawaited(ref.read(updateControllerProvider.notifier).checkIfStale());
     if (!ref.exists(peopleListProvider)) return;
     unawaited(ref.read(peopleListProvider.notifier).reloadIfDayChanged());
   }
@@ -49,6 +55,8 @@ class _IftarAppState extends ConsumerState<IftarApp> {
   Widget build(BuildContext context) {
     final settings =
         ref.watch(settingsControllerProvider).value ?? const AppSettings();
+    final updateRequired =
+        ref.watch(updateControllerProvider).status == UpdateStatus.required;
     return MaterialApp.router(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
@@ -63,6 +71,13 @@ class _IftarAppState extends ConsumerState<IftarApp> {
       builder: (context, child) {
         // Dates follow the UI language; digits stay Western (formatters.dart).
         Intl.defaultLocale = Localizations.localeOf(context).languageCode;
+        // Below minimumVersion: the force-update screen replaces every route.
+        if (updateRequired) {
+          return Navigator(
+            onGenerateRoute: (_) =>
+                MaterialPageRoute<void>(builder: (_) => const ForceUpdatePage()),
+          );
+        }
         return child!;
       },
       routerConfig: ref.watch(routerProvider),

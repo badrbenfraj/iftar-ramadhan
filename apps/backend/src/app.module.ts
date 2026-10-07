@@ -5,6 +5,7 @@ import { LoggerModule } from 'nestjs-pino';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AppReleaseModule } from './app-release/app-release.module';
 import { AuthModule } from './auth/auth.module';
 import { FastingModule } from './fasting/fasting.module';
 import { HealthModule } from './health/health.module';
@@ -20,6 +21,7 @@ import { UserModule } from './user/user.module';
     FastingModule,
     HealthModule,
     RegionModule,
+    AppReleaseModule,
     LoggerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

@@ -226,5 +226,13 @@
   "exportFailed": "Impossible de créer le fichier.",
   "logout": "Se déconnecter",
   "logoutTitle": "Se déconnecter ?",
-  "logoutBody": "Vous devrez vous reconnecter pour scanner les cartes."
+  "logoutBody": "Vous devrez vous reconnecter pour scanner les cartes.",
+  "updateAvailableTitle": "Une nouvelle version est disponible",
+  "updateAvailableBody": "La version {version} est disponible. Vous pouvez continuer et mettre à jour plus tard.",
+  "updateNow": "Mettre à jour",
+  "updateLater": "Plus tard",
+  "updateRequiredTitle": "Mise à jour requise",
+  "updateRequiredBody": "Votre version de l'application n'est plus prise en charge. Installez la dernière version pour continuer.",
+  "updateOpenFailed": "Impossible d'ouvrir le navigateur.",
+  "appVersion": "Version {version}"
 }

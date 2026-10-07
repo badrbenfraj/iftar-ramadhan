@@ -781,4 +781,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get logoutBody => 'You will need to sign in again to scan cards.';
+
+  @override
+  String get updateAvailableTitle => 'A new version is available';
+
+  @override
+  String updateAvailableBody(String version) {
+    return 'Version $version is available. You can keep working and update later.';
+  }
+
+  @override
+  String get updateNow => 'Update';
+
+  @override
+  String get updateLater => 'Later';
+
+  @override
+  String get updateRequiredTitle => 'Update required';
+
+  @override
+  String get updateRequiredBody =>
+      'Your version of the app is no longer supported. Please install the latest version to continue.';
+
+  @override
+  String get updateOpenFailed => 'Could not open the browser.';
+
+  @override
+  String appVersion(String version) {
+    return 'Version $version';
+  }
 }

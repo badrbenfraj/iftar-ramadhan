@@ -15,6 +15,7 @@ import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../people/presentation/people_controller.dart';
+import '../../update/data/version_repository.dart';
 import '../data/export_service.dart';
 
 /// The shell's bottom bar is 72 px tall and the body extends behind it.
@@ -162,6 +163,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final user = ref.watch(authControllerProvider).value;
     if (user == null) return const SizedBox.shrink();
     final env = ref.watch(appConfigProvider);
+    final installedVersion = ref.watch(installedVersionProvider).value;
     final settings =
         ref.watch(settingsControllerProvider).value ?? const AppSettings();
     final language = Localizations.localeOf(context).languageCode;
@@ -297,6 +299,15 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   icon: const Icon(Icons.logout_rounded),
                   label: Text(l.logout),
                 ),
+                // Which build a volunteer has, when helping them update.
+                if (installedVersion != null) ...[
+                  const SizedBox(height: AppSpacing.lg),
+                  Text(
+                    l.appVersion(installedVersion),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(color: c.inkMuted, fontSize: 12),
+                  ),
+                ],
                 if (!env.isProduction) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Text(

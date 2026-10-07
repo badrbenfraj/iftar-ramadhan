@@ -796,4 +796,33 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get logoutBody =>
       'Vous devrez vous reconnecter pour scanner les cartes.';
+
+  @override
+  String get updateAvailableTitle => 'Une nouvelle version est disponible';
+
+  @override
+  String updateAvailableBody(String version) {
+    return 'La version $version est disponible. Vous pouvez continuer et mettre à jour plus tard.';
+  }
+
+  @override
+  String get updateNow => 'Mettre à jour';
+
+  @override
+  String get updateLater => 'Plus tard';
+
+  @override
+  String get updateRequiredTitle => 'Mise à jour requise';
+
+  @override
+  String get updateRequiredBody =>
+      'Votre version de l\'application n\'est plus prise en charge. Installez la dernière version pour continuer.';
+
+  @override
+  String get updateOpenFailed => 'Impossible d\'ouvrir le navigateur.';
+
+  @override
+  String appVersion(String version) {
+    return 'Version $version';
+  }
 }

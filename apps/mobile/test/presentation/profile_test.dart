@@ -252,7 +252,7 @@ void main() {
       phone(tester);
       await pumpProfile(tester, extra: [
         appConfigProvider.overrideWithValue(
-          const AppConfig(apiBaseUrl: 'http://10.0.2.2:3000/api/v1', environment: 'development'),
+          const AppConfig(apiUrl: 'http://10.0.2.2:3000', environment: 'development'),
         ),
       ]);
       await tester.dragUntilVisible(
@@ -267,7 +267,7 @@ void main() {
       phone(tester);
       await pumpProfile(tester, extra: [
         appConfigProvider.overrideWithValue(
-          const AppConfig(apiBaseUrl: 'https://x/api/v1', environment: 'production'),
+          const AppConfig(apiUrl: 'https://x', environment: 'production'),
         ),
       ]);
       await tester.drag(find.byType(ListView), const Offset(0, -5000));

@@ -1,0 +1,90 @@
+# Deploys the backend stack (Caddy + API + Postgres) to the server over SSH.
+# Runs on pushes to main that touch the backend, by hand, or as the first
+# step of "Release app". Does nothing while SERVER_HOST is unset (between
+# Ramadans, when there is no server). Setup: docs/DEPLOYMENT.md.
+name: Deploy backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - apps/backend/**
+      - docker-compose.yml
+      - Caddyfile
+      - deploy/**
+      - .github/workflows/deploy-backend.yml
+  workflow_dispatch:
+  workflow_call:
+
+jobs:
+  test:
+    if: vars.SERVER_HOST != ''
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/backend/package-lock.json
+      - run: npm ci
+      - run: npm test
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    concurrency: deploy-backend
+    env:
+      SERVER_HOST: ${{ vars.SERVER_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Write the server .env from Variables and Secrets
+        env:
+          ACME_EMAIL: ${{ vars.ACME_EMAIL }}
+          DB_PASS: ${{ secrets.DB_PASS }}
+          DEFAULT_ADMIN_USER_PASSWORD: ${{ secrets.DEFAULT_ADMIN_USER_PASSWORD }}
+          JWT_PUBLIC_KEY_BASE64: ${{ secrets.JWT_PUBLIC_KEY_BASE64 }}
+          JWT_PRIVATE_KEY_BASE64: ${{ secrets.JWT_PRIVATE_KEY_BASE64 }}
+        run: |
+          missing=""
+          for v in SSH_USER ACME_EMAIL DB_PASS DEFAULT_ADMIN_USER_PASSWORD JWT_PUBLIC_KEY_BASE64 JWT_PRIVATE_KEY_BASE64; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          [ -z "$missing" ] || { echo "::error::Missing GitHub settings:$missing (see docs/DEPLOYMENT.md)"; exit 1; }
+          umask 077
+          cat > .env.production <<EOF
+          DOMAIN=$SERVER_HOST
+          ACME_EMAIL=$ACME_EMAIL
+          APP_ENV=production
+          APP_TIMEZONE=${{ vars.APP_TIMEZONE || 'Africa/Tunis' }}
+          DB_PORT=5432
+          DB_NAME=${{ vars.DB_NAME || 'iftar_db' }}
+          DB_USER=${{ vars.DB_USER || 'iftar' }}
+          DB_PASS=$DB_PASS
+          DEFAULT_ADMIN_USER_PASSWORD=$DEFAULT_ADMIN_USER_PASSWORD
+          JWT_PUBLIC_KEY_BASE64=$JWT_PUBLIC_KEY_BASE64
+          JWT_PRIVATE_KEY_BASE64=$JWT_PRIVATE_KEY_BASE64
+          JWT_ACCESS_TOKEN_EXP_IN_SEC=${{ vars.JWT_ACCESS_TOKEN_EXP_IN_SEC || '86400' }}
+          JWT_REFRESH_TOKEN_EXP_IN_SEC=${{ vars.JWT_REFRESH_TOKEN_EXP_IN_SEC || '2592000' }}
+          EOF
+
+      - name: Install the SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          [ -n "$SSH_PRIVATE_KEY" ] || { echo "::error::Missing secret SSH_PRIVATE_KEY"; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Deploy
+        run: SSH_KEY="$HOME/.ssh/deploy_key" bash deploy/deploy-backend.sh .env.production
+
+      - name: Clean up
+        if: always()
+        run: rm -f ~/.ssh/deploy_key .env.production

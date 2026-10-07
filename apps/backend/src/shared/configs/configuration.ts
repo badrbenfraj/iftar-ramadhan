@@ -3,6 +3,8 @@ export default (): any => ({
   // Timezone that defines a distribution "day" (one meal per person per day).
   timezone: process.env.APP_TIMEZONE || 'Africa/Tunis',
   port: process.env.APP_PORT,
+  // Directory holding the APKs and release metadata (docs/DEPLOYMENT.md).
+  releasesDir: process.env.RELEASES_DIR || 'releases',
   database: {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT ? parseInt(process.env.DB_PORT, 10) : undefined,

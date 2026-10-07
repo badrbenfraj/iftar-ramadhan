@@ -133,16 +133,17 @@ surfaces. The teal primary and the Ionic pill shapes are unchanged. The design t
 
 1. **Test on real phones with real QR cards** (camera focus, lighting, speed). The camera path
    could not be exercised here.
-2. **Deploy the backend first** (`deploy-compose.sh`), then distribute the app. Confirm the
-   production URL in `apps/mobile/config/production.json`: the Ionic app pointed to
-   `vps-9e3159a8…`, while the new compose file defaults to `vps-ca2a6790…` (the latter is used).
-3. **Release signing**: create a keystore and wire it into `android/app/build.gradle.kts`
-   (currently signed with the debug key). Consider `--split-per-abi` (the universal APK is ~73 MB).
+2. **Deploy the backend first**, then distribute the app. Done by the "Release app"
+   workflow; the server URL is no longer in the code (`API_URL` GitHub variable). See
+   `docs/DEPLOYMENT.md`.
+3. **Release signing**: wired into `android/app/build.gradle.kts` via `key.properties`,
+   written by the release workflow from GitHub secrets. The keystore itself still has to
+   be created once (`docs/DEPLOYMENT.md` §3.1). Releases target arm + arm64 only.
 4. **iOS**: build and test on macOS (`pod install`/SPM, signing). No iOS app icon set was
    generated (the Ionic project had no iOS target).
 5. **Rotate secrets**: JWT private keys and DB/admin passwords are committed in `setup.sh` and
    `apps/backend/.env*`. `src/cli.ts` also logs the admin password at startup.
 6. **Region access control** is still not enforced: any logged-in user can read or modify
    another region by changing the URL. `GET /users` also lists all users to any volunteer.
-7. Once validated during a distribution, delete `apps/legacy-ionic` and the Ionic-era
-   `deploy.sh` / GitHub workflow.
+7. Once validated during a distribution, delete `apps/legacy-ionic`. (The Ionic-era
+   `deploy.sh` and workflow were replaced by `deploy/` and `.github/workflows/`.)

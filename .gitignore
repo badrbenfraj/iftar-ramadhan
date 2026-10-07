@@ -40,3 +40,8 @@ node_modules
 .pub-cache/
 .pub/
 /apps/mobile/build/
+
+# Deployment (deploy/, docs/DEPLOYMENT.md): never commit server secrets
+/.env
+/.env.production
+/releases/

@@ -1,4 +1,6 @@
+import java.io.FileInputStream
 import java.util.Base64
+import java.util.Properties
 
 plugins {
     id("com.android.application")
@@ -16,6 +18,14 @@ val dartDefines: Map<String, String> =
         }
         ?.toMap()
         ?: emptyMap()
+
+// Release signing. CI writes android/key.properties from GitHub secrets
+// (docs/DEPLOYMENT.md). Every release MUST be signed with the same key, or
+// Android refuses to install it over the previous version.
+val keystoreProperties = Properties().apply {
+    val file = rootProject.file("key.properties")
+    if (file.exists()) FileInputStream(file).use { load(it) }
+}
 
 android {
     namespace = "org.iftarramadhan.iftar_mobile"
@@ -39,7 +49,18 @@ android {
         // Plain HTTP only when the build targets an http:// backend
         // (e.g. --dart-define-from-file=config/local.json). Production is HTTPS-only.
         manifestPlaceholders["usesCleartextTraffic"] =
-            (dartDefines["API_BASE_URL"]?.startsWith("http://") == true).toString()
+            (dartDefines["API_URL"]?.startsWith("http://") == true).toString()
+    }
+
+    signingConfigs {
+        if (keystoreProperties.containsKey("storeFile")) {
+            create("release") {
+                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                storePassword = keystoreProperties.getProperty("storePassword")
+                keyAlias = keystoreProperties.getProperty("keyAlias")
+                keyPassword = keystoreProperties.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
@@ -48,9 +69,10 @@ android {
             manifestPlaceholders["usesCleartextTraffic"] = "true"
         }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // The release key when key.properties exists, else the debug key so
+            // local `flutter run --release` keeps working.
+            signingConfig = signingConfigs.findByName("release")
+                ?: signingConfigs.getByName("debug")
         }
     }
 }

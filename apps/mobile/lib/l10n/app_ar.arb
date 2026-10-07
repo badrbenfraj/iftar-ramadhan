@@ -226,5 +226,13 @@
   "exportFailed": "تعذّر إنشاء الملف.",
   "logout": "تسجيل الخروج",
   "logoutTitle": "تسجيل الخروج؟",
-  "logoutBody": "ستحتاج إلى تسجيل الدخول من جديد لمسح البطاقات."
+  "logoutBody": "ستحتاج إلى تسجيل الدخول من جديد لمسح البطاقات.",
+  "updateAvailableTitle": "يتوفّر إصدار جديد",
+  "updateAvailableBody": "الإصدار {version} متوفّر. يمكنك مواصلة العمل والتحديث لاحقاً.",
+  "updateNow": "تحديث",
+  "updateLater": "لاحقاً",
+  "updateRequiredTitle": "التحديث مطلوب",
+  "updateRequiredBody": "لم يعد إصدار التطبيق لديك مدعوماً. يُرجى تثبيت أحدث إصدار للمتابعة.",
+  "updateOpenFailed": "تعذّر فتح المتصفّح.",
+  "appVersion": "الإصدار {version}"
 }

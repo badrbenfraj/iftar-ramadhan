@@ -1,48 +1,70 @@
-# Spec 2: Serving safety (Undo, served-by, offline serving)
+# Spec 2A: Serving safety on a bad connection (Undo, served-by, offline identify)
 
-- **Date:** 2026-10-01
+- **Date:** 2026-10-01 (split into 2A / 2B on 2026-10-03)
 - **Status:** Draft for review
 - **Scope:** `apps/backend` (NestJS + PostgreSQL) and `apps/mobile` (Flutter)
 - **Depends on:**
-  1. [Spec 1, the app redesign](2026-10-01-fusion-app-redesign-design.md), which is merged first. This spec reuses its scan states, tokens, and l10n.
-  2. The fix for the "fake meal yesterday" bug (`fasting.controller.ts` `createFasting`), in progress in a separate session. This spec assumes `fastings.lastTakenMeal` is nullable (migration `1790850000000-MakeLastTakenMealNullable`).
-- **Reference prototype:** [assets/2026-10-01-fusion-prototype.html](assets/2026-10-01-fusion-prototype.html). The Undo, offline, and sync flows are already clickable there.
+  1. [Spec 1, the app redesign](2026-10-01-fusion-app-redesign-design.md), merged. This spec reuses its scan states, tokens, and l10n.
+  2. The fix for the "fake meal yesterday" bug, merged. `fastings.lastTakenMeal` is nullable (`fasting.entity.ts:40`).
+- **Followed by:** [Spec 2B, serving with no network](2026-10-03-offline-serving-design.md). 2B builds on the table, IDs, and on-device list defined here and adds no new table.
+- **Reference prototype:** [assets/2026-10-01-fusion-prototype.html](assets/2026-10-01-fusion-prototype.html). The Undo and offline flows are already clickable there.
+
+---
+
+## 0. Why two phases
+
+A slow or flaky connection is far more common at a distribution point than no connection at all, and it can be fixed **without any risk of serving one person twice**. Serving with no network can't: two phones with no signal can both serve the same person, and the system can only detect that afterwards.
+
+| | 2A (this spec) | 2B |
+|---|---|---|
+| Goal | Never lose or double a meal because of a bad connection. Identify people with no network | Serve with no network, sync later |
+| Double-serve risk | None. The server still decides every serve | Accepted, detected, and reported |
+| Ships | Before the January field dry run | After the dry run, enabled region by region |
 
 ---
 
 ## 1. Intent
 
-Three gaps the UX audit found that the app alone can't close:
+Gaps the UX audit found that the app alone can't close:
 
 | Gap | Today | Why it matters |
 |---|---|---|
+| **Retries guess** | The app treats a 409 within 3 minutes of its own confirm as "probably ours" (`scan_controller.dart:159`) | On a slow connection a confirm can arrive late or twice. A guess can hide a real second serve, or flag a person wrongly |
 | **No undo** | A confirm permanently appends to `takenMeals`. There's no endpoint to reverse it | A mis-tap or wrong card blocks a person for the night |
 | **No served-by** | Meals are stored as date strings only (`fasting.entity.ts:43`) | "Who gave him a meal?" can't be answered. Disputes can't be resolved |
-| **Offline means stuck** | Every lookup and confirm needs the network | Distribution points often have poor coverage |
+| **Offline means blind** | The people list is kept in memory only. After a restart with no network, nobody can be identified | Volunteers can't even tell people whether they've been served |
+| **Slow means frozen** | A confirm waits up to 20 s with no feedback | Volunteers tap again, or give up and hand over the meal anyway |
 
 ### Success criteria
-1. A volunteer can undo their own confirm. The UI offers Undo for 5 s, and the server accepts it for up to 10 min.
-2. "Already served" shows **when and by whom.**
-3. With no network, a volunteer can still identify people from the phone and, **where the region allows it**, serve offline. Meals sync automatically when the network returns.
-4. **No silent double serve.** Every case where two meals land on the same person and day is detected, stored, and shown to the volunteer and to admins.
-5. **Backward compatible.** The legacy Ionic app and older Flutter builds keep working against the new backend.
+1. **A confirm is idempotent.** Retrying it on a bad connection never creates a second meal and never shows a wrong "already served".
+2. A volunteer can undo their own confirm. The UI offers Undo for 5 s, and the server accepts it for up to 10 min.
+3. "Already served" shows **when and by whom.**
+4. With no network, a volunteer can still **identify** people from the phone and see whether they were served as of the last sync. Serving still needs the server.
+5. A slow confirm shows clear progress within 2 s and never ends in an ambiguous state.
+6. **Backward compatible.** The legacy Ionic app and older Flutter builds keep working against the new backend.
 
 ---
 
 ## 2. Scope
 
 ### In scope
-- **Backend:** a `meal_events` table, confirm idempotency, a revoke (undo) endpoint, an offline sync endpoint, served-by in responses, and a region flag for offline serving.
+- **Backend:** a `meal_events` table with backfill and dual-write, confirm idempotency, a revoke (undo) endpoint, and served-by in responses.
 - **App:**
+  - Idempotent confirm with a client-generated ID.
+  - Clear progress and retry on a slow confirm.
   - Undo.
   - Served-by display.
   - An encrypted on-device copy of the people list.
-  - Offline identify and offline serve.
-  - A persisted sync queue and conflict review.
+  - Offline identify (read-only).
 
-### Out of scope
+### Out of scope (moved to [Spec 2B](2026-10-03-offline-serving-design.md))
+- Serving with no network, the sync queue, and the sync endpoint.
+- The `allowOfflineServing` region flag.
+- Conflict review (endpoint, banner, sheet).
+
+### Out of scope (both phases)
 - Moving statistics to read from `meal_events`. Statistics stay on `fastings` thanks to dual-write (§3.3).
-- An admin web dashboard for conflicts. Conflicts are visible via the API and in the app's banner.
+- An admin web dashboard.
 - A server-side duplicate-CIN rule. That's its own small change; listed in §9.
 
 ---
@@ -50,19 +72,21 @@ Three gaps the UX audit found that the app alone can't close:
 ## 3. Data model
 
 ### 3.1 New table `meal_events`
+The table is created with **every column 2B needs**, so 2B needs no change to it. In 2A, `source` is only ever `online` or `backfill`, and `conflict` is only set by the backfill.
+
 | Column | Type | Notes |
 |---|---|---|
 | `id` | `uuid` PK | **Client-generated** (`clientEventId`) when the app sends one; otherwise server-generated |
 | `fastingId` | `int` FK → `fastings.id` ON DELETE CASCADE | |
 | `regionId` | `int` FK → `regions.id` | Denormalized for region-scoped queries |
-| `servedAt` | `timestamptz` | Server time for online confirms; device time for offline serves |
+| `servedAt` | `timestamptz` | Server time for online confirms (device time for offline serves in 2B) |
 | `serviceDay` | `date` | Local day of `servedAt` in `APP_TIMEZONE`, computed by the server |
 | `receivedAt` | `timestamptz` default `now()` | |
 | `servedByUserId` | `int` FK → `users.id`, nullable | Null only for backfilled history |
-| `source` | `varchar` (`online` \| `offline` \| `backfill`) | |
+| `source` | `varchar` (`online` \| `offline` \| `backfill`) | `offline` is used from 2B on |
 | `deviceId` | `varchar(64)` nullable | Installation ID from the app |
 | `conflict` | `boolean` default `false` | True when another active event already exists for the same person and `serviceDay` (a double serve) |
-| `flag` | `varchar` nullable | Admin-review marker that doesn't change validity, e.g. `OFFLINE_NOT_ALLOWED` |
+| `flag` | `varchar` nullable | Admin-review marker that doesn't change validity. Unused in 2A |
 | `revokedAt` | `timestamptz` nullable | |
 | `revokedByUserId` | `int` FK → `users.id`, nullable | |
 
@@ -91,17 +115,18 @@ Indexes:
 
 ## 4. API
 
-All routes keep the existing JWT guard, region scoping, ACL checks, and the `{ data, meta }` envelope.
+All routes keep the existing JWT guard, region scoping, and the `{ data, meta }` envelope.
 
 ### 4.1 Confirm (changed): `PATCH /fastings/confirm/:region/:id`
 **Request body** adds optional `clientEventId` (uuid v4) and `deviceId`.
 
 **Behavior:**
-- **If an event with `clientEventId` already exists for this person:** return `200` with that event. This is idempotent and replaces the app's 3-minute "own confirmation" heuristic; keep the heuristic for old clients.
+- **If an event with `clientEventId` already exists for this person:** return `200` with that event, even if it has since been revoked (the response then shows `revokedAt`). This is idempotent and replaces the app's 3-minute "own confirmation" heuristic; keep the heuristic for old clients that send no ID.
+- **If `clientEventId` exists for a different person:** `422 CLIENT_EVENT_ID_REUSED`.
 - **Else, if an active event exists for `serviceDay(now)`:** return `409 MEAL_ALREADY_TAKEN` with `{ servedAt, servedBy: { id, name } | null }`.
 - **Else:** insert the event (`source = 'online'`), dual-write, and return `200`.
 
-**Response:** the person (as today) plus `meal: { eventId, servedAt, servedBy: { id, name } }`.
+**Response:** the person (as today) plus `meal: { eventId, servedAt, servedBy: { id, name }, revokedAt }`.
 
 ### 4.2 Undo (new): `POST /fastings/meals/:eventId/revoke`
 **Allowed when either:**
@@ -117,43 +142,26 @@ All routes keep the existing JWT guard, region scoping, ACL checks, and the `{ d
 - `403 UNDO_NOT_ALLOWED`, for someone else's event when the actor isn't an admin.
 - `403 UNDO_WINDOW_EXPIRED`.
 
-### 4.3 Offline sync (new): `POST /fastings/meals/sync`
-**Request:**
-```json
-{ "events": [ { "clientEventId": "uuid", "fastingId": 142, "regionId": 3,
-                "servedAt": "2027-02-21T17:44:10Z", "deviceId": "inst-…" } ] }
-```
-- Up to 200 events per request. The actor must belong to each event's region (existing ACL).
-
-**Validation per event:**
-- `servedAt` is no more than 5 min in the future and no more than 36 h in the past. Otherwise the result is `rejected: CLOCK_OUT_OF_RANGE`.
-- The person exists in the region. Otherwise the result is `rejected: PERSON_NOT_FOUND`.
-- If the region has `allowOfflineServing = false` at sync time, the event is **still applied**, because the meal already happened physically. It gets `flag = 'OFFLINE_NOT_ALLOWED'` for admin review, and the result is `applied` with that flag.
-
-**Result per event, in the same order:**
-| `status` | Meaning | App action |
-|---|---|---|
-| `applied` | Stored as the day's active event and dual-written; may carry a `flag` | Drop from the queue |
-| `duplicate` | `clientEventId` already stored | Drop from the queue |
-| `conflict` | Person already had an active event that day. Stored with `conflict = true`; includes `{ other: { servedAt, servedBy } }` | Move to the conflicts list |
-| `rejected` | Not stored; includes a `code` | Move to the problems list |
-
-Each event is processed in its own transaction, so one bad event doesn't fail the batch.
-
-### 4.4 Reads (changed)
-- `GET /fastings/:region` and `GET /fastings/:region/:id` add `todayMeal: { eventId, servedAt, servedBy: { id, name } } | null`.
-- A new `GET /fastings/meals/review/:region?day=YYYY-MM-DD` returns the region's events that need admin attention: `conflict = true` or `flag IS NOT NULL`. It's admin-only.
-
-### 4.5 Region flag (changed)
-- `regions.allowOfflineServing boolean NOT NULL DEFAULT false`. Admins edit it with the existing `PATCH /regions/:id`.
-- It's included in the user profile's region object, so the app knows the policy.
+### 4.3 Reads (changed)
+- `GET /fastings/:region` and `GET /fastings/:region/:id` add `todayMeal: { eventId, servedAt, servedBy: { id, name } | null } | null`.
+- Meal history (in `GET /fastings/:region/:id`) adds `meals: [{ eventId, servedAt, servedBy, revokedAt }]` next to the existing `takenMeals`, which is unchanged for old clients.
 
 ---
 
 ## 5. App changes
 
-### 5.1 Undo
-- **The confirm request sends a fresh `clientEventId`.** Retries reuse the same ID, so they're idempotent.
+### 5.1 Idempotent confirm and slow-network feedback
+- **Each confirm gets a fresh `clientEventId`** (uuid v4) when the volunteer taps Confirm. Every retry of that confirm reuses it. `deviceId` is an installation ID generated once and kept in secure storage.
+- **The 3-minute own-confirmation heuristic is removed** for this app version: the server now answers a retry with the original event.
+- **Progress:**
+  - 0–2 s: the Confirm button shows a spinner (as today).
+  - After 2 s: the band says "Sending… slow connection". The camera stays paused and the confirm can't be tapped twice.
+  - On timeout or a network error: the band says "Not confirmed yet. Don't hand over the meal." with **Retry** (same `clientEventId`) and **Cancel**.
+  - Retry is automatic once after 3 s, then manual.
+- **The Confirmed state is shown only after the server's `200`.** There is no state where the volunteer can't tell whether the meal counted.
+- **Timeouts** in `api_client.dart`: `connectTimeout` stays 10 s; `receiveTimeout` and `sendTimeout` go from 20 s to 15 s for confirm and revoke, since the retry is now safe.
+
+### 5.2 Undo
 - **The Confirmed state** (Spec 1 §4.6) gains an **Undo · 5** button with a countdown. It replaces the 1.6 s auto-resume with:
   - The camera is live immediately.
   - The band stays for 5 s.
@@ -163,50 +171,37 @@ Each event is processed in its own transaction, so one bad event doesn't fail th
   - On success, the toast says "Undone. {name} is not marked as served."
   - On failure, the toast says "Couldn't undo. Try again from History."
 - **The History sheet** shows "Undo tonight's meal" on the volunteer's own event while the server window is open.
-- **For an offline serve,** Undo removes the pending event locally. No network is needed.
 
-### 5.2 Served-by
+### 5.3 Served-by
 - The Already-taken panel shows "Served at 18:12 by Sami." When `servedBy` is null (backfill), it shows the time only.
 - Meal history rows show the volunteer's name when known.
 
-### 5.3 On-device people list
+### 5.4 On-device people list
 - **`PeopleCache`** stores the region's list plus `lastSyncedAt`:
   - JSON encrypted with AES-GCM.
-  - The key is held in `flutter_secure_storage`.
-  - The file lives in the app documents directory.
-- **When it updates:** on every successful list load, after each sync, and after confirms.
+  - The key is held in `flutter_secure_storage` (already a dependency).
+  - The file lives in the app documents directory (`path_provider`, already a dependency).
+- **When it updates:** on every successful list load and after each confirm or undo.
 - **When it's wiped:** on logout and on a region change.
-- **On startup,** the cached list shows immediately with a "Last updated 18:05" line, while the network refresh runs.
+- **On startup,** the cached list shows immediately with a "Last updated 18:05" line, while the network refresh runs. On a slow connection this also makes People usable before the refresh finishes.
 - **New dependency:** one audited crypto package, `cryptography`. It's chosen in the plan and needs approval.
 
-### 5.4 Connectivity
+### 5.5 Connectivity
 - **"Offline" is detected from request outcomes** (`NetworkFailure` / `TimeoutFailure`), plus a 15 s `GET /health` probe while offline.
 - **No new connectivity plugin is required.**
 - **People list banner:** "Offline · using the list saved at {time}".
 - **Scan screen:** a gold offline icon in the top bar.
 
-### 5.5 Offline identify and serve
-New scan states (styled per Spec 1 §4.6):
+### 5.6 Offline identify (read-only)
+New scan states (styled per Spec 1 §4.6). **None of them can serve.** 2B adds "Serve offline" to the first one.
 
 | State | Shown when | Content | Actions |
 |---|---|---|---|
-| **Unverified** | Lookup fails offline and the person is cached and not served in the cache | `system` band: "Can't check tonight", plus "Last sync {time}: not served yet". Name, tiles | Retry; **Serve offline** (only if `allowOfflineServing`); Skip |
+| **Unverified** | Lookup fails offline, and the person is cached and not served in the cache | `system` band: "Can't check tonight", plus "Last sync {time}: not served yet". Name, tiles | Retry; Skip |
 | Already taken (cached) | Offline, and the cache says served today | As Spec 1, plus "(as of {time})" | Scan next |
 | Not on this phone | Offline, and the ID isn't cached | `system` band: "Card #{id} isn't on this phone" | Scan again |
 
-**"Serve offline" flow:**
-1. **The first time in a session,** a dialog appears: "Serve without checking?" It explains that this should only be done when no other volunteer is serving the region, that the meal syncs later, and that a double serve will be reported. The buttons are Serve offline and Cancel. Later offline serves in the same session skip the dialog.
-2. **It creates a pending event:** `clientEventId`, the person, device-time `servedAt`, and `deviceId`. The event is persisted in the queue.
-3. **The cached person is marked served locally.**
-4. **The Confirmed state** says "Saved on this phone. Syncs when online." Undo is available.
-
-### 5.6 Sync queue
-- **The queue is persisted** in the same encrypted store and survives app restarts.
-- **Flush triggers:** connectivity regained, app resumed, every 30 s while items are pending, and pull-to-refresh.
-- **Results map to** §4.3.
-- **The scan top bar** shows "{n} to sync". A toast reports "{n} offline meals synced".
-- **Conflicts and problems** appear as a banner on People: "1 serving to review". It opens a sheet listing each item: the person, both times, who served, and the reason. The only action is **Acknowledge**. The server already stored it as flagged, and admins resolve it.
-- **Logout with a non-empty queue** is blocked with a dialog: "{n} meals haven't synced yet. Connect to sync before logging out." It offers "Log out anyway (meals will be lost)" as a destructive, explicitly confirmed option.
+Find-without-card (Spec 1) searches the on-device list when offline, with the same "(as of {time})" note.
 
 ---
 
@@ -216,47 +211,49 @@ New scan states (styled per Spec 1 §4.6):
 - Events form an audit trail. Revoked events are kept, not deleted.
 - No PII in logs. Backend logs use IDs only.
 - Revoke permissions are enforced on the server. The UI only hides what isn't allowed.
+- **Precondition:** region access control (`MIGRATION_REPORT.md` §6.6) should be enforced before this ships, since the new endpoints take region and event IDs from the client.
 
 ---
 
 ## 7. Error handling
 | Situation | Behavior |
 |---|---|
+| Confirm times out | "Not confirmed yet. Don't hand over the meal." Retry reuses the `clientEventId`, so it can't double |
+| Retry lands after the first request succeeded | Server returns the original event (`200`). App shows Confirmed |
 | Revoke after the window | `403 UNDO_WINDOW_EXPIRED`. App: "It's too late to undo. Ask an admin." |
-| Revoke while offline (online event) | Not possible, because it needs the server. App: "Undo needs a connection. Try again from History." |
-| Sync partially fails | Per-event results. Failed items stay queued (network) or move to problems (rejected) |
-| Device clock wrong | `rejected: CLOCK_OUT_OF_RANGE`. Shown in problems with "Check the phone's date and time" |
-| Region disallows offline serving mid-session | The button disappears on the next profile refresh. Already-queued events still sync, applied with `flag = OFFLINE_NOT_ALLOWED` |
+| Revoke while offline | Not possible, because it needs the server. App: "Undo needs a connection. Try again from History." |
+| Cache can't be decrypted (key lost, OS restore) | Delete the file silently and load from the network |
 
 ---
 
 ## 8. Testing
 - **Backend (Jest):**
-  - Confirm idempotency (same `clientEventId` twice), 409 with servedBy, and the dual-write consistency of `takenMeals`/`lastTakenMeal`.
+  - Confirm idempotency (same `clientEventId` twice, including after a revoke), `CLIENT_EVENT_ID_REUSED`, 409 with servedBy, and the dual-write consistency of `takenMeals`/`lastTakenMeal`.
+  - Two concurrent confirms with different IDs for the same person: exactly one `200`, one `409`.
   - Revoke: own within the window, own after the window, someone else's, admin same day, idempotent revoke, and dual-write removal.
-  - Sync: `applied` / `duplicate` / `conflict` / `rejected` per event, and batch isolation.
   - `serviceDay` at `APP_TIMEZONE` day boundaries (23:59 vs 00:01 local).
   - The partial unique index blocks a second active event.
   - Migration backfill counts match `takenMeals` lengths. The down migration leaves `fastings` intact.
+  - Old-client confirm (no `clientEventId`) behaves as today.
 - **App:**
-  - The offline state machine (Unverified, serve offline, Undo of a pending event).
-  - Queue persistence across restart.
-  - Each sync result path.
-  - The conflict banner and sheet.
-  - Logout guarded by a non-empty queue.
-  - Encrypted cache round-trip and wipe on logout.
-- **Field test before enabling offline serving for a region:** two phones, airplane mode, and deliberate double serves, to confirm that conflicts surface on both phones and in the admin endpoint.
+  - Confirm progress states: fast, slow (>2 s), timeout, automatic retry, manual retry, cancel.
+  - A retry reuses the same `clientEventId`; a new tap creates a new one.
+  - Undo within 5 s, Undo failure, Undo from History.
+  - The offline identify states and the find-without-card offline path.
+  - Encrypted cache round-trip, wipe on logout and region change, and recovery from an undecryptable file.
+- **Field check (dry run):** throttle a phone to 2G/EDGE and confirm 20 people in a row; then airplane mode and identify 10 people after an app restart.
 
 ---
 
 ## 9. Rollout
-1. **Backend release:** the migration, the new endpoints, and the dual-write. Old clients are unaffected.
-2. **App release:** Undo and served-by are on for everyone. Offline serving stays dormant until a region's flag is enabled.
-3. **Enable `allowOfflineServing`** region by region, after the field test in §8.
-4. **Follow-ups, not in this spec:**
-  - A server-side duplicate-CIN rule.
-  - Statistics read from `meal_events` (excluding revoked and flagged events).
-  - Optional cleanup of historical fake "yesterday" meals created by the old registration bug, which needs admin review.
+1. **Backend release:** the migration, the changed confirm, revoke, and reads. Old clients are unaffected.
+2. **App release:** idempotent confirm, Undo, served-by, the on-device list, and offline identify, for everyone.
+3. **Field dry run** in January.
+4. **Then [Spec 2B](2026-10-03-offline-serving-design.md).**
+5. **Follow-ups, not in either spec:**
+   - A server-side duplicate-CIN rule.
+   - Statistics read from `meal_events` (excluding revoked and flagged events).
+   - Optional cleanup of historical fake "yesterday" meals created by the old registration bug, which needs admin review.
 
 ---
 
@@ -265,6 +262,6 @@ New scan states (styled per Spec 1 §4.6):
 |---|---|
 | UI undo window vs server window | 5 s in the UI, 10 min on the server (`UNDO_WINDOW_MINUTES`) |
 | Who can revoke later the same day? | Admins only |
-| Offline policy granularity | Per region (`allowOfflineServing`), default off |
-| Retention of revoked/conflict events | Keep indefinitely (small rows, audit value) |
+| Retention of revoked events | Keep indefinitely (small rows, audit value) |
 | Crypto package for the cache | `cryptography`, to be confirmed in the plan |
+| Slow-confirm thresholds | 2 s to show "Sending…", one automatic retry after 3 s. Tune after the dry run |

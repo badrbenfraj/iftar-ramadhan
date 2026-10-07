@@ -1,0 +1,33 @@
+# Forces every installed app older than the given version to update before
+# it can be used (docs/DEPLOYMENT.md "Forcing an update"). 0.0.0 removes it.
+name: Set minimum app version
+
+on:
+  workflow_dispatch:
+    inputs:
+      minimum_version:
+        description: Oldest app version still allowed, e.g. 1.4.0 (0.0.0 = no minimum)
+        required: true
+
+jobs:
+  set:
+    runs-on: ubuntu-latest
+    env:
+      SERVER_HOST: ${{ vars.SERVER_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install the SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+      - name: Set minimum-version on the server
+        env:
+          MINIMUM_VERSION: ${{ inputs.minimum_version }}
+        run: SSH_KEY="$HOME/.ssh/deploy_key" bash deploy/set-minimum-version.sh "$MINIMUM_VERSION"
+      - name: Clean up
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

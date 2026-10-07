@@ -104,7 +104,7 @@ void main() {
           ...testOverrides(FakePeopleRepository([])),
           statisticsRepositoryProvider.overrideWithValue(stats),
           appConfigProvider.overrideWithValue(
-            AppConfig(apiBaseUrl: 'http://test', environment: 'test', ramadanStart: ramadanStart),
+            AppConfig(apiUrl: 'http://test', environment: 'test', ramadanStart: ramadanStart),
           ),
         ],
       );
@@ -189,7 +189,7 @@ void main() {
           ...testOverrides(FakePeopleRepository([]), clock: () => now),
           statisticsRepositoryProvider.overrideWithValue(stats),
           appConfigProvider.overrideWithValue(
-            AppConfig(apiBaseUrl: 'http://test', environment: 'test', ramadanStart: ramadanStart),
+            AppConfig(apiUrl: 'http://test', environment: 'test', ramadanStart: ramadanStart),
           ),
         ],
       );
@@ -255,7 +255,7 @@ void main() {
             ...testOverrides(FakePeopleRepository([]), clock: clock),
             statisticsRepositoryProvider.overrideWithValue(stats),
             appConfigProvider.overrideWithValue(
-              AppConfig(apiBaseUrl: 'http://test', environment: 'test', ramadanStart: ramadanStart),
+              AppConfig(apiUrl: 'http://test', environment: 'test', ramadanStart: ramadanStart),
             ),
           ],
         ),

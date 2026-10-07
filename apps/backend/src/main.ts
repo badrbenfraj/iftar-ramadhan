@@ -19,7 +19,8 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
-  app.setGlobalPrefix('api/v1');
+  // /download is the human page volunteers open; everything else is the API.
+  app.setGlobalPrefix('api/v1', { exclude: ['download'] });
 
   app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
   app.use(RequestIdMiddleware);

@@ -253,5 +253,15 @@
   "exportFailed": "Could not create the file.",
   "logout": "Log out",
   "logoutTitle": "Log out?",
-  "logoutBody": "You will need to sign in again to scan cards."
+  "logoutBody": "You will need to sign in again to scan cards.",
+  "updateAvailableTitle": "A new version is available",
+  "updateAvailableBody": "Version {version} is available. You can keep working and update later.",
+  "@updateAvailableBody": {"placeholders": {"version": {"type": "String"}}},
+  "updateNow": "Update",
+  "updateLater": "Later",
+  "updateRequiredTitle": "Update required",
+  "updateRequiredBody": "Your version of the app is no longer supported. Please install the latest version to continue.",
+  "updateOpenFailed": "Could not open the browser.",
+  "appVersion": "Version {version}",
+  "@appVersion": {"placeholders": {"version": {"type": "String"}}}
 }

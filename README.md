@@ -15,11 +15,12 @@ same card at the same time.
 │   └── legacy-ionic/    Previous Ionic 7 / Angular 16 app (kept until the Flutter app is validated in the field)
 ├── packages/            Shared Dart packages (none yet, see packages/README.md)
 ├── docs/
+│   ├── DEPLOYMENT.md           Server, releases, in-app updates, yearly redeployment
 │   ├── MIGRATION_ANALYSIS.md   Pre-migration analysis of the Ionic app and the API
 │   └── MIGRATION_REPORT.md     What changed, why, what's left
-├── docker-compose.yml   Production stack: Caddy (TLS) + API + Postgres + Adminer
-├── Caddyfile
-└── deploy-compose.sh    Deploy the stack to the VPS over SSH
+├── deploy/              SSH scripts used by GitHub Actions (or by hand)
+├── docker-compose.yml   Production stack: Caddy (TLS + APK files) + API + Postgres + Adminer
+└── Caddyfile
 ```
 
 ## Requirements
@@ -77,16 +78,19 @@ npm run start:dev                # http://localhost:3000/api/v1  (health: /api/v
 | `JWT_PUBLIC_KEY_BASE64` `JWT_PRIVATE_KEY_BASE64` | RS256 key pair (base64 PEM) |
 | `JWT_ACCESS_TOKEN_EXP_IN_SEC` `JWT_REFRESH_TOKEN_EXP_IN_SEC` | Token lifetimes |
 | `DEFAULT_ADMIN_USER_PASSWORD` | Password of the seeded `admin` user |
+| `RELEASES_DIR` | Directory with the APKs and release metadata (default `releases`; `/srv/releases` in Docker) |
 
 ### Production
 
-The Docker image (`apps/backend/Dockerfile`, Node 24) runs the migrations, then
-the seed CLI, then the API. The root `docker-compose.yml` puts it behind Caddy
-with automatic TLS:
+**See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)**: GitHub Variables and Secrets,
+releasing a new app version, the `/download` page, forcing an update, and the
+step-by-step guide for a new OVH server each Ramadan.
 
-```bash
-./deploy-compose.sh [user@host] [.env file] [remote dir] [ssh key]
-```
+In short: GitHub Actions deploys the root `docker-compose.yml` to
+`/opt/iftar` on the server over SSH. The backend image
+(`apps/backend/Dockerfile`, Node 24) is built there, runs the migrations, then
+the seed CLI, then the API, behind Caddy with automatic Let's Encrypt HTTPS for
+the OVH hostname. Caddy also serves the APKs from `/opt/iftar/releases`.
 
 > Deploy the backend **before** shipping the Flutter app: the app relies on
 > `409 MEAL_ALREADY_TAKEN`, the `mealTakenToday` flag and ISO dates in
@@ -109,12 +113,12 @@ Environment files live in `apps/mobile/config/`:
 
 | Key | Meaning |
 |---|---|
-| `API_BASE_URL` | Base URL including `/api/v1` |
+| `API_URL` | Server origin, e.g. `https://vps-xxxx.vps.ovh.net` (the app adds `/api/v1`). Default `http://localhost:3000`. Never committed for production: the release workflow passes the `API_URL` GitHub variable. |
 | `APP_ENV` | `development` shows the API URL on the profile screen |
 
-For a physical phone on your Wi-Fi, copy `development.json`, set
-`API_BASE_URL` to `http://<your-pc-ip>:3000/api/v1`, and pass that file.
-Cleartext HTTP is only allowed in **debug** builds.
+For a physical phone on your Wi-Fi, pass
+`--dart-define=API_URL=http://<your-pc-ip>:3000` (or copy `development.json`).
+Cleartext HTTP is only allowed when `API_URL` is `http://` or in debug builds.
 
 ### Quality checks
 
@@ -130,19 +134,25 @@ flutter test test/integration \
 
 ### Build
 
+Official APKs are built, signed and published by the **Release app** GitHub
+workflow (push a tag `v<version>`, see [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)).
+By hand:
+
 ```bash
 # Android
-flutter build apk --release --dart-define-from-file=config/production.json
-flutter build appbundle --release --dart-define-from-file=config/production.json   # Play Store
+flutter build apk --release --dart-define-from-file=config/production.json   --dart-define=API_URL=https://<server>
 # → build/app/outputs/flutter-apk/app-release.apk
 
 # iOS (macOS + Xcode)
-flutter build ipa --release --dart-define-from-file=config/production.json
+flutter build ipa --release --dart-define-from-file=config/production.json   --dart-define=API_URL=https://<server>
 ```
 
-Release builds are currently signed with the **debug key**
-(`android/app/build.gradle.kts`). Before distributing, add a release keystore
-([Flutter guide](https://docs.flutter.dev/deployment/android#sign-the-app)).
+Release builds use the release key from `android/key.properties` when present
+(the workflow writes it from GitHub secrets), otherwise the debug key.
+
+The app checks `/api/v1/app/version` at startup and offers (or, below the
+minimum version, requires) an update through the server's `/download` page
+(`lib/features/update/`).
 
 ### Architecture in one paragraph
 

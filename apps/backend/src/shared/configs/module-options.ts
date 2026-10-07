@@ -12,6 +12,7 @@ export const configModuleOptions: ConfigModuleOptions = {
       .default('development'),
     APP_PORT: Joi.number().required(),
     APP_TIMEZONE: Joi.string().optional(),
+    RELEASES_DIR: Joi.string().optional(),
     DB_HOST: Joi.string().required(),
     DB_PORT: Joi.number().optional(),
     DB_NAME: Joi.string().required(),

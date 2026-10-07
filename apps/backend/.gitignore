@@ -396,3 +396,5 @@ pnpm-lock.yaml
 # Keep Husky configs
 !.husky
 !.huskyrc
+# Local APK releases (RELEASES_DIR), see docs/DEPLOYMENT.md
+/releases/

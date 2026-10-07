@@ -781,4 +781,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get logoutBody => 'ستحتاج إلى تسجيل الدخول من جديد لمسح البطاقات.';
+
+  @override
+  String get updateAvailableTitle => 'يتوفّر إصدار جديد';
+
+  @override
+  String updateAvailableBody(String version) {
+    return 'الإصدار $version متوفّر. يمكنك مواصلة العمل والتحديث لاحقاً.';
+  }
+
+  @override
+  String get updateNow => 'تحديث';
+
+  @override
+  String get updateLater => 'لاحقاً';
+
+  @override
+  String get updateRequiredTitle => 'التحديث مطلوب';
+
+  @override
+  String get updateRequiredBody =>
+      'لم يعد إصدار التطبيق لديك مدعوماً. يُرجى تثبيت أحدث إصدار للمتابعة.';
+
+  @override
+  String get updateOpenFailed => 'تعذّر فتح المتصفّح.';
+
+  @override
+  String appVersion(String version) {
+    return 'الإصدار $version';
+  }
 }

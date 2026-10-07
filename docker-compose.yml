@@ -1,3 +1,7 @@
+# Production stack, deployed to /opt/iftar on the server by
+# deploy/deploy-backend.sh (see docs/DEPLOYMENT.md).
+name: iftar
+
 services:
   caddy:
     image: caddy:2
@@ -5,13 +9,15 @@ services:
     depends_on:
       - app
     environment:
-      DOMAIN: ${DOMAIN:-vps-ca2a6790.vps.ovh.net}
+      # The server's hostname (SERVER_HOST), e.g. vps-xxxx.vps.ovh.net.
+      DOMAIN: ${DOMAIN:?set DOMAIN to the server hostname}
       ACME_EMAIL: ${ACME_EMAIL}
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./releases:/srv/releases:ro
       - caddy_data:/data
       - caddy_config:/config
     networks:
@@ -54,8 +60,16 @@ services:
       - iftar-network
 
   app:
-    image: badredinebenfraj/iftar
+    # Built on the server from apps/backend (no image registry to manage).
+    build:
+      context: ./apps/backend
+      args:
+        APP_ENV: ${APP_ENV:-production}
+    image: iftar-backend:local
     container_name: iftar-app
+    volumes:
+      # Read-only: the API reads latest.json / minimum-version from here.
+      - ./releases:/srv/releases:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -73,6 +87,7 @@ services:
       JWT_PRIVATE_KEY_BASE64: ${JWT_PRIVATE_KEY_BASE64}
       DEFAULT_ADMIN_USER_PASSWORD: ${DEFAULT_ADMIN_USER_PASSWORD}
       APP_PORT: 3000
+      RELEASES_DIR: /srv/releases
       WAIT_HOSTS: postgres:5432
     networks:
       - iftar-network

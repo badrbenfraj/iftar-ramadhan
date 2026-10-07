@@ -1,0 +1,152 @@
+# Builds the signed APK and publishes it to the server as the new latest
+# release. Trigger: push a tag v<version> matching apps/mobile/pubspec.yaml,
+# or run it by hand (Actions > Release app > Run workflow).
+# Step by step: docs/DEPLOYMENT.md "Releasing a new version".
+name: Release app
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      deploy_backend:
+        description: Deploy the backend first
+        type: boolean
+        default: true
+
+jobs:
+  version:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.v.outputs.version }}
+      build_number: ${{ steps.v.outputs.build_number }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: v
+        name: Read the version from pubspec.yaml
+        run: |
+          version=$(sed -nE 's/^version:[[:space:]]*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' apps/mobile/pubspec.yaml)
+          [ -n "$version" ] || { echo "::error::No x.y.z version in apps/mobile/pubspec.yaml"; exit 1; }
+          if [ "$GITHUB_REF_TYPE" = tag ] && [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match pubspec.yaml version $version"; exit 1
+          fi
+          IFS=. read -r major minor patch <<< "$version"
+          # Android versionCode must grow with every release: 1.10.2 -> 1010002.
+          build_number=$(( major * 1000000 + minor * 1000 + patch ))
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
+          echo "Releasing $version (versionCode $build_number)"
+
+  test-mobile:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+
+  backend:
+    needs: test-mobile
+    if: github.event_name == 'push' || inputs.deploy_backend
+    uses: ./.github/workflows/deploy-backend.yml
+    secrets: inherit
+
+  apk:
+    needs: [version, test-mobile, backend]
+    # Runs when the backend deploy succeeded or was not requested.
+    if: >-
+      !cancelled() && needs.version.result == 'success' &&
+      needs.test-mobile.result == 'success' &&
+      (needs.backend.result == 'success' || needs.backend.result == 'skipped')
+    runs-on: ubuntu-latest
+    concurrency: release-apk
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      BUILD_NUMBER: ${{ needs.version.outputs.build_number }}
+      SERVER_HOST: ${{ vars.SERVER_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      # Defaults to https://<SERVER_HOST>; set the API_URL variable to override.
+      API_URL: ${{ vars.API_URL || format('https://{0}', vars.SERVER_HOST) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the GitHub settings
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          missing=""
+          for v in SERVER_HOST SSH_USER SSH_PRIVATE_KEY ANDROID_KEYSTORE_BASE64 ANDROID_KEYSTORE_PASSWORD ANDROID_KEY_ALIAS ANDROID_KEY_PASSWORD; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          [ -z "$missing" ] || { echo "::error::Missing GitHub settings:$missing (see docs/DEPLOYMENT.md)"; exit 1; }
+          case "$API_URL" in https://*) ;; *) echo "::error::API_URL must start with https:// (got $API_URL)"; exit 1 ;; esac
+          echo "Building $VERSION for $API_URL"
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: 17
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Install the release signing key
+        working-directory: apps/mobile/android
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 -d > app/release.jks
+          cat > key.properties <<EOF
+          storeFile=release.jks
+          storePassword=$ANDROID_KEYSTORE_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
+          keyPassword=$ANDROID_KEY_PASSWORD
+          EOF
+
+      - name: Build the APK
+        working-directory: apps/mobile
+        run: |
+          flutter pub get
+          flutter build apk --release \
+            --target-platform android-arm,android-arm64 \
+            --build-name="$VERSION" --build-number="$BUILD_NUMBER" \
+            --dart-define-from-file=config/production.json \
+            --dart-define=API_URL="$API_URL"
+          cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/app-$VERSION.apk"
+          sha256sum "$RUNNER_TEMP/app-$VERSION.apk"
+
+      # Kept 90 days for troubleshooting; the server keeps every release.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-${{ env.VERSION }}
+          path: ${{ runner.temp }}/app-${{ env.VERSION }}.apk
+
+      - name: Install the SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Upload, verify and publish
+        run: SSH_KEY="$HOME/.ssh/deploy_key" bash deploy/release-apk.sh "$RUNNER_TEMP/app-$VERSION.apk" "$VERSION"
+
+      - name: Clean up
+        if: always()
+        run: rm -f ~/.ssh/deploy_key apps/mobile/android/key.properties apps/mobile/android/app/release.jks

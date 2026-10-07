@@ -1,4 +1,3 @@
 {
-  "APP_ENV": "production",
-  "API_BASE_URL": "https://vps-ca2a6790.vps.ovh.net/api/v1"
+  "APP_ENV": "production"
 }
