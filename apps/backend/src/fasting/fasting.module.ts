@@ -12,6 +12,7 @@ import { MealEvent } from './entities/meal-event.entity';
 import { FastingRepository } from './repositories/fasting.repository';
 import { FastingService } from './services/fasting.service';
 import { FastingAclService } from './services/fasting-acl.service';
+import { MealEventService } from './services/meal-event.service';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { FastingAclService } from './services/fasting-acl.service';
     FastingService,
     JwtAuthStrategy,
     FastingAclService,
+    MealEventService,
     FastingRepository,
     RegionRepository,
   ],

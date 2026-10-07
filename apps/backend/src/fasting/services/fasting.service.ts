@@ -2,7 +2,6 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -30,9 +29,11 @@ import {
   UpdateFastingInput,
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
+import { MealEventOutput } from '../dtos/meal-event-output.dto';
 import { Fasting } from '../entities/fasting.entity';
 import { FastingRepository } from '../repositories/fasting.repository';
 import { FastingAclService } from './fasting-acl.service';
+import { MealEventService } from './meal-event.service';
 
 export { FASTING_ERROR_CODES };
 
@@ -56,6 +57,7 @@ export class FastingService {
     private repository: FastingRepository,
     private userService: UserService,
     private aclService: FastingAclService,
+    private meals: MealEventService,
     private configService: ConfigService,
     private readonly logger: AppLogger,
   ) {
@@ -71,7 +73,14 @@ export class FastingService {
    * purpose: it is an eager relation that would otherwise leak the creator's
    * user record (including the password hash) to every client.
    */
-  private toOutput(fasting: Fasting): FastingOutput {
+  private toOutput(
+    fasting: Fasting,
+    extras: {
+      meal?: MealEventOutput;
+      todayMeal?: MealEventOutput | null;
+      meals?: MealEventOutput[];
+    } = {},
+  ): FastingOutput {
     const { createdBy, ...rest } = fasting;
     return plainToClass(FastingOutput, {
       ...rest,
@@ -80,6 +89,7 @@ export class FastingService {
         new Date(),
         this.timeZone,
       ),
+      ...extras,
     });
   }
 
@@ -231,13 +241,8 @@ export class FastingService {
   }
 
   /**
-   * Records today's meal for a person. This is the single source of truth for
-   * "one meal per person per day":
-   *  - the row is locked (`SELECT ... FOR UPDATE`) so concurrent confirmations
-   *    for the same person are serialized;
-   *  - "today" is evaluated server-side in APP_TIMEZONE;
-   *  - the history is appended server-side, never taken from the client.
-   * A second confirmation on the same day fails with 409 MEAL_ALREADY_TAKEN.
+   * Records today's meal (spec 2A §4.1); see MealEventService.confirm for the
+   * one-meal-per-day and retry rules.
    */
   async confirmMeal(
     ctx: RequestContext,
@@ -247,82 +252,12 @@ export class FastingService {
   ): Promise<FastingOutput> {
     this.logger.log(ctx, `${this.confirmMeal.name} was called`);
 
-    if (!Number.isInteger(fastingId) || !Number.isInteger(region)) {
-      throw new NotFoundException({
-        message: 'Fasting ID and Region ID are required',
-        code: FASTING_ERROR_CODES.PERSON_NOT_FOUND,
-      });
-    }
-
-    const actor: Actor = ctx.user;
-
-    await this.repository.manager.transaction(async (manager) => {
-      const rows: Array<{ id: number; lastTakenMeal: Date | null }> =
-        await manager.query(
-          `SELECT "id", "lastTakenMeal" FROM "fastings"
-           WHERE "id" = $1 AND "regionId" = $2
-           FOR UPDATE`,
-          [fastingId, region],
-        );
-
-      if (rows.length === 0) {
-        throw new NotFoundException({
-          message: `Fasting record with ID ${fastingId} not found in region ${region}`,
-          code: FASTING_ERROR_CODES.PERSON_NOT_FOUND,
-        });
-      }
-
-      const fasting = await manager.findOne(Fasting, {
-        where: { id: fastingId },
-      });
-      const isAllowed = this.aclService
-        .forActor(actor)
-        .canDoAction(Action.Update, fasting);
-      if (!isAllowed) {
-        throw new UnauthorizedException();
-      }
-
-      const now = new Date();
-      const lastTakenMeal = rows[0].lastTakenMeal
-        ? new Date(rows[0].lastTakenMeal)
-        : null;
-
-      if (isSameLocalDay(lastTakenMeal, now, this.timeZone)) {
-        throw new ConflictException({
-          message: 'Meal already collected today',
-          code: FASTING_ERROR_CODES.MEAL_ALREADY_TAKEN,
-          lastTakenMeal: lastTakenMeal.toISOString(),
-        });
-      }
-
-      const phone = input.phone === undefined ? null : input.phone;
-      const comment = input.comment === undefined ? null : input.comment;
-      const hasPhone = input.phone !== undefined;
-      const hasComment = input.comment !== undefined;
-
-      await manager.query(
-        `UPDATE "fastings"
-         SET "lastTakenMeal" = $3,
-             "takenMeals" = array_append("takenMeals", $4::varchar),
-             "phone" = CASE WHEN $5::boolean THEN $6::varchar ELSE "phone" END,
-             "comment" = CASE WHEN $7::boolean THEN $8::text ELSE "comment" END,
-             "updatedAt" = now()
-         WHERE "id" = $1 AND "regionId" = $2`,
-        [
-          fastingId,
-          region,
-          now,
-          now.toISOString(),
-          hasPhone,
-          phone,
-          hasComment,
-          comment,
-        ],
-      );
-    });
-
+    const meal = await this.meals.confirm(ctx, fastingId, region, input);
     const saved = await this.repository.getByIdAndRegion(fastingId, region);
-    return this.toOutput(saved);
+    return this.toOutput(saved, {
+      meal,
+      todayMeal: meal.revokedAt ? null : meal,
+    });
   }
 
   /**
