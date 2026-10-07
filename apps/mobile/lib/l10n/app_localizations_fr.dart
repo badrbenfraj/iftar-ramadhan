@@ -595,6 +595,33 @@ class AppLocalizationsFr extends AppLocalizations {
       'Rien à remettre. Indiquez-lui avec douceur que le repas a déjà été retiré ce soir.';
 
   @override
+  String undoCountdown(int seconds) {
+    return 'Annuler · $seconds';
+  }
+
+  @override
+  String undone(String name) {
+    return 'Annulé. $name n’est plus marqué comme servi.';
+  }
+
+  @override
+  String get undoFailed =>
+      'Impossible d’annuler. Réessayez depuis l’historique.';
+
+  @override
+  String get undoTooLate =>
+      'Il est trop tard pour annuler. Demandez à un administrateur.';
+
+  @override
+  String get undoNeedsConnection =>
+      'L’annulation nécessite une connexion. Réessayez depuis l’historique.';
+
+  @override
+  String servedAtBy(String time, String name) {
+    return 'Servi à $time par $name';
+  }
+
+  @override
   String get scanNextCard => 'Carte suivante';
 
   @override

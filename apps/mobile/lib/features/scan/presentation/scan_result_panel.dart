@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -127,10 +129,16 @@ class ScanResultPanel extends ConsumerWidget {
           slow: slow,
         );
 
-      case ScanConfirmed(:final person):
-        return _DoneBand(person: person);
+      case ScanConfirmed(:final person, :final undoing):
+        return _DoneBand(
+          person: person,
+          undoing: undoing,
+          undoWindow: ref.read(scanTimingsProvider).undoWindow,
+          // No meal ID (older backend): nothing the server could undo.
+          onUndo: person.todayMeal == null ? null : controller.undo,
+        );
 
-      case ScanAlreadyTaken(:final person, :final takenAt):
+      case ScanAlreadyTaken(:final person, :final takenAt, :final servedByName):
         final time = takenAt == null ? null : ltr(formatTime(takenAt));
         return _Sheet(
           background: c.claySoft,
@@ -143,6 +151,18 @@ class ScanResultPanel extends ConsumerWidget {
           ),
           header: [_Name(person), _PersonMeta(person)],
           body: [
+            if (time != null && servedByName != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  l.servedAtBy(time, isolate(servedByName)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: c.clayInk,
+                  ),
+                ),
+              ),
             Text(
               time == null ? l.alreadyServedNoteNoTime : l.alreadyServedNote(time),
               style: TextStyle(fontSize: 13, color: c.clayInk),
@@ -493,9 +513,19 @@ class _Band extends StatelessWidget {
 }
 
 class _DoneBand extends StatelessWidget {
-  const _DoneBand({required this.person});
+  const _DoneBand({
+    required this.person,
+    required this.undoing,
+    required this.undoWindow,
+    required this.onUndo,
+  });
 
   final FastingPerson person;
+  final bool undoing;
+  final Duration undoWindow;
+
+  /// Null when this meal can't be undone from here.
+  final VoidCallback? onUndo;
 
   @override
   Widget build(BuildContext context) {
@@ -544,6 +574,15 @@ class _DoneBand extends StatelessWidget {
                             l.blessingMeaning,
                             style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12.5),
                           ),
+                        if (onUndo != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: _UndoButton(
+                              window: undoWindow,
+                              undoing: undoing,
+                              onPressed: onUndo!,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -553,6 +592,64 @@ class _DoneBand extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Undo · 5", counting down while the band is shown (spec 2A §5.2).
+class _UndoButton extends StatefulWidget {
+  const _UndoButton({
+    required this.window,
+    required this.undoing,
+    required this.onPressed,
+  });
+
+  final Duration window;
+  final bool undoing;
+  final VoidCallback onPressed;
+
+  @override
+  State<_UndoButton> createState() => _UndoButtonState();
+}
+
+class _UndoButtonState extends State<_UndoButton> {
+  late int _left = widget.window.inSeconds.clamp(1, 60);
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_left > 1) setState(() => _left--);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
+        minimumSize: const Size(0, 44),
+      ),
+      onPressed: widget.undoing ? null : widget.onPressed,
+      icon: widget.undoing
+          ? const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Icon(Icons.undo_rounded),
+      label: Text(l.undoCountdown(_left)),
     );
   }
 }

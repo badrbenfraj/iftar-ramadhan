@@ -583,6 +583,31 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا شيء للتسليم. أخبره بلطف أنه استلم الليلة.';
 
   @override
+  String undoCountdown(int seconds) {
+    return 'تراجع · $seconds';
+  }
+
+  @override
+  String undone(String name) {
+    return 'تم التراجع. $name لم يعد مسجّلًا كمن استلم.';
+  }
+
+  @override
+  String get undoFailed => 'تعذّر التراجع. حاول مجددًا من السجل.';
+
+  @override
+  String get undoTooLate => 'فات وقت التراجع. اطلب ذلك من المشرف.';
+
+  @override
+  String get undoNeedsConnection =>
+      'التراجع يحتاج إلى اتصال. حاول مجددًا من السجل.';
+
+  @override
+  String servedAtBy(String time, String name) {
+    return 'استلم على الساعة $time، قدّمها $name';
+  }
+
+  @override
   String get scanNextCard => 'البطاقة التالية';
 
   @override

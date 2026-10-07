@@ -7,6 +7,8 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../people/domain/fasting_person.dart';
 import '../../people/presentation/people_controller.dart';
@@ -84,10 +86,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     }
   }
 
-  /// Only "ready" is re-created in place (contact edits); every other change
-  /// is news worth a buzz.
+  /// Only "ready" (contact edits) and "confirmed" (Undo in flight) are
+  /// re-created in place; every other change is news worth a buzz.
   static bool _sameVerdict(ScanStatus a, ScanStatus b) =>
-      a is ScanReady && b is ScanReady && a.person.id == b.person.id;
+      (a is ScanReady && b is ScanReady && a.person.id == b.person.id) ||
+      (a is ScanConfirmed && b is ScanConfirmed && a.person.id == b.person.id);
 
   void _hapticsFor(ScanStatus status) {
     switch (status) {
@@ -115,6 +118,20 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         _hapticsFor(next);
       },
     );
+    ref.listen(scanControllerProvider.select((s) => s.notice), (prev, next) {
+      if (next == null || identical(prev, next)) return;
+      final l = AppLocalizations.of(context);
+      showAppSnackBar(
+        context,
+        switch (next.kind) {
+          ScanNoticeKind.undone => l.undone(isolate(next.name ?? '')),
+          ScanNoticeKind.undoFailed => l.undoFailed,
+          ScanNoticeKind.undoTooLate => l.undoTooLate,
+          ScanNoticeKind.undoNeedsConnection => l.undoNeedsConnection,
+        },
+        isError: next.kind != ScanNoticeKind.undone,
+      );
+    });
     final l = AppLocalizations.of(context);
     final scan = ref.watch(scanControllerProvider);
     final now = ref.watch(clockProvider)();

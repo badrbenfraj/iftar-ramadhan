@@ -581,6 +581,31 @@ class AppLocalizationsEn extends AppLocalizations {
       'Nothing to hand over. Kindly let them know it was already collected tonight.';
 
   @override
+  String undoCountdown(int seconds) {
+    return 'Undo · $seconds';
+  }
+
+  @override
+  String undone(String name) {
+    return 'Undone. $name is not marked as served.';
+  }
+
+  @override
+  String get undoFailed => 'Couldn’t undo. Try again from History.';
+
+  @override
+  String get undoTooLate => 'It’s too late to undo. Ask an admin.';
+
+  @override
+  String get undoNeedsConnection =>
+      'Undo needs a connection. Try again from History.';
+
+  @override
+  String servedAtBy(String time, String name) {
+    return 'Served at $time by $name';
+  }
+
+  @override
   String get scanNextCard => 'Scan next card';
 
   @override

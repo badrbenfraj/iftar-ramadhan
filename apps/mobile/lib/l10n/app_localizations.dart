@@ -1090,6 +1090,42 @@ abstract class AppLocalizations {
   /// **'Nothing to hand over. Kindly let them know it was already collected tonight.'**
   String get alreadyServedNoteNoTime;
 
+  /// No description provided for @undoCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo · {seconds}'**
+  String undoCountdown(int seconds);
+
+  /// No description provided for @undone.
+  ///
+  /// In en, this message translates to:
+  /// **'Undone. {name} is not marked as served.'**
+  String undone(String name);
+
+  /// No description provided for @undoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t undo. Try again from History.'**
+  String get undoFailed;
+
+  /// No description provided for @undoTooLate.
+  ///
+  /// In en, this message translates to:
+  /// **'It’s too late to undo. Ask an admin.'**
+  String get undoTooLate;
+
+  /// No description provided for @undoNeedsConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo needs a connection. Try again from History.'**
+  String get undoNeedsConnection;
+
+  /// No description provided for @servedAtBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Served at {time} by {name}'**
+  String servedAtBy(String time, String name);
+
   /// No description provided for @scanNextCard.
   ///
   /// In en, this message translates to:

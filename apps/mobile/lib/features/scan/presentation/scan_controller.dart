@@ -9,6 +9,7 @@ import '../../../core/utils/uuid.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../people/data/people_repository.dart';
 import '../../people/domain/fasting_person.dart';
+import '../../people/domain/meal_event.dart';
 import '../../people/presentation/people_controller.dart';
 import '../domain/qr_payload.dart';
 
@@ -79,8 +80,11 @@ final class ScanConfirming extends ScanStatus {
 }
 
 final class ScanConfirmed extends ScanStatus {
-  const ScanConfirmed(this.person);
+  const ScanConfirmed(this.person, {this.undoing = false});
   final FastingPerson person;
+
+  /// Undo was tapped and the server hasn't answered yet.
+  final bool undoing;
 }
 
 /// Already collected today — do not serve again.
@@ -121,15 +125,31 @@ final class ScanFailed extends ScanStatus {
   bool get duringConfirm => person != null;
 }
 
+enum ScanNoticeKind { undone, undoFailed, undoTooLate, undoNeedsConnection }
+
+/// A one-off message for the volunteer, shown as a snackbar. Every notice is
+/// a new object, so the same message twice is shown twice.
+class ScanNotice {
+  ScanNotice(this.kind, {this.name});
+  final ScanNoticeKind kind;
+
+  /// The person, for "Undone. {name} is not marked as served."
+  final String? name;
+}
+
 class ScanState {
   const ScanState({
     this.status = const ScanIdle(),
+    this.notice,
     this.servedCount = 0,
     this.singleMeals = 0,
     this.familyMeals = 0,
   });
 
   final ScanStatus status;
+
+  /// The latest message for the volunteer (see [ScanNotice]).
+  final ScanNotice? notice;
 
   /// Meals confirmed from this device since the scanner was opened.
   final int servedCount;
@@ -145,8 +165,8 @@ class ScanState {
     ScanIdle() ||
     ScanInvalidCode() ||
     ScanNotFound() ||
-    ScanAlreadyTaken() ||
-    ScanConfirmed() => true,
+    ScanAlreadyTaken() => true,
+    ScanConfirmed(:final undoing) => !undoing,
     ScanFailed(:final duringConfirm) => !duringConfirm,
     ScanLookingUp() ||
     ScanIdentifying() ||
@@ -156,11 +176,13 @@ class ScanState {
 
   ScanState copyWith({
     ScanStatus? status,
+    ScanNotice? notice,
     int? servedCount,
     int? singleMeals,
     int? familyMeals,
   }) => ScanState(
     status: status ?? this.status,
+    notice: notice ?? this.notice,
     servedCount: servedCount ?? this.servedCount,
     singleMeals: singleMeals ?? this.singleMeals,
     familyMeals: familyMeals ?? this.familyMeals,
@@ -457,6 +479,59 @@ class ScanController extends Notifier<ScanState> {
         _set(const ScanIdle());
       }
     });
+  }
+
+  /// "Undo · 5" on the Confirmed band (spec 2A §5.2).
+  Future<void> undo() async {
+    final status = state.status;
+    if (status is! ScanConfirmed || status.undoing) return;
+    final meal = status.person.todayMeal;
+    if (meal == null) return;
+    _resumeTimer?.cancel();
+    _set(ScanConfirmed(status.person, undoing: true));
+    final notice = await _revoke(meal.eventId, status.person);
+    if (!ref.mounted) return;
+    final undone = notice.kind == ScanNoticeKind.undone;
+    final p = status.person;
+    state = state.copyWith(
+      status: const ScanIdle(),
+      notice: notice,
+      servedCount: undone ? state.servedCount - 1 : null,
+      singleMeals: undone ? state.singleMeals - p.singleMeal : null,
+      familyMeals: undone ? state.familyMeals - p.familyMeal : null,
+    );
+    // The card still in front of the lens is not re-read at once.
+    _lastSeenAt = _now();
+  }
+
+  /// History → "Undo tonight's meal" on an Already-served sheet: undo, then
+  /// look the person up again so the sheet shows the new answer.
+  Future<void> undoFromHistory(FastingPerson person, MealEvent meal) async {
+    if (state.status is! ScanAlreadyTaken) return;
+    final notice = await _revoke(meal.eventId, person);
+    if (!ref.mounted) return;
+    state = state.copyWith(notice: notice);
+    if (notice.kind == ScanNoticeKind.undone) await _lookup(person.id);
+  }
+
+  Future<ScanNotice> _revoke(String eventId, FastingPerson person) async {
+    try {
+      final updated = await ref
+          .read(peopleRepositoryProvider)
+          .revokeMeal(eventId);
+      if (ref.mounted) ref.read(peopleListProvider.notifier).upsert(updated);
+      return ScanNotice(ScanNoticeKind.undone, name: person.fullName);
+    } on UndoRefusedFailure catch (e) {
+      return ScanNotice(
+        e.tooLate ? ScanNoticeKind.undoTooLate : ScanNoticeKind.undoFailed,
+      );
+    } on NetworkFailure {
+      return ScanNotice(ScanNoticeKind.undoNeedsConnection);
+    } on TimeoutFailure {
+      return ScanNotice(ScanNoticeKind.undoNeedsConnection);
+    } on Object {
+      return ScanNotice(ScanNoticeKind.undoFailed);
+    }
   }
 
   Future<void> retry() async {
