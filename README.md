@@ -74,6 +74,7 @@ npm run start:dev                # http://localhost:3000/api/v1  (health: /api/v
 | `APP_ENV` | `development` \| `production` \| `test` |
 | `APP_PORT` | HTTP port (container: 3000) |
 | `APP_TIMEZONE` | **Defines "today" for the one-meal-per-day rule** and statistics. Default `Africa/Tunis` |
+| `UNDO_WINDOW_MINUTES` | How long a volunteer can undo their own meal confirm. Default `10`; admins can undo until the end of the day |
 | `DB_HOST` `DB_PORT` `DB_NAME` `DB_USER` `DB_PASS` | PostgreSQL |
 | `JWT_PUBLIC_KEY_BASE64` `JWT_PRIVATE_KEY_BASE64` | RS256 key pair (base64 PEM) |
 | `JWT_ACCESS_TOKEN_EXP_IN_SEC` `JWT_REFRESH_TOKEN_EXP_IN_SEC` | Token lifetimes |

@@ -286,6 +286,19 @@ export class FastingService {
     });
   }
 
+  /** Undoes a meal (spec 2A §4.2) and returns the person as it now is. */
+  async revokeMeal(
+    ctx: RequestContext,
+    eventId: string,
+  ): Promise<FastingOutput> {
+    this.logger.log(ctx, `${this.revokeMeal.name} was called`);
+
+    const { fastingId, regionId } = await this.meals.revoke(ctx, eventId);
+    const fasting = await this.repository.getByIdAndRegion(fastingId, regionId);
+    const todayMeal = await this.meals.todayMealOf(fastingId);
+    return this.toOutput(fasting, { todayMeal });
+  }
+
   /**
    * Per-day statistics for a region over an inclusive date range. Days are
    * calendar days in APP_TIMEZONE; each person counts at most once per day.

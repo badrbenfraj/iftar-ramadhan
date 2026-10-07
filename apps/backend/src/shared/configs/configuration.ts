@@ -2,6 +2,8 @@ export default (): any => ({
   env: process.env.APP_ENV,
   // Timezone that defines a distribution "day" (one meal per person per day).
   timezone: process.env.APP_TIMEZONE || 'Africa/Tunis',
+  // How long a volunteer can undo their own meal confirm (spec 2A §4.2).
+  undoWindowMinutes: parseInt(process.env.UNDO_WINDOW_MINUTES || '10', 10),
   port: process.env.APP_PORT,
   // Directory holding the APKs and release metadata (docs/DEPLOYMENT.md).
   releasesDir: process.env.RELEASES_DIR || 'releases',

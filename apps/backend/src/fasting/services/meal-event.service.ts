@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -22,6 +23,7 @@ import { ConfirmMealInput } from '../dtos/fasting-input.dto';
 import { MealEventOutput } from '../dtos/meal-event-output.dto';
 import { Fasting } from '../entities/fasting.entity';
 import { FastingAclService } from './fasting-acl.service';
+import { decideRevoke } from './revoke-rules';
 
 /** A meal event row joined with the serving volunteer's name. */
 export interface MealEventRow {
@@ -305,5 +307,99 @@ export class MealEventService {
     },
   ): Promise<string> {
     return this.insertActive(manager, { ...meal, id: null, deviceId: null });
+  }
+
+  private get undoWindowMinutes(): number {
+    return this.configService.get<number>('undoWindowMinutes') ?? 10;
+  }
+
+  /**
+   * Undoes a meal (spec 2A §4.2). The event is kept with revokedAt /
+   * revokedByUserId; the person's history loses that meal.
+   */
+  async revoke(
+    ctx: RequestContext,
+    eventId: string,
+  ): Promise<{ fastingId: number; regionId: number }> {
+    this.logger.log(ctx, `${this.revoke.name} was called`);
+    const actor: Actor = ctx.user;
+
+    return this.dataSource.transaction(async (manager) => {
+      const found = await this.findEvent(manager, eventId);
+      if (!found) {
+        throw new NotFoundException({
+          message: 'Meal not found',
+          code: FASTING_ERROR_CODES.MEAL_EVENT_NOT_FOUND,
+        });
+      }
+      // Same lock order as confirm: the person first, then the event.
+      await manager.query(
+        `SELECT "id" FROM "fastings" WHERE "id" = $1 FOR UPDATE`,
+        [found.fastingId],
+      );
+      const event = await this.findEvent(manager, eventId);
+      const ids = { fastingId: event.fastingId, regionId: event.regionId };
+
+      switch (
+        decideRevoke(event, actor, new Date(), {
+          windowMinutes: this.undoWindowMinutes,
+          timeZone: this.timeZone,
+        })
+      ) {
+        case 'alreadyRevoked':
+          return ids;
+        case 'notAllowed':
+          throw new ForbiddenException({
+            message: 'Only the volunteer who served this meal can undo it',
+            code: FASTING_ERROR_CODES.UNDO_NOT_ALLOWED,
+          });
+        case 'windowExpired':
+          throw new ForbiddenException({
+            message: 'It is too late to undo this meal',
+            code: FASTING_ERROR_CODES.UNDO_WINDOW_EXPIRED,
+          });
+        case 'allowed':
+          break;
+      }
+
+      await manager.query(
+        `UPDATE "meal_events" SET "revokedAt" = now(), "revokedByUserId" = $2 WHERE "id" = $1`,
+        [eventId, actor.id],
+      );
+      if (!event.conflict) {
+        await this.removeFromHistory(manager, event);
+      }
+      return ids;
+    });
+  }
+
+  /** Dual-write of a revoke: drop that meal from takenMeals, recompute lastTakenMeal. */
+  private async removeFromHistory(
+    manager: EntityManager,
+    event: MealEventRow,
+  ): Promise<void> {
+    const [row]: Array<{ takenMeals: string[] }> = await manager.query(
+      `SELECT "takenMeals" FROM "fastings" WHERE "id" = $1`,
+      [event.fastingId],
+    );
+    const taken = row?.takenMeals ?? [];
+    // Compared as instants: entries are ISO strings, or dates written with
+    // an offset by the registration path.
+    const target = new Date(event.servedAt).getTime();
+    const index = taken.findIndex((raw) => new Date(raw).getTime() === target);
+    const remaining =
+      index < 0 ? taken : [...taken.slice(0, index), ...taken.slice(index + 1)];
+
+    const [latest]: Array<{ at: Date | null }> = await manager.query(
+      `SELECT max("servedAt") AS "at" FROM "meal_events"
+       WHERE "fastingId" = $1 AND "revokedAt" IS NULL AND "conflict" = false`,
+      [event.fastingId],
+    );
+    await manager.query(
+      `UPDATE "fastings"
+       SET "takenMeals" = $2::varchar[], "lastTakenMeal" = $3, "updatedAt" = now()
+       WHERE "id" = $1`,
+      [event.fastingId, remaining, latest?.at ? new Date(latest.at) : null],
+    );
   }
 }
