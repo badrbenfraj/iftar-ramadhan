@@ -127,9 +127,25 @@ export class FastingService {
     fasting.region = plainToClass(Region, user.region);
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
-    const savedFasting = await this.repository.save(fasting);
+    const savedFasting = await this.repository.manager.transaction(
+      async (manager) => {
+        const saved = await manager.save(Fasting, fasting);
+        if (saved.lastTakenMeal && fasting.region?.id != null) {
+          await this.meals.recordRegistrationMeal(manager, {
+            fastingId: saved.id,
+            regionId: fasting.region.id,
+            servedAt: new Date(saved.lastTakenMeal),
+            servedByUserId: actor.id,
+          });
+        }
+        return saved;
+      },
+    );
 
-    return this.toOutput(savedFasting);
+    const todayMeal = savedFasting.lastTakenMeal
+      ? await this.meals.todayMealOf(savedFasting.id)
+      : null;
+    return this.toOutput(savedFasting, { todayMeal });
   }
 
   async getFastingsByRegion(
@@ -155,7 +171,13 @@ export class FastingService {
       offset,
     );
 
-    return { fastings: fastings.map((f) => this.toOutput(f)), count };
+    const today = await this.meals.todayMealsByRegion(region);
+    return {
+      fastings: fastings.map((f) =>
+        this.toOutput(f, { todayMeal: today.get(f.id) ?? null }),
+      ),
+      count,
+    };
   }
 
   async getFastings(
@@ -201,7 +223,9 @@ export class FastingService {
       throw new UnauthorizedException();
     }
 
-    return this.toOutput(fasting);
+    const meals = await this.meals.mealsOf(fasting.id);
+    const todayMeal = await this.meals.todayMealOf(fasting.id);
+    return this.toOutput(fasting, { todayMeal, meals });
   }
 
   async updateFasting(
@@ -232,12 +256,14 @@ export class FastingService {
     const updatedFasting: Fasting = {
       ...fasting,
       ...plainToClass(Fasting, editable),
+      id: fasting.id,
     };
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
     const savedFasting = await this.repository.save(updatedFasting);
 
-    return this.toOutput(savedFasting);
+    const todayMeal = await this.meals.todayMealOf(savedFasting.id);
+    return this.toOutput(savedFasting, { todayMeal });
   }
 
   /**

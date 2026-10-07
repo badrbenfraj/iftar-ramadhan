@@ -186,6 +186,68 @@ describe('Meal events (e2e)', () => {
     });
   });
 
+  describe('reads', () => {
+    it("lists tonight's meal with who served it", async () => {
+      await createPerson(201);
+      await createPerson(202);
+      const clientEventId = randomUUID();
+      await confirm(201, { clientEventId }).expect(HttpStatus.OK);
+
+      const res = await request(server())
+        .get(`/fastings/${regionId}`)
+        .set(bearer(other))
+        .expect(HttpStatus.OK);
+      const byId = new Map(res.body.data.map((p) => [p.id, p]));
+      expect((byId.get(201) as any).todayMeal).toMatchObject({
+        eventId: clientEventId,
+        servedBy: { name: 'Volunteer' },
+        revokedAt: null,
+      });
+      expect((byId.get(202) as any).todayMeal).toBeNull();
+    });
+
+    it('shows every meal of one person, newest first, with who served it', async () => {
+      await createPerson(203);
+      await confirm(203, { clientEventId: randomUUID() }).expect(HttpStatus.OK);
+      const res = await request(server())
+        .get(`/fastings/${regionId}/203`)
+        .set(bearer(volunteer))
+        .expect(HttpStatus.OK);
+      expect(res.body.data.meals).toHaveLength(1);
+      expect(res.body.data.meals[0].servedBy.name).toBe('Volunteer');
+      expect(res.body.data.todayMeal.eventId).toBe(res.body.data.meals[0].eventId);
+    });
+
+    it('records the meal handed over at registration as a meal event', async () => {
+      const created = await createPerson(204, { cameToday: true });
+      expect(created.body.data.todayMeal).toMatchObject({
+        servedBy: { name: 'Volunteer' },
+      });
+      expect(await activeMeals(204)).toBe(1);
+      const second = await confirm(204, { clientEventId: randomUUID() }).expect(
+        HttpStatus.CONFLICT,
+      );
+      expect(second.body.error.details.servedBy.name).toBe('Volunteer');
+    });
+
+    it("keeps tonight's meal in the response of an edit", async () => {
+      await createPerson(205);
+      await confirm(205, { clientEventId: randomUUID() }).expect(HttpStatus.OK);
+      const res = await request(server())
+        .patch(`/fastings/${regionId}/205`)
+        .set(bearer(volunteer))
+        .send({
+          firstName: 'Najwa',
+          lastName: 'Chalbi',
+          singleMeal: 2,
+          familyMeal: 1,
+          region: { id: regionId, name: 'Dar Sokra' },
+        })
+        .expect(HttpStatus.OK);
+      expect(res.body.data.todayMeal).not.toBeNull();
+    });
+  });
+
   afterAll(async () => {
     await app.close();
     await closeDBAfterTest();

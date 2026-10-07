@@ -17,6 +17,7 @@ describe('FastingService', () => {
   const manager = {
     query: jest.fn(),
     findOne: jest.fn(),
+    save: jest.fn(),
   };
 
   const repository = {
@@ -137,13 +138,13 @@ describe('FastingService', () => {
       expect(error.getResponse()).toMatchObject({
         code: FASTING_ERROR_CODES.PERSON_ID_TAKEN,
       });
-      expect(repository.save).not.toHaveBeenCalled();
+      expect(manager.save).not.toHaveBeenCalled();
     });
 
     it('saves a person with no meal history as not collected today', async () => {
       userService.getUserById.mockResolvedValue({ id: 7, region: { id: 1 } });
       repository.findOne.mockResolvedValue(null);
-      repository.save.mockImplementation(async (fasting) => fasting);
+      manager.save.mockImplementation(async (_entity, fasting) => fasting);
 
       const result = await service.createFasting(ctx, {
         id: 43,
@@ -156,12 +157,39 @@ describe('FastingService', () => {
         takenMeals: [],
       } as any);
 
-      expect(repository.save).toHaveBeenCalledWith(
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ lastTakenMeal: null, takenMeals: [] }),
       );
+      expect(meals.recordRegistrationMeal).not.toHaveBeenCalled();
       expect(result.lastTakenMeal).toBeNull();
       expect(result.takenMeals).toEqual([]);
       expect(result.mealTakenToday).toBe(false);
+    });
+
+    it('records the meal of a person who came today as a meal event', async () => {
+      const today = new Date();
+      userService.getUserById.mockResolvedValue({ id: 7, region: { id: 1 } });
+      repository.findOne.mockResolvedValue(null);
+      manager.save.mockImplementation(async (_entity, fasting) => fasting);
+
+      await service.createFasting(ctx, {
+        id: 44,
+        firstName: 'X',
+        lastName: 'Y',
+        singleMeal: 1,
+        familyMeal: 0,
+        region: 1,
+        lastTakenMeal: today,
+        takenMeals: [today],
+      } as any);
+
+      expect(meals.recordRegistrationMeal).toHaveBeenCalledWith(manager, {
+        fastingId: 44,
+        regionId: 1,
+        servedAt: today,
+        servedByUserId: 7,
+      });
     });
   });
 

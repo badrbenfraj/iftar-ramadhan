@@ -252,4 +252,58 @@ export class MealEventService {
     );
     return rows[0] ?? null;
   }
+
+  /** Tonight's active meal per person of a region (one query for a list). */
+  async todayMealsByRegion(
+    regionId: number,
+    now: Date = new Date(),
+  ): Promise<Map<number, MealEventOutput>> {
+    const rows: MealEventRow[] = await this.dataSource.query(
+      `${EVENT_SELECT}
+       WHERE e."regionId" = $1 AND e."serviceDay" = $2
+         AND e."revokedAt" IS NULL AND e."conflict" = false`,
+      [regionId, this.serviceDay(now)],
+    );
+    return new Map(rows.map((row) => [row.fastingId, toMealEventOutput(row)]));
+  }
+
+  async todayMealOf(
+    fastingId: number,
+    now: Date = new Date(),
+  ): Promise<MealEventOutput | null> {
+    const row = await this.activeEventOn(
+      this.dataSource.manager,
+      fastingId,
+      this.serviceDay(now),
+    );
+    return row ? toMealEventOutput(row) : null;
+  }
+
+  /** Every meal of a person, newest first, undone ones included. */
+  async mealsOf(fastingId: number): Promise<MealEventOutput[]> {
+    const rows: MealEventRow[] = await this.dataSource.query(
+      `${EVENT_SELECT}
+       WHERE e."fastingId" = $1 AND e."conflict" = false
+       ORDER BY e."servedAt" DESC`,
+      [fastingId],
+    );
+    return rows.map(toMealEventOutput);
+  }
+
+  /**
+   * "Came today" at registration is a real meal: it blocks a second one and
+   * can be undone like any other. The caller has already written
+   * takenMeals / lastTakenMeal.
+   */
+  recordRegistrationMeal(
+    manager: EntityManager,
+    meal: {
+      fastingId: number;
+      regionId: number;
+      servedAt: Date;
+      servedByUserId: number;
+    },
+  ): Promise<string> {
+    return this.insertActive(manager, { ...meal, id: null, deviceId: null });
+  }
 }
