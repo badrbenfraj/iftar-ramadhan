@@ -31,6 +31,7 @@ import {
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
 import { MealEventOutput } from '../dtos/meal-event-output.dto';
+import { MealReviewItemOutput } from '../dtos/meal-review-output.dto';
 import {
   MealSyncResultOutput,
   SyncMealEventInput,
@@ -323,6 +324,20 @@ export class FastingService {
   ): Promise<MealSyncResultOutput[]> {
     this.logger.log(ctx, `${this.syncOfflineMeals.name} was called`);
     return this.meals.syncOffline(ctx, events);
+  }
+
+  /** Admin review of conflicts and flagged meals (spec 2B §4.2). */
+  getMealReview(
+    ctx: RequestContext,
+    region: number,
+    day?: string,
+  ): Promise<MealReviewItemOutput[]> {
+    this.logger.log(ctx, `${this.getMealReview.name} was called`);
+    if (day !== undefined && parseDayKey(day) === null) {
+      throw new BadRequestException('day must be YYYY-MM-DD');
+    }
+    const key = parseDayKey(day) ?? localDayKey(new Date(), this.timeZone);
+    return this.meals.reviewItems(region, key);
   }
 
   /**

@@ -22,6 +22,7 @@ import {
 import { FASTING_ERROR_CODES, OFFLINE_FLAGS } from '../constants/error-codes';
 import { ConfirmMealInput } from '../dtos/fasting-input.dto';
 import { MealEventOutput } from '../dtos/meal-event-output.dto';
+import { MealReviewItemOutput } from '../dtos/meal-review-output.dto';
 import {
   MealSyncResultOutput,
   SyncMealEventInput,
@@ -480,6 +481,51 @@ export class MealEventService {
       [fastingId],
     );
     return rows.map(toMealEventOutput);
+  }
+
+  /** A region's meals needing admin attention on [day] (spec 2B §4.2). */
+  async reviewItems(
+    regionId: number,
+    day: string,
+  ): Promise<MealReviewItemOutput[]> {
+    const rows: Array<{
+      eventId: string;
+      fastingId: number;
+      firstName: string;
+      lastName: string;
+      servedAt: Date;
+      servedByUserId: number | null;
+      servedByName: string | null;
+      source: string;
+      conflict: boolean;
+      flag: string | null;
+      revokedAt: Date | null;
+    }> = await this.dataSource.query(
+      `SELECT e."id" AS "eventId", e."fastingId", f."firstName", f."lastName",
+              e."servedAt", e."servedByUserId", u."name" AS "servedByName",
+              e."source", e."conflict", e."flag", e."revokedAt"
+       FROM "meal_events" e
+       JOIN "fastings" f ON f."id" = e."fastingId"
+       LEFT JOIN "users" u ON u."id" = e."servedByUserId"
+       WHERE e."regionId" = $1 AND e."serviceDay" = $2
+         AND (e."conflict" = true OR e."flag" IS NOT NULL)
+       ORDER BY e."fastingId", e."servedAt"`,
+      [regionId, day],
+    );
+    return rows.map((r) => ({
+      eventId: r.eventId,
+      fastingId: r.fastingId,
+      personName: `${r.firstName} ${r.lastName}`.trim(),
+      servedAt: new Date(r.servedAt).toISOString(),
+      servedBy:
+        r.servedByUserId == null
+          ? null
+          : { id: r.servedByUserId, name: r.servedByName ?? '' },
+      source: r.source,
+      conflict: r.conflict,
+      flag: r.flag,
+      revokedAt: r.revokedAt ? new Date(r.revokedAt).toISOString() : null,
+    }));
   }
 
   /**
