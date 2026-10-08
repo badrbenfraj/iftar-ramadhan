@@ -48,7 +48,7 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
     final people = await ref.read(peopleRepositoryProvider).list(region.id);
     loadedAt = ref.read(clockProvider)();
     fromCache = false;
-    _save(people);
+    _save(region.id, people);
     return people;
   }
 
@@ -62,15 +62,20 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
   }
 
   /// Keeps the copy on the phone in step with the list on screen.
-  void _save(List<FastingPerson> people) {
-    final region = ref.read(authControllerProvider).value?.region;
+  void _save(int regionId, List<FastingPerson> people) {
     final at = loadedAt;
-    if (region == null || at == null) return;
+    if (!ref.mounted || at == null) return;
     unawaited(
       ref
           .read(peopleCacheProvider)
-          .write(regionId: region.id, people: people, syncedAt: at),
+          .write(regionId: regionId, people: people, syncedAt: at),
     );
+  }
+
+  void _saveCurrent(List<FastingPerson> people) {
+    final region = ref.read(authControllerProvider).value?.region;
+    if (region == null) return;
+    _save(region.id, people);
   }
 
   /// Called when the app returns to the foreground: the phone gets no push
@@ -109,7 +114,7 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
       person,
     ]..sort((a, b) => a.id.compareTo(b.id));
     state = AsyncData(next);
-    _save(next);
+    _saveCurrent(next);
   }
 
   void remove(int id) {
@@ -119,7 +124,7 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
       for (final p in current)
         if (p.id != id) p,
     ]);
-    _save(state.value!);
+    _saveCurrent(state.value!);
   }
 }
 

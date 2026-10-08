@@ -57,9 +57,12 @@ class AuthController extends AsyncNotifier<User?> {
   Future<void> _signOut({AppFailure? reason}) async {
     if (state.value == null && reason != null) return;
     lastSignOutFailure = reason;
-    await _repo.logout();
-    // The saved list holds names, CIN and phone numbers (spec 2A §6).
-    await ref.read(peopleCacheProvider).clear();
+    try {
+      await _repo.logout();
+    } finally {
+      // The saved list holds names, CIN and phone numbers (spec 2A §6).
+      await ref.read(peopleCacheProvider).clear();
+    }
     state = const AsyncData(null);
     // The next volunteer on this phone starts from a clean list screen.
     ref

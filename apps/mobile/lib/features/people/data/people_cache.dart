@@ -51,6 +51,16 @@ class EncryptedFilePeopleCache implements PeopleCache {
   final SettingsStorage _keys;
   final AesGcm _algorithm = AesGcm.with256bits();
 
+  /// Writes and clears run one after another, in call order, so a clear on
+  /// logout always lands after any write already started.
+  Future<void> _queue = Future.value();
+
+  Future<void> _enqueue(Future<void> Function() op) {
+    final next = _queue.then((_) => op());
+    _queue = next.catchError((_) {});
+    return next;
+  }
+
   Future<File> _file() async => File('${(await _directory()).path}/$fileName');
 
   Future<SecretKey> _key({required bool create}) async {
@@ -100,7 +110,7 @@ class EncryptedFilePeopleCache implements PeopleCache {
     required int regionId,
     required List<FastingPerson> people,
     required DateTime syncedAt,
-  }) async {
+  }) => _enqueue(() async {
     try {
       final clear = utf8.encode(
         jsonEncode({
@@ -122,17 +132,24 @@ class EncryptedFilePeopleCache implements PeopleCache {
     } on Object {
       // Best effort: the list on screen is unaffected.
     }
-  }
+  });
 
   @override
-  Future<void> clear() async {
+  Future<void> clear() => _enqueue(() async {
     await _delete();
+    try {
+      final file = await _file();
+      final tmp = File('${file.path}.tmp');
+      if (await tmp.exists()) await tmp.delete();
+    } on Object {
+      // No stray temp file, or no storage.
+    }
     try {
       await _keys.write(keyName, null);
     } on Object {
       // The file is gone; a stray key decrypts nothing.
     }
-  }
+  });
 
   Future<void> _delete() async {
     try {

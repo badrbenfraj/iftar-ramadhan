@@ -53,7 +53,7 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
         ? null
         : ref.read(peopleListProvider.notifier).loadedAt;
     final now = ref.watch(clockProvider)();
-    final q =latinDigits(_query.text).trim();
+    final q = latinDigits(_query.text).trim();
     final digits = RegExp(r'^\d+$').hasMatch(q);
     final ready = q.length >= 2 || digits;
     final results = ready
