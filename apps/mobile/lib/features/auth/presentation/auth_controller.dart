@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/app_failure.dart';
 import '../../../core/providers.dart';
+import '../../people/data/people_cache.dart';
 import '../../people/presentation/people_filter.dart';
 import '../data/auth_repository.dart';
 import '../domain/user.dart';
@@ -57,6 +58,8 @@ class AuthController extends AsyncNotifier<User?> {
     if (state.value == null && reason != null) return;
     lastSignOutFailure = reason;
     await _repo.logout();
+    // The saved list holds names, CIN and phone numbers (spec 2A §6).
+    await ref.read(peopleCacheProvider).clear();
     state = const AsyncData(null);
     // The next volunteer on this phone starts from a clean list screen.
     ref

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/app_failure.dart';
@@ -5,21 +7,39 @@ import '../../../core/providers.dart';
 import '../../../core/storage/device_id.dart';
 import '../../../core/utils/formatters.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../data/people_cache.dart';
 import '../data/people_repository.dart';
 import '../domain/fasting_person.dart';
 import '../domain/meal_event.dart';
 
 /// The region's list of fasting people (Ionic tab "list").
 class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
-  /// When the list was last loaded from the server. The "served tonight"
-  /// flags in it describe that day only.
+  /// When the list on screen was loaded from the server (for the copy saved
+  /// on the phone: when that copy was). The "served tonight" flags in it
+  /// describe that day only.
   DateTime? loadedAt;
 
+  /// True while the list on screen is the copy saved on this phone and no
+  /// server answer has replaced it yet (spec 2A §5.4).
+  bool fromCache = false;
+
   @override
-  Future<List<FastingPerson>> build() {
+  Future<List<FastingPerson>> build() async {
     // Reload when the signed-in user's region changes.
     ref.watch(authControllerProvider.select((a) => a.value?.region?.id));
     loadedAt = null;
+    fromCache = false;
+    final region = requireRegion(ref);
+    final saved = await ref
+        .read(peopleCacheProvider)
+        .read(regionId: region.id);
+    if (saved != null) {
+      loadedAt = saved.syncedAt;
+      fromCache = true;
+      // Shown at once; the server's list replaces it when it arrives.
+      unawaited(_refreshQuietly());
+      return saved.people;
+    }
     return _load();
   }
 
@@ -27,7 +47,30 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
     final region = requireRegion(ref);
     final people = await ref.read(peopleRepositoryProvider).list(region.id);
     loadedAt = ref.read(clockProvider)();
+    fromCache = false;
+    _save(people);
     return people;
+  }
+
+  Future<void> _refreshQuietly() async {
+    try {
+      final people = await _load();
+      if (ref.mounted) state = AsyncData(people);
+    } on Object {
+      // Offline: the saved list stays on screen, marked with its time.
+    }
+  }
+
+  /// Keeps the copy on the phone in step with the list on screen.
+  void _save(List<FastingPerson> people) {
+    final region = ref.read(authControllerProvider).value?.region;
+    final at = loadedAt;
+    if (region == null || at == null) return;
+    unawaited(
+      ref
+          .read(peopleCacheProvider)
+          .write(regionId: region.id, people: people, syncedAt: at),
+    );
   }
 
   /// Called when the app returns to the foreground: the phone gets no push
@@ -66,6 +109,7 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
       person,
     ]..sort((a, b) => a.id.compareTo(b.id));
     state = AsyncData(next);
+    _save(next);
   }
 
   void remove(int id) {
@@ -75,6 +119,7 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
       for (final p in current)
         if (p.id != id) p,
     ]);
+    _save(state.value!);
   }
 }
 

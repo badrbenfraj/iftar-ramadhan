@@ -863,4 +863,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String appVersion(String version) {
     return 'Version $version';
   }
+
+  @override
+  String offlineUsingList(String time) {
+    return 'Hors ligne · liste enregistrée à $time';
+  }
+
+  @override
+  String lastUpdatedAt(String time) {
+    return 'Mis à jour à $time';
+  }
+
+  @override
+  String get offlineIndicator => 'Hors ligne';
 }

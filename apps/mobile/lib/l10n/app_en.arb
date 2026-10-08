@@ -276,5 +276,10 @@
   "updateRequiredBody": "Your version of the app is no longer supported. Please install the latest version to continue.",
   "updateOpenFailed": "Could not open the browser.",
   "appVersion": "Version {version}",
-  "@appVersion": {"placeholders": {"version": {"type": "String"}}}
+  "@appVersion": {"placeholders": {"version": {"type": "String"}}},
+  "offlineUsingList": "Offline · using the list saved at {time}",
+  "@offlineUsingList": {"placeholders": {"time": {"type": "String"}}},
+  "lastUpdatedAt": "Last updated {time}",
+  "@lastUpdatedAt": {"placeholders": {"time": {"type": "String"}}},
+  "offlineIndicator": "Offline"
 }

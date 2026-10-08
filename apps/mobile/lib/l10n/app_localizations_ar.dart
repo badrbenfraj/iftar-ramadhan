@@ -846,4 +846,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String appVersion(String version) {
     return 'الإصدار $version';
   }
+
+  @override
+  String offlineUsingList(String time) {
+    return 'غير متصل · القائمة المحفوظة على الساعة $time';
+  }
+
+  @override
+  String lastUpdatedAt(String time) {
+    return 'آخر تحديث على الساعة $time';
+  }
+
+  @override
+  String get offlineIndicator => 'غير متصل';
 }

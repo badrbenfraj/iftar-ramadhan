@@ -846,4 +846,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String appVersion(String version) {
     return 'Version $version';
   }
+
+  @override
+  String offlineUsingList(String time) {
+    return 'Offline · using the list saved at $time';
+  }
+
+  @override
+  String lastUpdatedAt(String time) {
+    return 'Last updated $time';
+  }
+
+  @override
+  String get offlineIndicator => 'Offline';
 }

@@ -1563,6 +1563,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version {version}'**
   String appVersion(String version);
+
+  /// No description provided for @offlineUsingList.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · using the list saved at {time}'**
+  String offlineUsingList(String time);
+
+  /// No description provided for @lastUpdatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated {time}'**
+  String lastUpdatedAt(String time);
+
+  /// No description provided for @offlineIndicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offlineIndicator;
 }
 
 class _AppLocalizationsDelegate

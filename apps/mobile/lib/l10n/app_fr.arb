@@ -243,5 +243,8 @@
   "updateRequiredTitle": "Mise à jour requise",
   "updateRequiredBody": "Votre version de l'application n'est plus prise en charge. Installez la dernière version pour continuer.",
   "updateOpenFailed": "Impossible d'ouvrir le navigateur.",
-  "appVersion": "Version {version}"
+  "appVersion": "Version {version}",
+  "offlineUsingList": "Hors ligne · liste enregistrée à {time}",
+  "lastUpdatedAt": "Mis à jour à {time}",
+  "offlineIndicator": "Hors ligne"
 }

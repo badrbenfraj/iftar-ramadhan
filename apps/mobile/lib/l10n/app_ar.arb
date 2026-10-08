@@ -243,5 +243,8 @@
   "updateRequiredTitle": "التحديث مطلوب",
   "updateRequiredBody": "لم يعد إصدار التطبيق لديك مدعوماً. يُرجى تثبيت أحدث إصدار للمتابعة.",
   "updateOpenFailed": "تعذّر فتح المتصفّح.",
-  "appVersion": "الإصدار {version}"
+  "appVersion": "الإصدار {version}",
+  "offlineUsingList": "غير متصل · القائمة المحفوظة على الساعة {time}",
+  "lastUpdatedAt": "آخر تحديث على الساعة {time}",
+  "offlineIndicator": "غير متصل"
 }

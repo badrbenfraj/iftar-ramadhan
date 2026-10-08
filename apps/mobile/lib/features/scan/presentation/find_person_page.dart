@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/app_failure.dart';
+import '../../../core/network/connectivity.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/iftar_colors.dart';
@@ -48,8 +49,11 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
     final c = context.colors;
     final list = ref.watch(peopleListProvider);
     final people = list.value ?? const <FastingPerson>[];
+    final offlineAt = ref.watch(connectivityProvider)
+        ? null
+        : ref.read(peopleListProvider.notifier).loadedAt;
     final now = ref.watch(clockProvider)();
-    final q = latinDigits(_query.text).trim();
+    final q =latinDigits(_query.text).trim();
     final digits = RegExp(r'^\d+$').hasMatch(q);
     final ready = q.length >= 2 || digits;
     final results = ready
@@ -114,6 +118,14 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
                     ),
                   ),
                 ),
+                if (offlineAt != null)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(start: 12, top: 8),
+                    child: Text(
+                      l.offlineUsingList(ltr(formatTime(offlineAt))),
+                      style: const TextStyle(color: AppPalette.gold, fontSize: 12.5),
+                    ),
+                  ),
               ],
             ),
           ),
