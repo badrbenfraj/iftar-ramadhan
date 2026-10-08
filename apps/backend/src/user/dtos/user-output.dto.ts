@@ -19,6 +19,10 @@ export class UserRegionOutput {
   active: boolean;
 
   @Expose()
+  @ApiProperty({ description: 'Volunteers may serve with no network (spec 2B)' })
+  allowOfflineServing: boolean;
+
+  @Expose()
   @ApiProperty()
   createdAt: Date;
 

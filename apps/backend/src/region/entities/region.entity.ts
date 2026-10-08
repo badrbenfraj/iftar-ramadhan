@@ -24,6 +24,10 @@ export class Region {
   @Column()
   active: boolean;
 
+  /** Spec 2B: volunteers may serve with no network in this region. */
+  @Column({ default: false })
+  allowOfflineServing: boolean;
+
   @OneToMany(() => Fasting, (fastingPerson) => fastingPerson.region)
   fastingPeople: Fasting[];
 
