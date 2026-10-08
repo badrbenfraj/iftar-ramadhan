@@ -49,6 +49,7 @@ class AuthController extends AsyncNotifier<User?> {
   Future<void> login(String username, String password) async {
     lastSignOutFailure = null;
     final user = await _repo.login(username, password);
+    ref.read(peopleCacheProvider).open();
     state = AsyncData(user);
   }
 

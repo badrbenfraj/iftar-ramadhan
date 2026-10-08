@@ -32,8 +32,12 @@ abstract interface class PeopleCache {
     required DateTime syncedAt,
   });
 
-  /// On logout: the list holds names, CIN and phone numbers.
+  /// On logout: the list holds names, CIN and phone numbers. After it,
+  /// writes are ignored until [open].
   Future<void> clear();
+
+  /// After a sign-in: writes are accepted again (see [clear]).
+  void open();
 }
 
 /// AES-GCM encrypted file; the 256-bit key lives in the platform keystore.
@@ -54,6 +58,9 @@ class EncryptedFilePeopleCache implements PeopleCache {
   /// Writes and clears run one after another, in call order, so a clear on
   /// logout always lands after any write already started.
   Future<void> _queue = Future.value();
+
+  /// Set by [clear]; a write that runs after it is dropped.
+  bool _closed = false;
 
   Future<void> _enqueue(Future<void> Function() op) {
     final next = _queue.then((_) => op());
@@ -111,6 +118,7 @@ class EncryptedFilePeopleCache implements PeopleCache {
     required List<FastingPerson> people,
     required DateTime syncedAt,
   }) => _enqueue(() async {
+    if (_closed) return;
     try {
       final clear = utf8.encode(
         jsonEncode({
@@ -135,7 +143,15 @@ class EncryptedFilePeopleCache implements PeopleCache {
   });
 
   @override
-  Future<void> clear() => _enqueue(() async {
+  void open() => _closed = false;
+
+  @override
+  Future<void> clear() {
+    _closed = true;
+    return _enqueue(_wipe);
+  }
+
+  Future<void> _wipe() async {
     await _delete();
     try {
       final file = await _file();
@@ -149,7 +165,7 @@ class EncryptedFilePeopleCache implements PeopleCache {
     } on Object {
       // The file is gone; a stray key decrypts nothing.
     }
-  });
+  }
 
   Future<void> _delete() async {
     try {
@@ -169,6 +185,7 @@ class MemoryPeopleCache implements PeopleCache {
   int? regionId;
   int writes = 0;
   int clears = 0;
+  bool closed = false;
 
   @override
   Future<CachedPeople?> read({required int regionId}) async =>
@@ -180,13 +197,18 @@ class MemoryPeopleCache implements PeopleCache {
     required List<FastingPerson> people,
     required DateTime syncedAt,
   }) async {
+    if (closed) return;
     this.regionId = regionId;
     saved = CachedPeople(List.of(people), syncedAt);
     writes++;
   }
 
   @override
+  void open() => closed = false;
+
+  @override
   Future<void> clear() async {
+    closed = true;
     saved = null;
     regionId = null;
     clears++;
