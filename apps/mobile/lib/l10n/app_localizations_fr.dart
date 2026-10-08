@@ -898,4 +898,29 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get offlineIndicator => 'Hors ligne';
+
+  @override
+  String get serveOffline => 'Servir hors ligne';
+
+  @override
+  String get serveOfflineTitle => 'Servir sans vérifier ?';
+
+  @override
+  String get serveOfflineBody =>
+      'À faire seulement si aucun autre bénévole ne sert cette région en ce moment. Le repas est enregistré sur ce téléphone et sera synchronisé au retour du réseau. S’il s’agit d’un deuxième repas, ce sera signalé.';
+
+  @override
+  String get savedOnPhone =>
+      'Enregistré sur ce téléphone. Synchronisé au retour du réseau.';
+
+  @override
+  String toSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count à synchroniser',
+      one: '1 à synchroniser',
+    );
+    return '$_temp0';
+  }
 }

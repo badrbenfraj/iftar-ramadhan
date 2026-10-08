@@ -251,5 +251,10 @@
   "appVersion": "Version {version}",
   "offlineUsingList": "Hors ligne · liste enregistrée à {time}",
   "lastUpdatedAt": "Mis à jour à {time}",
-  "offlineIndicator": "Hors ligne"
+  "offlineIndicator": "Hors ligne",
+  "serveOffline": "Servir hors ligne",
+  "serveOfflineTitle": "Servir sans vérifier ?",
+  "serveOfflineBody": "À faire seulement si aucun autre bénévole ne sert cette région en ce moment. Le repas est enregistré sur ce téléphone et sera synchronisé au retour du réseau. S’il s’agit d’un deuxième repas, ce sera signalé.",
+  "savedOnPhone": "Enregistré sur ce téléphone. Synchronisé au retour du réseau.",
+  "toSync": "{count, plural, =1{1 à synchroniser} other{{count} à synchroniser}}"
 }

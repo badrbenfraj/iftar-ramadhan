@@ -11,6 +11,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../offline/presentation/offline_queue_controller.dart';
 import '../../people/domain/fasting_person.dart';
 import '../../people/presentation/people_controller.dart';
 import '../../people/presentation/people_filter.dart';
@@ -143,6 +145,10 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     // Watching the list also keeps it loaded for instant identify.
     final people = ref.watch(peopleListProvider).value ?? const <FastingPerson>[];
     final servedTonight = countPeople(people, now).served;
+    final userId = ref.watch(authControllerProvider.select((a) => a.value?.id));
+    final toSync = ref.watch(
+      offlineQueueProvider.select((s) => s.pendingFor(userId).length),
+    );
     final frameColor = switch (scan.status) {
       ScanReady() || ScanConfirming() => AppPalette.mint,
       ScanAlreadyTaken() => AppPalette.clayFrame,
@@ -208,6 +214,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                           _TopBar(
                             camera: _camera,
                             servedTonight: servedTonight,
+                            toSync: toSync,
                             onClose: confirming ? null : _close,
                             // Disabled, not hidden, while someone is pending.
                             onFind: available && scan.acceptsScans ? _findWithoutCard : null,
@@ -256,6 +263,7 @@ class _TopBar extends StatelessWidget {
   const _TopBar({
     required this.camera,
     required this.servedTonight,
+    required this.toSync,
     required this.onClose,
     required this.onFind,
     required this.showFind,
@@ -264,6 +272,7 @@ class _TopBar extends StatelessWidget {
 
   final MobileScannerController camera;
   final int servedTonight;
+  final int toSync;
 
   /// Null while a confirmation is in flight.
   final VoidCallback? onClose;
@@ -295,7 +304,9 @@ class _TopBar extends StatelessWidget {
                   style: const TextStyle(color: AppPalette.onSky, fontSize: 15, fontWeight: FontWeight.w500),
                 ),
                 Text(
-                  l.servedTonight(servedTonight),
+                  toSync > 0
+                      ? '${l.servedTonight(servedTonight)} · ${l.toSync(toSync)}'
+                      : l.servedTonight(servedTonight),
                   style: const TextStyle(color: AppPalette.gold, fontSize: 11.5),
                 ),
               ],

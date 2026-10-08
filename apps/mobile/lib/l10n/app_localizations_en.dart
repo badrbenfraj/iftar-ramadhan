@@ -881,4 +881,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineIndicator => 'Offline';
+
+  @override
+  String get serveOffline => 'Serve offline';
+
+  @override
+  String get serveOfflineTitle => 'Serve without checking?';
+
+  @override
+  String get serveOfflineBody =>
+      'Only do this if no other volunteer is serving this region right now. The meal is saved on this phone and syncs when you’re back online. If it turns out to be a second meal, it will be reported.';
+
+  @override
+  String get savedOnPhone => 'Saved on this phone. Syncs when online.';
+
+  @override
+  String toSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count to sync',
+      one: '1 to sync',
+    );
+    return '$_temp0';
+  }
 }

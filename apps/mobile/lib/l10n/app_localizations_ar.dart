@@ -881,4 +881,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get offlineIndicator => 'غير متصل';
+
+  @override
+  String get serveOffline => 'التقديم دون اتصال';
+
+  @override
+  String get serveOfflineTitle => 'التقديم دون تحقق؟';
+
+  @override
+  String get serveOfflineBody =>
+      'افعل ذلك فقط إن لم يكن متطوع آخر يوزّع في هذه المنطقة الآن. تُحفظ الوجبة على هذا الهاتف وتُزامَن عند عودة الاتصال. وإن تبيّن أنها وجبة ثانية فسيُبلَّغ عنها.';
+
+  @override
+  String get savedOnPhone => 'حُفظت على هذا الهاتف. تُزامَن عند عودة الاتصال.';
+
+  @override
+  String toSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count في انتظار المزامنة',
+      one: '1 في انتظار المزامنة',
+    );
+    return '$_temp0';
+  }
 }

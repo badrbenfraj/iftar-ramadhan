@@ -132,10 +132,11 @@ class ScanResultPanel extends ConsumerWidget {
           slow: slow,
         );
 
-      case ScanConfirmed(:final person, :final undoing):
+      case ScanConfirmed(:final person, :final undoing, :final offline):
         return _DoneBand(
           person: person,
           undoing: undoing,
+          offline: offline,
           undoWindow: ref.read(scanTimingsProvider).undoWindow,
           // No meal ID (older backend): nothing the server could undo.
           onUndo: person.todayMeal == null ? null : controller.undo,
@@ -259,11 +260,24 @@ class ScanResultPanel extends ConsumerWidget {
             HandOverTiles(person: person),
           ],
           footer: [
-            FilledButton.icon(
-              onPressed: controller.retry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: Text(l.retry),
-            ),
+            if (ref.read(authControllerProvider).value?.region?.allowOfflineServing == true) ...[
+              FilledButton.icon(
+                onPressed: () => _serveOffline(context, controller, person.id),
+                icon: const Icon(Icons.cloud_off_rounded),
+                label: Text(l.serveOffline),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: controller.retry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(l.retry),
+              ),
+            ] else
+              FilledButton.icon(
+                onPressed: controller.retry,
+                icon: const Icon(Icons.refresh_rounded),
+                label: Text(l.retry),
+              ),
             _Links([(l.skip, controller.scanNext)]),
           ],
         );
@@ -579,12 +593,14 @@ class _DoneBand extends StatelessWidget {
   const _DoneBand({
     required this.person,
     required this.undoing,
+    required this.offline,
     required this.undoWindow,
     required this.onUndo,
   });
 
   final FastingPerson person;
   final bool undoing;
+  final bool offline;
   final Duration undoWindow;
 
   /// Null when this meal can't be undone from here.
@@ -632,6 +648,11 @@ class _DoneBand extends StatelessWidget {
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(color: Colors.white, fontSize: 12.5),
                         ),
+                        if (offline)
+                          Text(
+                            l.savedOnPhone,
+                            style: const TextStyle(color: AppPalette.gold, fontSize: 12.5),
+                          ),
                         if (l.blessingMeaning.isNotEmpty)
                           Text(
                             l.blessingMeaning,
@@ -875,6 +896,37 @@ Future<void> _openOver(
 ) async {
   await context.push<void>(location);
   if (context.mounted) await controller.refreshCurrent();
+}
+
+/// Asks "Serve without checking?" the first time in a scanner session
+/// (spec 2B §5.1), then serves offline.
+Future<void> _serveOffline(
+  BuildContext context,
+  ScanController controller,
+  int personId,
+) async {
+  if (controller.needsOfflineConsent) {
+    final l = AppLocalizations.of(context);
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l.serveOfflineTitle),
+        content: Text(l.serveOfflineBody),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(l.serveOffline),
+          ),
+        ],
+      ),
+    );
+    if (ok != true) return;
+  }
+  await controller.serveOffline(personId);
 }
 
 class _Links extends StatelessWidget {

@@ -7,6 +7,8 @@ import '../../../core/providers.dart';
 import '../../../core/storage/device_id.dart';
 import '../../../core/utils/uuid.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../offline/domain/offline_meal.dart';
+import '../../offline/presentation/offline_queue_controller.dart';
 import '../../people/data/people_repository.dart';
 import '../../people/domain/fasting_person.dart';
 import '../../people/domain/meal_event.dart';
@@ -97,11 +99,14 @@ final class ScanConfirming extends ScanStatus {
 }
 
 final class ScanConfirmed extends ScanStatus {
-  const ScanConfirmed(this.person, {this.undoing = false});
+  const ScanConfirmed(this.person, {this.undoing = false, this.offline = false});
   final FastingPerson person;
 
-  /// Undo was tapped and the server hasn't answered yet.
+  /// Undo was tapped and hasn't finished yet.
   final bool undoing;
+
+  /// Served with no network: saved on this phone, synced later (spec 2B).
+  final bool offline;
 }
 
 /// Already collected today — do not serve again.
@@ -248,6 +253,14 @@ class ScanController extends Notifier<ScanState> {
   Timer? _slowTimer;
   Timer? _autoRetryTimer;
   bool _historyUndoInFlight = false;
+
+  /// "Serve without checking?" was accepted in this scanner session
+  /// (spec 2B §5.1); later offline serves skip the question.
+  bool _offlineConsent = false;
+
+  /// The person as the phone knew them before an offline serve, restored by
+  /// its Undo.
+  final Map<String, FastingPerson> _offlineOriginals = {};
 
   /// The confirm already retried automatically. One automatic retry per
   /// confirm; after that the volunteer decides.
@@ -522,10 +535,10 @@ class ScanController extends Notifier<ScanState> {
     }
   }
 
-  void _onConfirmed(FastingPerson person) {
+  void _onConfirmed(FastingPerson person, {bool offline = false}) {
     ref.read(peopleListProvider.notifier).upsert(person);
     state = state.copyWith(
-      status: ScanConfirmed(person),
+      status: ScanConfirmed(person, offline: offline),
       servedCount: state.servedCount + 1,
       singleMeals: state.singleMeals + person.singleMeal,
       familyMeals: state.familyMeals + person.familyMeal,
@@ -538,6 +551,61 @@ class ScanController extends Notifier<ScanState> {
     });
   }
 
+  /// Whether "Serve offline" must first ask "Serve without checking?".
+  bool get needsOfflineConsent => !_offlineConsent;
+
+  /// "Serve offline" on "Can't check tonight" (spec 2B §5.1). Only where the
+  /// region allows it. The meal is queued on this phone with a fresh
+  /// clientEventId, and the person is marked served on the phone's list.
+  Future<void> serveOffline(int personId) async {
+    final current = state.status;
+    if (current is! ScanUnverified || current.person.id != personId) return;
+    final user = ref.read(authControllerProvider).value;
+    final region = user?.region;
+    if (user == null || region == null || !region.allowOfflineServing) {
+      return;
+    }
+    _offlineConsent = true;
+    final person = current.person;
+    final now = _now();
+    final eventId = newUuidV4();
+    // Blocks the camera while the meal is being saved.
+    _set(
+      ScanConfirming(person, clientEventId: eventId, noCard: current.noCard),
+    );
+    final deviceId = await ref.read(deviceIdProvider.future);
+    if (!ref.mounted) return;
+    await ref
+        .read(offlineQueueProvider.notifier)
+        .enqueue(
+          PendingMeal(
+            clientEventId: eventId,
+            personId: person.id,
+            regionId: region.id,
+            servedAt: now,
+            userId: user.id,
+            deviceId: deviceId,
+          ),
+        );
+    if (!ref.mounted) return;
+    _offlineOriginals[eventId] = person;
+    _onConfirmed(
+      person.copyWith(
+        lastTakenMeal: now,
+        takenMeals: [now, ...person.takenMeals],
+        mealTakenTodayFromServer: true,
+        receivedAt: now,
+        todayMeal: MealEvent(
+          eventId: eventId,
+          servedAt: now,
+          servedById: user.id,
+          servedByName: user.name,
+        ),
+      ),
+      offline: true,
+    );
+  }
+
   /// "Undo · 5" on the Confirmed band (spec 2A §5.2).
   Future<void> undo() async {
     final status = state.status;
@@ -545,8 +613,10 @@ class ScanController extends Notifier<ScanState> {
     final meal = status.person.todayMeal;
     if (meal == null) return;
     _resumeTimer?.cancel();
-    _set(ScanConfirmed(status.person, undoing: true));
-    final notice = await _revoke(meal.eventId, status.person);
+    _set(ScanConfirmed(status.person, undoing: true, offline: status.offline));
+    final notice = status.offline
+        ? await _undoOffline(meal.eventId, status.person)
+        : await _revoke(meal.eventId, status.person);
     if (!ref.mounted) return;
     final undone = notice.kind == ScanNoticeKind.undone;
     final p = status.person;
@@ -600,6 +670,27 @@ class ScanController extends Notifier<ScanState> {
       return ScanNotice(ScanNoticeKind.undoNeedsConnection);
     } on Object {
       return ScanNotice(ScanNoticeKind.undoFailed);
+    }
+  }
+
+  /// Undo of an offline serve. Still queued: dropped on the phone, no network
+  /// needed. Already synced meanwhile: undone on the server like any meal.
+  Future<ScanNotice> _undoOffline(String eventId, FastingPerson person) async {
+    final original = _offlineOriginals[eventId];
+    final outcome = await ref.read(offlineQueueProvider.notifier).remove(eventId);
+    switch (outcome) {
+      case RemoveOutcome.removed:
+        _offlineOriginals.remove(eventId);
+        if (ref.mounted && original != null) {
+          ref.read(peopleListProvider.notifier).upsert(original);
+        }
+        return ScanNotice(ScanNoticeKind.undone, name: person.fullName);
+      case RemoveOutcome.synced:
+        _offlineOriginals.remove(eventId);
+        return _revoke(eventId, person);
+      case RemoveOutcome.unknown:
+        // Still queued and maybe on the server: nothing was undone.
+        return ScanNotice(ScanNoticeKind.undoNeedsConnection);
     }
   }
 

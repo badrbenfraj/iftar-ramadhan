@@ -204,7 +204,13 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
     if (!ref.mounted) return 0;
     final userId = _userId;
     final batch = state.pendingFor(userId).take(batchSize).toList();
-    if (state.syncing || userId == null || batch.isEmpty) return 0;
+    // Offline: a send can't connect; trying would only mark meals as maybe-sent (an offline Undo must work, spec 2B §5.1).
+    if (state.syncing ||
+        userId == null ||
+        batch.isEmpty ||
+        !ref.read(connectivityProvider)) {
+      return 0;
+    }
     state = state.copyWith(syncing: true);
     final finished = Completer<void>();
     _flushing = finished.future;

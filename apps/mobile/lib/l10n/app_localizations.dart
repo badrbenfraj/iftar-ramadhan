@@ -1611,6 +1611,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline'**
   String get offlineIndicator;
+
+  /// No description provided for @serveOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Serve offline'**
+  String get serveOffline;
+
+  /// No description provided for @serveOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Serve without checking?'**
+  String get serveOfflineTitle;
+
+  /// No description provided for @serveOfflineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Only do this if no other volunteer is serving this region right now. The meal is saved on this phone and syncs when you’re back online. If it turns out to be a second meal, it will be reported.'**
+  String get serveOfflineBody;
+
+  /// No description provided for @savedOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. Syncs when online.'**
+  String get savedOnPhone;
+
+  /// No description provided for @toSync.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 to sync} other{{count} to sync}}'**
+  String toSync(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -289,5 +289,11 @@
   "@offlineUsingList": {"placeholders": {"time": {"type": "String"}}},
   "lastUpdatedAt": "Last updated {time}",
   "@lastUpdatedAt": {"placeholders": {"time": {"type": "String"}}},
-  "offlineIndicator": "Offline"
+  "offlineIndicator": "Offline",
+  "serveOffline": "Serve offline",
+  "serveOfflineTitle": "Serve without checking?",
+  "serveOfflineBody": "Only do this if no other volunteer is serving this region right now. The meal is saved on this phone and syncs when you’re back online. If it turns out to be a second meal, it will be reported.",
+  "savedOnPhone": "Saved on this phone. Syncs when online.",
+  "toSync": "{count, plural, =1{1 to sync} other{{count} to sync}}",
+  "@toSync": {"placeholders": {"count": {"type": "int"}}}
 }
