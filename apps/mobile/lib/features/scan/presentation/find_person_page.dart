@@ -122,7 +122,7 @@ class _FindPersonPageState extends ConsumerState<FindPersonPage> {
                   Padding(
                     padding: const EdgeInsetsDirectional.only(start: 12, top: 8),
                     child: Text(
-                      l.offlineUsingList(ltr(formatTime(offlineAt))),
+                      l.offlineUsingList(ltr(formatSavedAt(offlineAt, now))),
                       style: const TextStyle(color: AppPalette.gold, fontSize: 12.5),
                     ),
                   ),

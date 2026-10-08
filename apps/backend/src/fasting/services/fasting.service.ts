@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { plainToClass } from 'class-transformer';
+import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
 import { Region } from '../../region/entities/region.entity';
 import { Action } from '../../shared/acl/action.constant';
@@ -253,14 +254,26 @@ export class FastingService {
 
     const { lastTakenMeal, takenMeals, ...editable } = input;
 
-    const updatedFasting: Fasting = {
-      ...fasting,
-      ...plainToClass(Fasting, editable),
-      id: fasting.id,
+    // Write only the editable columns: a full save would put back the stale
+    // takenMeals / lastTakenMeal loaded above, dropping a concurrent confirm.
+    const edits = plainToClass(Fasting, editable);
+    const columns: QueryDeepPartialEntity<Fasting> = {
+      firstName: edits.firstName,
+      lastName: edits.lastName,
+      cin: edits.cin,
+      phone: edits.phone,
+      comment: edits.comment,
+      singleMeal: edits.singleMeal,
+      familyMeal: edits.familyMeal,
     };
+    if (edits.region !== undefined) columns.region = edits.region;
 
-    this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
-    const savedFasting = await this.repository.save(updatedFasting);
+    this.logger.log(ctx, `calling ${FastingRepository.name}.update`);
+    await this.repository.update({ id: fasting.id }, columns);
+    const savedFasting = await this.repository.getByIdAndRegion(
+      fastingId,
+      region,
+    );
 
     const todayMeal = await this.meals.todayMealOf(savedFasting.id);
     return this.toOutput(savedFasting, { todayMeal });

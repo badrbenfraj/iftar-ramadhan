@@ -60,13 +60,18 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
     final l = AppLocalizations.of(context);
     setState(() => _confirming = true);
     try {
-      await ref
+      final updated = await ref
           .read(personDetailsProvider(widget.personId).notifier)
           .confirmMeal(
             phone: _phone,
             comment: _comment,
             clientEventId: _pendingEventId ??= newUuidV4(),
           );
+      if (!updated.isMealTakenToday(ref.read(clockProvider)())) {
+        // A replay of a confirm whose meal was already undone: not served.
+        _pendingEventId = null;
+        return;
+      }
       await HapticFeedback.mediumImpact();
       if (mounted) {
         setState(() {

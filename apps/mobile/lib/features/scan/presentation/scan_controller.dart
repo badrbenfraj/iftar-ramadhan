@@ -479,6 +479,12 @@ class ScanController extends Notifier<ScanState> {
           );
       _slowTimer?.cancel();
       if (!ref.mounted) return;
+      if (!updated.isMealTakenToday(_now())) {
+        // A replay of a confirm whose meal was already undone: not served.
+        ref.read(peopleListProvider.notifier).upsert(updated);
+        _set(ScanReady(updated, noCard: noCard));
+        return;
+      }
       _onConfirmed(updated);
     } on MealAlreadyTakenFailure catch (e) {
       _slowTimer?.cancel();

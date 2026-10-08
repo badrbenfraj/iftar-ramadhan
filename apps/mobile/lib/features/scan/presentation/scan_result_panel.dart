@@ -103,7 +103,6 @@ class ScanResultPanel extends ConsumerWidget {
           ),
           body: [
             _PersonMeta(person),
-            _Label(l.handOver),
             HandOverTiles(person: person),
             if (noCard) _NoCardCheck(person),
             const _WaitBar(),
@@ -152,7 +151,7 @@ class ScanResultPanel extends ConsumerWidget {
             title: MealStatusWords.taken,
             subtitle: asOf == null
                 ? l.alreadyServedTonight
-                : '${l.alreadyServedTonight} ${l.asOfTime(ltr(formatTime(asOf)))}',
+                : '${l.alreadyServedTonight} ${l.asOfTime(ltr(formatSavedAt(asOf, ref.read(clockProvider)())))}',
             trailing: time,
           ),
           header: [_Name(person), _PersonMeta(person)],
@@ -248,7 +247,7 @@ class ScanResultPanel extends ConsumerWidget {
             color: c.systemBand,
             seal: problem,
             title: l.cantCheckTonight,
-            subtitle: l.lastSyncNotServed(ltr(formatTime(syncedAt))),
+            subtitle: l.lastSyncNotServed(ltr(formatSavedAt(syncedAt, ref.read(clockProvider)()))),
             small: true,
           ),
           header: [
@@ -257,7 +256,6 @@ class ScanResultPanel extends ConsumerWidget {
             if (noCard) _NoCardCheck(person),
           ],
           body: [
-            _Label(l.handOver),
             HandOverTiles(person: person),
           ],
           footer: [

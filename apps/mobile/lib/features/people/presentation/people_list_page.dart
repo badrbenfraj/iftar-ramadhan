@@ -65,9 +65,9 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
     final syncNote = !people.hasValue || savedAt == null
         ? null
         : !online
-        ? l.offlineUsingList(ltr(formatTime(savedAt)))
+        ? l.offlineUsingList(ltr(formatSavedAt(savedAt, ref.read(clockProvider)())))
         : listState.fromCache
-        ? l.lastUpdatedAt(ltr(formatTime(savedAt)))
+        ? l.lastUpdatedAt(ltr(formatSavedAt(savedAt, ref.read(clockProvider)())))
         : null;
     final now = ref.watch(clockProvider)();
     final day = ramadanDay(ref.watch(appConfigProvider).ramadanStart, now);

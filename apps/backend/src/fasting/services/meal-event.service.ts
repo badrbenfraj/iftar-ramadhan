@@ -310,7 +310,8 @@ export class MealEventService {
   }
 
   private get undoWindowMinutes(): number {
-    return this.configService.get<number>('undoWindowMinutes') ?? 10;
+    const v = this.configService.get<number>('undoWindowMinutes');
+    return Number.isFinite(v) && v > 0 ? v : 10;
   }
 
   /**
