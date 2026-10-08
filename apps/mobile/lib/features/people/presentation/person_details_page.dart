@@ -9,11 +9,15 @@ import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/utils/uuid.dart';
 import '../../../core/widgets/info_tile.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../domain/fasting_person.dart';
+import '../domain/meal_event.dart';
+import '../domain/undo_rules.dart';
 import 'people_controller.dart';
 import 'person_widgets.dart';
 
@@ -31,6 +35,10 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
   String? _phone;
   String? _comment;
   bool _confirming = false;
+
+  /// The ID of the confirm being attempted. Kept until it succeeds or the
+  /// person turns out to be served, so a retry can't record a second meal.
+  String? _pendingEventId;
 
   Future<void> _editContact(FastingPerson person) async {
     final result = await showContactEditor(
@@ -52,15 +60,28 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
     final l = AppLocalizations.of(context);
     setState(() => _confirming = true);
     try {
-      await ref
+      final updated = await ref
           .read(personDetailsProvider(widget.personId).notifier)
-          .confirmMeal(phone: _phone, comment: _comment);
+          .confirmMeal(
+            phone: _phone,
+            comment: _comment,
+            clientEventId: _pendingEventId ??= newUuidV4(),
+          );
+      if (!updated.isMealTakenToday(ref.read(clockProvider)())) {
+        // A replay of a confirm whose meal was already undone: not served.
+        _pendingEventId = null;
+        return;
+      }
       await HapticFeedback.mediumImpact();
       if (mounted) {
-        setState(() => _phone = _comment = null);
+        setState(() {
+          _phone = _comment = null;
+          _pendingEventId = null;
+        });
         showAppSnackBar(context, l.mealConfirmed);
       }
     } on MealAlreadyTakenFailure catch (e) {
+      _pendingEventId = null;
       await HapticFeedback.heavyImpact();
       if (mounted) {
         showAppSnackBar(
@@ -75,6 +96,33 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
       if (mounted) showAppSnackBar(context, failureText(l, e), isError: true);
     } finally {
       if (mounted) setState(() => _confirming = false);
+    }
+  }
+
+  Future<void> _undo(MealEvent meal) async {
+    final l = AppLocalizations.of(context);
+    try {
+      final p = await ref
+          .read(personDetailsProvider(widget.personId).notifier)
+          .undoMeal(meal);
+      // A reused ID would be answered with the revoked meal (200), so the
+      // next confirm must start fresh.
+      _pendingEventId = null;
+      if (mounted) showAppSnackBar(context, l.undone(isolate(p.fullName)));
+    } on UndoRefusedFailure catch (e) {
+      if (mounted) {
+        showAppSnackBar(
+          context,
+          e.tooLate ? l.undoTooLate : l.undoFailed,
+          isError: true,
+        );
+      }
+    } on NetworkFailure {
+      if (mounted) showAppSnackBar(context, l.undoNeedsConnection, isError: true);
+    } on TimeoutFailure {
+      if (mounted) showAppSnackBar(context, l.undoNeedsConnection, isError: true);
+    } on AppFailure {
+      if (mounted) showAppSnackBar(context, l.undoFailed, isError: true);
     }
   }
 
@@ -109,7 +157,13 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
 
   Widget _body(FastingPerson person) {
     final l = AppLocalizations.of(context);
-    final taken = person.isMealTakenToday(ref.watch(clockProvider)());
+    final now = ref.watch(clockProvider)();
+    final taken = person.isMealTakenToday(now);
+    final undoable = undoableMeal(
+      person,
+      ref.watch(authControllerProvider).value,
+      now,
+    );
     final phone = _phone ?? person.phone;
     final comment = _comment ?? person.comment;
     return RefreshIndicator(
@@ -153,7 +207,12 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
                 value: person.lastTakenMeal == null
                     ? null
                     : l.lastMeal(formatDate(person.lastTakenMeal!)),
-                onTap: () => showMealHistory(context, person),
+                onTap: () => showMealHistory(
+                  context,
+                  person,
+                  undoable: undoable,
+                  onUndo: _undo,
+                ),
               ),
             ],
           ),
@@ -173,7 +232,12 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
           ),
           const SizedBox(height: AppSpacing.md),
           TextButton.icon(
-            onPressed: () => showMealHistory(context, person),
+            onPressed: () => showMealHistory(
+              context,
+              person,
+              undoable: undoable,
+              onUndo: _undo,
+            ),
             icon: const Icon(Icons.history_rounded),
             label: Text(l.mealHistory(person.takenMeals.length)),
           ),

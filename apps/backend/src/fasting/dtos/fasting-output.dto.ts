@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
 import { Region } from '../../region/entities/region.entity';
+import { MealEventOutput } from './meal-event-output.dto';
 
 export class FastingOutput {
   @Expose()
@@ -58,6 +59,31 @@ export class FastingOutput {
       'Whether the meal was already collected today (server timezone APP_TIMEZONE)',
   })
   mealTakenToday: boolean;
+
+  @Expose()
+  @ApiProperty({
+    type: MealEventOutput,
+    required: false,
+    description: 'Confirm only: the meal this request recorded (or replayed)',
+  })
+  meal?: MealEventOutput;
+
+  @Expose()
+  @ApiProperty({
+    type: MealEventOutput,
+    required: false,
+    nullable: true,
+    description: "Tonight's active meal, if any",
+  })
+  todayMeal?: MealEventOutput | null;
+
+  @Expose()
+  @ApiProperty({
+    type: [MealEventOutput],
+    required: false,
+    description: 'Single-person read only: every meal, newest first',
+  })
+  meals?: MealEventOutput[];
 
   @Expose()
   @ApiProperty()

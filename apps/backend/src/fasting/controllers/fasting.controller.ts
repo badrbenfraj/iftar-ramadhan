@@ -4,8 +4,10 @@ import {
   Controller,
   Delete,
   Get,
+  HttpCode,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -166,6 +168,39 @@ export class FastingController {
       region,
       input,
     );
+    return { data: fasting, meta: {} };
+  }
+
+  @Post('meals/:eventId/revoke')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Undo a meal confirmation (spec 2A §4.2)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse(FastingOutput),
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description:
+      "details.code = UNDO_NOT_ALLOWED (someone else's meal) or UNDO_WINDOW_EXPIRED",
+    type: BaseApiErrorResponse,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'details.code = MEAL_EVENT_NOT_FOUND',
+    type: BaseApiErrorResponse,
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async revokeMeal(
+    @ReqContext() ctx: RequestContext,
+    @Param('eventId', new ParseUUIDPipe()) eventId: string,
+  ): Promise<BaseApiResponse<FastingOutput>> {
+    this.logger.log(ctx, `${this.revokeMeal.name} was called`);
+
+    const fasting = await this.fastingService.revokeMeal(ctx, eventId);
     return { data: fasting, meta: {} };
   }
 

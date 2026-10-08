@@ -13,14 +13,22 @@ abstract interface class PeopleRepository {
   Future<FastingPerson> update(Region region, PersonDraft draft);
   Future<void> delete(int regionId, int id);
 
-  /// Records today's meal. Throws `MealAlreadyTakenFailure` when the server
-  /// says the person already collected today.
+  /// Records today's meal. [clientEventId] identifies this confirm: a retry
+  /// must reuse it, so the server answers with the original meal instead of
+  /// recording a second one. Throws `MealAlreadyTakenFailure` when the person
+  /// already collected today.
   Future<FastingPerson> confirmMeal(
     int regionId,
     int id, {
     String? phone,
     String? comment,
+    String? clientEventId,
+    String? deviceId,
   });
+
+  /// Undoes a meal (spec 2A §4.2). Throws `UndoRefusedFailure` when the
+  /// server refuses (someone else's meal, or too late).
+  Future<FastingPerson> revokeMeal(String eventId);
 }
 
 class ApiPeopleRepository implements PeopleRepository {
@@ -110,10 +118,27 @@ class ApiPeopleRepository implements PeopleRepository {
     int id, {
     String? phone,
     String? comment,
+    String? clientEventId,
+    String? deviceId,
   }) async {
     final envelope = await _api.patch(
       '/fastings/confirm/$regionId/$id',
-      body: {'phone': ?phone?.trim(), 'comment': ?comment?.trim()},
+      body: {
+        'phone': ?phone?.trim(),
+        'comment': ?comment?.trim(),
+        'clientEventId': ?clientEventId,
+        'deviceId': ?deviceId,
+      },
+      timeout: ApiClient.mutationTimeout,
+    );
+    return _person(envelope.object);
+  }
+
+  @override
+  Future<FastingPerson> revokeMeal(String eventId) async {
+    final envelope = await _api.post(
+      '/fastings/meals/$eventId/revoke',
+      timeout: ApiClient.mutationTimeout,
     );
     return _person(envelope.object);
   }

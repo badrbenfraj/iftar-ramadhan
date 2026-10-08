@@ -540,6 +540,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get confirming => 'جارٍ التأكيد…';
 
   @override
+  String get sendingSlow => 'جارٍ الإرسال… الاتصال بطيء';
+
+  @override
   String get skip => 'تخطّي';
 
   @override
@@ -571,6 +574,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get alreadyServedTonight => 'استلم الليلة';
 
   @override
+  String get cantCheckTonight => 'تعذّر التحقق الليلة';
+
+  @override
+  String lastSyncNotServed(String time) {
+    return 'آخر مزامنة $time: لم يستلم بعد';
+  }
+
+  @override
+  String asOfTime(String time) {
+    return '(حتى الساعة $time)';
+  }
+
+  @override
+  String notOnPhoneTitle(int id) {
+    return 'البطاقة رقم $id غير موجودة على هذا الهاتف';
+  }
+
+  @override
+  String get notOnPhoneMessage =>
+      'لا يوجد اتصال، وهذه البطاقة ليست في القائمة المحفوظة على هذا الهاتف.';
+
+  @override
   String alreadyServedNote(String time) {
     return 'لا شيء للتسليم. أخبره بلطف أنه استلم على الساعة $time.';
   }
@@ -578,6 +603,39 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get alreadyServedNoteNoTime =>
       'لا شيء للتسليم. أخبره بلطف أنه استلم الليلة.';
+
+  @override
+  String undoCountdown(int seconds) {
+    return 'تراجع · $seconds';
+  }
+
+  @override
+  String undone(String name) {
+    return 'تم التراجع. $name لم يعد مسجّلًا كمن استلم.';
+  }
+
+  @override
+  String get undoFailed => 'تعذّر التراجع. حاول مجددًا من السجل.';
+
+  @override
+  String get undoTooLate => 'فات وقت التراجع. اطلب ذلك من المشرف.';
+
+  @override
+  String get undoNeedsConnection =>
+      'التراجع يحتاج إلى اتصال. حاول مجددًا من السجل.';
+
+  @override
+  String servedAtBy(String time, String name) {
+    return 'استلم على الساعة $time، قدّمها $name';
+  }
+
+  @override
+  String get undoTonightsMeal => 'التراجع عن وجبة الليلة';
+
+  @override
+  String servedBy(String name) {
+    return 'قدّمها $name';
+  }
 
   @override
   String get scanNextCard => 'البطاقة التالية';
@@ -810,4 +868,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String appVersion(String version) {
     return 'الإصدار $version';
   }
+
+  @override
+  String offlineUsingList(String time) {
+    return 'غير متصل · القائمة المحفوظة على الساعة $time';
+  }
+
+  @override
+  String lastUpdatedAt(String time) {
+    return 'آخر تحديث على الساعة $time';
+  }
+
+  @override
+  String get offlineIndicator => 'غير متصل';
 }

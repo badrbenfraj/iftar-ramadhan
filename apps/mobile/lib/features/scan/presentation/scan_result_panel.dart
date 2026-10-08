@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/failure_text.dart';
+import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/theme/iftar_colors.dart';
@@ -15,6 +18,7 @@ import '../../../core/widgets/status_chip.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../people/domain/fasting_person.dart';
+import '../../people/domain/undo_rules.dart';
 import '../../people/presentation/person_widgets.dart';
 import 'scan_controller.dart';
 
@@ -65,6 +69,8 @@ class ScanResultPanel extends ConsumerWidget {
     ScanNotFound(:final personId) => 'missing-$personId',
     ScanInvalidCode(:final raw) => 'invalid-$raw',
     ScanFailed(:final personId) => 'failed-$personId',
+    ScanUnverified(:final person) => 'unverified-${person.id}',
+    ScanNotOnPhone(:final personId) => 'notonphone-$personId',
   };
 
   Widget _content(BuildContext context, WidgetRef ref) {
@@ -97,7 +103,6 @@ class ScanResultPanel extends ConsumerWidget {
           ),
           body: [
             _PersonMeta(person),
-            _Label(l.handOver),
             HandOverTiles(person: person),
             if (noCard) _NoCardCheck(person),
             const _WaitBar(),
@@ -115,7 +120,7 @@ class ScanResultPanel extends ConsumerWidget {
           busy: false,
         );
 
-      case ScanConfirming(:final person, :final noCard):
+      case ScanConfirming(:final person, :final noCard, :final slow):
         return _ready(
           context,
           controller,
@@ -124,12 +129,19 @@ class ScanResultPanel extends ConsumerWidget {
           comment: person.comment,
           noCard: noCard,
           busy: true,
+          slow: slow,
         );
 
-      case ScanConfirmed(:final person):
-        return _DoneBand(person: person);
+      case ScanConfirmed(:final person, :final undoing):
+        return _DoneBand(
+          person: person,
+          undoing: undoing,
+          undoWindow: ref.read(scanTimingsProvider).undoWindow,
+          // No meal ID (older backend): nothing the server could undo.
+          onUndo: person.todayMeal == null ? null : controller.undo,
+        );
 
-      case ScanAlreadyTaken(:final person, :final takenAt):
+      case ScanAlreadyTaken(:final person, :final takenAt, :final servedByName, :final asOf):
         final time = takenAt == null ? null : ltr(formatTime(takenAt));
         return _Sheet(
           background: c.claySoft,
@@ -137,11 +149,25 @@ class ScanResultPanel extends ConsumerWidget {
             color: AppPalette.pausedBand,
             seal: Seal(SealKind.served, semanticLabel: l.sealServed),
             title: MealStatusWords.taken,
-            subtitle: l.alreadyServedTonight,
+            subtitle: asOf == null
+                ? l.alreadyServedTonight
+                : '${l.alreadyServedTonight} ${l.asOfTime(ltr(formatSavedAt(asOf, ref.read(clockProvider)())))}',
             trailing: time,
           ),
           header: [_Name(person), _PersonMeta(person)],
           body: [
+            if (time != null && servedByName != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  l.servedAtBy(time, isolate(servedByName)),
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: c.clayInk,
+                  ),
+                ),
+              ),
             Text(
               time == null ? l.alreadyServedNoteNoTime : l.alreadyServedNote(time),
               style: TextStyle(fontSize: 13, color: c.clayInk),
@@ -158,7 +184,19 @@ class ScanResultPanel extends ConsumerWidget {
               label: Text(l.scanNextCard),
             ),
             _Links([
-              (l.history, () => showMealHistory(context, person)),
+              (
+                l.history,
+                () => showMealHistory(
+                  context,
+                  person,
+                  undoable: undoableMeal(
+                    person,
+                    ref.read(authControllerProvider).value,
+                    ref.read(clockProvider)(),
+                  ),
+                  onUndo: (meal) => controller.undoFromHistory(person, meal),
+                ),
+              ),
               (l.details, () => context.push('/people/${person.id}')),
             ]),
           ],
@@ -198,6 +236,52 @@ class ScanResultPanel extends ConsumerWidget {
               onPressed: onFindWithoutCard,
               icon: const Icon(Icons.search_rounded),
               label: Text(l.findNoCard),
+            ),
+            _Links([(l.scanAgain, controller.scanNext)]),
+          ],
+        );
+
+      case ScanUnverified(:final person, :final syncedAt, :final noCard):
+        return _Sheet(
+          band: _Band(
+            color: c.systemBand,
+            seal: problem,
+            title: l.cantCheckTonight,
+            subtitle: l.lastSyncNotServed(ltr(formatSavedAt(syncedAt, ref.read(clockProvider)()))),
+            small: true,
+          ),
+          header: [
+            _Name(person),
+            _PersonMeta(person),
+            if (noCard) _NoCardCheck(person),
+          ],
+          body: [
+            HandOverTiles(person: person),
+          ],
+          footer: [
+            FilledButton.icon(
+              onPressed: controller.retry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(l.retry),
+            ),
+            _Links([(l.skip, controller.scanNext)]),
+          ],
+        );
+
+      case ScanNotOnPhone(:final personId):
+        return _Sheet(
+          band: _Band(
+            color: c.systemBand,
+            seal: problem,
+            title: l.notOnPhoneTitle(personId),
+            subtitle: l.notOnPhoneMessage,
+            small: true,
+          ),
+          body: [
+            FilledButton.icon(
+              onPressed: controller.retry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(l.retry),
             ),
             _Links([(l.scanAgain, controller.scanNext)]),
           ],
@@ -264,16 +348,25 @@ class ScanResultPanel extends ConsumerWidget {
     required String? comment,
     required bool noCard,
     required bool busy,
+    bool slow = false,
   }) {
     final l = AppLocalizations.of(context);
     final c = context.colors;
     return _Sheet(
-      band: _Band(
-        color: c.serveBand,
-        seal: Seal(SealKind.serve, semanticLabel: l.sealServe),
-        title: MealStatusWords.notTaken,
-        subtitle: l.notServedTonight,
-      ),
+      band: slow
+          ? _Band(
+              color: AppPalette.waitBand,
+              seal: Seal(SealKind.checking, semanticLabel: l.sealChecking),
+              title: l.sendingSlow,
+              subtitle: l.dontHandOverYet,
+              small: true,
+            )
+          : _Band(
+              color: c.serveBand,
+              seal: Seal(SealKind.serve, semanticLabel: l.sealServe),
+              title: MealStatusWords.notTaken,
+              subtitle: l.notServedTonight,
+            ),
       // Pinned: who and the CIN check. Scrolling: quantities and contact.
       // Pinned below: the action, so Confirm never leaves the screen.
       header: [
@@ -483,9 +576,19 @@ class _Band extends StatelessWidget {
 }
 
 class _DoneBand extends StatelessWidget {
-  const _DoneBand({required this.person});
+  const _DoneBand({
+    required this.person,
+    required this.undoing,
+    required this.undoWindow,
+    required this.onUndo,
+  });
 
   final FastingPerson person;
+  final bool undoing;
+  final Duration undoWindow;
+
+  /// Null when this meal can't be undone from here.
+  final VoidCallback? onUndo;
 
   @override
   Widget build(BuildContext context) {
@@ -534,6 +637,15 @@ class _DoneBand extends StatelessWidget {
                             l.blessingMeaning,
                             style: TextStyle(color: Colors.white.withValues(alpha: 0.75), fontSize: 12.5),
                           ),
+                        if (onUndo != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 10),
+                            child: _UndoButton(
+                              window: undoWindow,
+                              undoing: undoing,
+                              onPressed: onUndo!,
+                            ),
+                          ),
                       ],
                     ),
                   ),
@@ -543,6 +655,64 @@ class _DoneBand extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// "Undo · 5", counting down while the band is shown (spec 2A §5.2).
+class _UndoButton extends StatefulWidget {
+  const _UndoButton({
+    required this.window,
+    required this.undoing,
+    required this.onPressed,
+  });
+
+  final Duration window;
+  final bool undoing;
+  final VoidCallback onPressed;
+
+  @override
+  State<_UndoButton> createState() => _UndoButtonState();
+}
+
+class _UndoButtonState extends State<_UndoButton> {
+  late int _left = widget.window.inSeconds.clamp(1, 60);
+  Timer? _tick;
+
+  @override
+  void initState() {
+    super.initState();
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_left > 1) setState(() => _left--);
+    });
+  }
+
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return OutlinedButton.icon(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: Colors.white,
+        side: BorderSide(color: Colors.white.withValues(alpha: 0.7)),
+        minimumSize: const Size(0, 44),
+      ),
+      onPressed: widget.undoing ? null : widget.onPressed,
+      icon: widget.undoing
+          ? const SizedBox.square(
+              dimension: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: Colors.white,
+              ),
+            )
+          : const Icon(Icons.undo_rounded),
+      label: Text(l.undoCountdown(_left)),
     );
   }
 }

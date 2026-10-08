@@ -18,6 +18,11 @@ class ApiClient {
     responseType: ResponseType.json,
   );
 
+  /// Confirm and undo normally answer fast. When they don't, a retry is
+  /// safe (same clientEventId), so give up sooner than the 20 s default
+  /// (spec 2A §5.1).
+  static const mutationTimeout = Duration(seconds: 15);
+
   Future<ApiEnvelope> get(
     String path, {
     Map<String, dynamic>? query,
@@ -34,16 +39,27 @@ class ApiClient {
     String path, {
     Object? body,
     Map<String, dynamic>? extra,
+    Duration? timeout,
   }) => _send(
     () => _dio.post<dynamic>(
       path,
       data: body,
-      options: Options(extra: extra),
+      options: Options(
+        extra: extra,
+        sendTimeout: timeout,
+        receiveTimeout: timeout,
+      ),
     ),
   );
 
-  Future<ApiEnvelope> patch(String path, {Object? body}) =>
-      _send(() => _dio.patch<dynamic>(path, data: body));
+  Future<ApiEnvelope> patch(String path, {Object? body, Duration? timeout}) =>
+      _send(
+        () => _dio.patch<dynamic>(
+          path,
+          data: body,
+          options: Options(sendTimeout: timeout, receiveTimeout: timeout),
+        ),
+      );
 
   Future<ApiEnvelope> delete(String path) =>
       _send(() => _dio.delete<dynamic>(path));

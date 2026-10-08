@@ -540,6 +540,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get confirming => 'Confirming…';
 
   @override
+  String get sendingSlow => 'Sending… slow connection';
+
+  @override
   String get skip => 'Skip';
 
   @override
@@ -569,6 +572,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get alreadyServedTonight => 'Already served tonight';
 
   @override
+  String get cantCheckTonight => 'Can’t check tonight';
+
+  @override
+  String lastSyncNotServed(String time) {
+    return 'Last sync $time: not served yet';
+  }
+
+  @override
+  String asOfTime(String time) {
+    return '(as of $time)';
+  }
+
+  @override
+  String notOnPhoneTitle(int id) {
+    return 'Card #$id isn’t on this phone';
+  }
+
+  @override
+  String get notOnPhoneMessage =>
+      'No connection, and this card isn’t in the list saved on this phone.';
+
+  @override
   String alreadyServedNote(String time) {
     return 'Nothing to hand over. Kindly let them know it was collected at $time.';
   }
@@ -576,6 +601,39 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get alreadyServedNoteNoTime =>
       'Nothing to hand over. Kindly let them know it was already collected tonight.';
+
+  @override
+  String undoCountdown(int seconds) {
+    return 'Undo · $seconds';
+  }
+
+  @override
+  String undone(String name) {
+    return 'Undone. $name is not marked as served.';
+  }
+
+  @override
+  String get undoFailed => 'Couldn’t undo. Try again from History.';
+
+  @override
+  String get undoTooLate => 'It’s too late to undo. Ask an admin.';
+
+  @override
+  String get undoNeedsConnection =>
+      'Undo needs a connection. Try again from History.';
+
+  @override
+  String servedAtBy(String time, String name) {
+    return 'Served at $time by $name';
+  }
+
+  @override
+  String get undoTonightsMeal => 'Undo tonight’s meal';
+
+  @override
+  String servedBy(String name) {
+    return 'by $name';
+  }
 
   @override
   String get scanNextCard => 'Scan next card';
@@ -810,4 +868,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String appVersion(String version) {
     return 'Version $version';
   }
+
+  @override
+  String offlineUsingList(String time) {
+    return 'Offline · using the list saved at $time';
+  }
+
+  @override
+  String lastUpdatedAt(String time) {
+    return 'Last updated $time';
+  }
+
+  @override
+  String get offlineIndicator => 'Offline';
 }

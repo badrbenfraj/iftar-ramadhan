@@ -1,4 +1,4 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import { ConflictException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Test, TestingModule } from '@nestjs/testing';
 
@@ -9,6 +9,7 @@ import { UserService } from '../../user/services/user.service';
 import { FastingRepository } from '../repositories/fasting.repository';
 import { FASTING_ERROR_CODES, FastingService } from './fasting.service';
 import { FastingAclService } from './fasting-acl.service';
+import { MealEventService } from './meal-event.service';
 
 describe('FastingService', () => {
   let service: FastingService;
@@ -16,6 +17,7 @@ describe('FastingService', () => {
   const manager = {
     query: jest.fn(),
     findOne: jest.fn(),
+    save: jest.fn(),
   };
 
   const repository = {
@@ -33,6 +35,15 @@ describe('FastingService', () => {
   const userService = { getUserById: jest.fn() };
   const config = { get: jest.fn(() => 'Africa/Tunis') };
   const logger = { setContext: jest.fn(), log: jest.fn() };
+
+  const meals = {
+    confirm: jest.fn(),
+    todayMealsByRegion: jest.fn(async () => new Map()),
+    todayMealOf: jest.fn(async () => null),
+    mealsOf: jest.fn(async () => []),
+    recordRegistrationMeal: jest.fn(),
+    revoke: jest.fn(),
+  };
 
   const ctx = new RequestContext();
   ctx.user = { id: 7, username: 'vol', roles: [ROLE.USER] };
@@ -56,6 +67,7 @@ describe('FastingService', () => {
         FastingService,
         FastingAclService,
         { provide: FastingRepository, useValue: repository },
+        { provide: MealEventService, useValue: meals },
         { provide: UserService, useValue: userService },
         { provide: ConfigService, useValue: config },
         { provide: AppLogger, useValue: logger },
@@ -65,13 +77,14 @@ describe('FastingService', () => {
   });
 
   describe('confirmMeal', () => {
-    it('records the meal when the person has not collected today', async () => {
-      manager.query
-        .mockResolvedValueOnce([
-          { id: 42, lastTakenMeal: new Date('2020-01-01T12:00:00Z') },
-        ])
-        .mockResolvedValueOnce(undefined);
-      manager.findOne.mockResolvedValue(person);
+    it('returns the person with the meal the request recorded', async () => {
+      const meal = {
+        eventId: '6f1c2c55-7a8e-4d39-9b0e-6c7c1f0a9d11',
+        servedAt: new Date().toISOString(),
+        servedBy: { id: 7, name: 'Vol' },
+        revokedAt: null,
+      };
+      meals.confirm.mockResolvedValue(meal);
       repository.getByIdAndRegion.mockResolvedValue({
         ...person,
         lastTakenMeal: new Date(),
@@ -79,64 +92,29 @@ describe('FastingService', () => {
 
       const result = await service.confirmMeal(ctx, 42, 1, { phone: '123' });
 
-      // The lock is taken first, in the same transaction as the update.
-      expect(manager.query.mock.calls[0][0]).toContain('FOR UPDATE');
-      const [updateSql, params] = manager.query.mock.calls[1];
-      expect(updateSql).toContain('array_append("takenMeals"');
-      expect(params.slice(0, 2)).toEqual([42, 1]);
-      expect(params[4]).toBe(true); // phone provided
-      expect(params[5]).toBe('123');
-      expect(params[6]).toBe(false); // comment untouched
+      expect(meals.confirm).toHaveBeenCalledWith(ctx, 42, 1, { phone: '123' });
+      expect(result.meal).toEqual(meal);
+      expect(result.todayMeal).toEqual(meal);
       expect(result.mealTakenToday).toBe(true);
       expect(result).not.toHaveProperty('createdBy');
     });
 
-    it('records the first meal of a person who has never collected one', async () => {
-      manager.query
-        .mockResolvedValueOnce([{ id: 42, lastTakenMeal: null }])
-        .mockResolvedValueOnce(undefined);
-      manager.findOne.mockResolvedValue({ ...person, lastTakenMeal: null });
+    it('has no meal tonight when the replayed meal was undone', async () => {
+      meals.confirm.mockResolvedValue({
+        eventId: '6f1c2c55-7a8e-4d39-9b0e-6c7c1f0a9d11',
+        servedAt: new Date().toISOString(),
+        servedBy: { id: 7, name: 'Vol' },
+        revokedAt: new Date().toISOString(),
+      });
       repository.getByIdAndRegion.mockResolvedValue({
         ...person,
-        lastTakenMeal: new Date(),
-        takenMeals: [new Date().toISOString()],
+        lastTakenMeal: null,
       });
 
       const result = await service.confirmMeal(ctx, 42, 1, {});
 
-      expect(manager.query).toHaveBeenCalledTimes(2);
-      expect(manager.query.mock.calls[1][0]).toContain('UPDATE "fastings"');
-      expect(result.mealTakenToday).toBe(true);
-    });
-
-    it('rejects a second collection on the same day with MEAL_ALREADY_TAKEN', async () => {
-      manager.query.mockResolvedValueOnce([
-        { id: 42, lastTakenMeal: new Date() },
-      ]);
-      manager.findOne.mockResolvedValue(person);
-
-      const error = await service.confirmMeal(ctx, 42, 1, {}).catch((e) => e);
-
-      expect(error).toBeInstanceOf(ConflictException);
-      expect(error.getResponse()).toMatchObject({
-        code: FASTING_ERROR_CODES.MEAL_ALREADY_TAKEN,
-      });
-      expect(manager.query).toHaveBeenCalledTimes(1); // no UPDATE issued
-    });
-
-    it('returns 404 for an unknown person', async () => {
-      manager.query.mockResolvedValueOnce([]);
-
-      await expect(service.confirmMeal(ctx, 999, 1, {})).rejects.toBeInstanceOf(
-        NotFoundException,
-      );
-    });
-
-    it('returns 404 for a non-numeric id (invalid QR) without hitting the DB', async () => {
-      await expect(
-        service.confirmMeal(ctx, Number('abc'), 1, {}),
-      ).rejects.toBeInstanceOf(NotFoundException);
-      expect(repository.manager.transaction).not.toHaveBeenCalled();
+      expect(result.todayMeal).toBeNull();
+      expect(result.mealTakenToday).toBe(false);
     });
   });
 
@@ -160,13 +138,13 @@ describe('FastingService', () => {
       expect(error.getResponse()).toMatchObject({
         code: FASTING_ERROR_CODES.PERSON_ID_TAKEN,
       });
-      expect(repository.save).not.toHaveBeenCalled();
+      expect(manager.save).not.toHaveBeenCalled();
     });
 
     it('saves a person with no meal history as not collected today', async () => {
       userService.getUserById.mockResolvedValue({ id: 7, region: { id: 1 } });
       repository.findOne.mockResolvedValue(null);
-      repository.save.mockImplementation(async (fasting) => fasting);
+      manager.save.mockImplementation(async (_entity, fasting) => fasting);
 
       const result = await service.createFasting(ctx, {
         id: 43,
@@ -179,12 +157,39 @@ describe('FastingService', () => {
         takenMeals: [],
       } as any);
 
-      expect(repository.save).toHaveBeenCalledWith(
+      expect(manager.save).toHaveBeenCalledWith(
+        expect.anything(),
         expect.objectContaining({ lastTakenMeal: null, takenMeals: [] }),
       );
+      expect(meals.recordRegistrationMeal).not.toHaveBeenCalled();
       expect(result.lastTakenMeal).toBeNull();
       expect(result.takenMeals).toEqual([]);
       expect(result.mealTakenToday).toBe(false);
+    });
+
+    it('records the meal of a person who came today as a meal event', async () => {
+      const today = new Date();
+      userService.getUserById.mockResolvedValue({ id: 7, region: { id: 1 } });
+      repository.findOne.mockResolvedValue(null);
+      manager.save.mockImplementation(async (_entity, fasting) => fasting);
+
+      await service.createFasting(ctx, {
+        id: 44,
+        firstName: 'X',
+        lastName: 'Y',
+        singleMeal: 1,
+        familyMeal: 0,
+        region: 1,
+        lastTakenMeal: today,
+        takenMeals: [today],
+      } as any);
+
+      expect(meals.recordRegistrationMeal).toHaveBeenCalledWith(manager, {
+        fastingId: 44,
+        regionId: 1,
+        servedAt: today,
+        servedByUserId: 7,
+      });
     });
   });
 

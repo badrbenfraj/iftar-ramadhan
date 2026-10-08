@@ -5,8 +5,11 @@ import 'package:go_router/go_router.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../../../core/network/connectivity.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../people/domain/fasting_person.dart';
 import '../../people/presentation/people_controller.dart';
@@ -84,10 +87,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     }
   }
 
-  /// Only "ready" is re-created in place (contact edits); every other change
-  /// is news worth a buzz.
+  /// Only "ready" (contact edits) and "confirmed" (Undo in flight) are
+  /// re-created in place; every other change is news worth a buzz.
   static bool _sameVerdict(ScanStatus a, ScanStatus b) =>
-      a is ScanReady && b is ScanReady && a.person.id == b.person.id;
+      (a is ScanReady && b is ScanReady && a.person.id == b.person.id) ||
+      (a is ScanConfirmed && b is ScanConfirmed && a.person.id == b.person.id);
 
   void _hapticsFor(ScanStatus status) {
     switch (status) {
@@ -98,7 +102,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       case ScanAlreadyTaken():
         HapticFeedback.heavyImpact();
         HapticFeedback.vibrate();
-      case ScanInvalidCode() || ScanNotFound() || ScanFailed():
+      case ScanInvalidCode() ||
+          ScanNotFound() ||
+          ScanFailed() ||
+          ScanUnverified() ||
+          ScanNotOnPhone():
         HapticFeedback.vibrate();
       case ScanIdle() || ScanLookingUp() || ScanIdentifying() || ScanConfirming():
         break;
@@ -115,6 +123,20 @@ class _ScanPageState extends ConsumerState<ScanPage> {
         _hapticsFor(next);
       },
     );
+    ref.listen(scanControllerProvider.select((s) => s.notice), (prev, next) {
+      if (next == null || identical(prev, next)) return;
+      final l = AppLocalizations.of(context);
+      showAppSnackBar(
+        context,
+        switch (next.kind) {
+          ScanNoticeKind.undone => l.undone(isolate(next.name ?? '')),
+          ScanNoticeKind.undoFailed => l.undoFailed,
+          ScanNoticeKind.undoTooLate => l.undoTooLate,
+          ScanNoticeKind.undoNeedsConnection => l.undoNeedsConnection,
+        },
+        isError: next.kind != ScanNoticeKind.undone,
+      );
+    });
     final l = AppLocalizations.of(context);
     final scan = ref.watch(scanControllerProvider);
     final now = ref.watch(clockProvider)();
@@ -124,7 +146,12 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     final frameColor = switch (scan.status) {
       ScanReady() || ScanConfirming() => AppPalette.mint,
       ScanAlreadyTaken() => AppPalette.clayFrame,
-      ScanIdentifying() || ScanLookingUp() || ScanInvalidCode() || ScanFailed() => AppPalette.gold,
+      ScanIdentifying() ||
+      ScanLookingUp() ||
+      ScanInvalidCode() ||
+      ScanFailed() ||
+      ScanUnverified() ||
+      ScanNotOnPhone() => AppPalette.gold,
       ScanNotFound() => AppPalette.onSkyMuted,
       _ => AppPalette.onSky,
     };
@@ -185,6 +212,7 @@ class _ScanPageState extends ConsumerState<ScanPage> {
                             // Disabled, not hidden, while someone is pending.
                             onFind: available && scan.acceptsScans ? _findWithoutCard : null,
                             showFind: available,
+                            offline: !ref.watch(connectivityProvider),
                           ),
                           // The sheet takes what it needs of the space below the
                           // top bar and scrolls inside itself beyond that.
@@ -231,6 +259,7 @@ class _TopBar extends StatelessWidget {
     required this.onClose,
     required this.onFind,
     required this.showFind,
+    required this.offline,
   });
 
   final MobileScannerController camera;
@@ -244,6 +273,8 @@ class _TopBar extends StatelessWidget {
 
   /// Hidden when the camera is off: that screen has its own Find button.
   final bool showFind;
+
+  final bool offline;
 
   @override
   Widget build(BuildContext context) {
@@ -270,6 +301,13 @@ class _TopBar extends StatelessWidget {
               ],
             ),
           ),
+          if (offline) ...[
+            Tooltip(
+              message: l.offlineIndicator,
+              child: const Icon(Icons.cloud_off_rounded, color: AppPalette.gold),
+            ),
+            const SizedBox(width: 8),
+          ],
           if (showFind) ...[
             _RoundIcon(icon: Icons.person_search_rounded, tooltip: l.findNoCard, onPressed: onFind),
             const SizedBox(width: 8),

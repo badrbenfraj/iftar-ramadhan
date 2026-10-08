@@ -1,7 +1,7 @@
 # Spec 2A: Serving safety on a bad connection (Undo, served-by, offline identify)
 
 - **Date:** 2026-10-01 (split into 2A / 2B on 2026-10-03)
-- **Status:** Draft for review
+- **Status:** Implemented (branch feat/serving-safety-2a, plan docs/superpowers/plans/2026-10-07-serving-safety-2a.md)
 - **Scope:** `apps/backend` (NestJS + PostgreSQL) and `apps/mobile` (Flutter)
 - **Depends on:**
   1. [Spec 1, the app redesign](2026-10-01-fusion-app-redesign-design.md), merged. This spec reuses its scan states, tokens, and l10n.

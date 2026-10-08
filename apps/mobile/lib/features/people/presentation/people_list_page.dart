@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/network/app_failure.dart';
+import '../../../core/network/connectivity.dart';
 import '../../../core/network/failure_text.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_colors.dart';
@@ -58,6 +59,16 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
     final people = ref.watch(peopleListProvider);
     final query = ref.watch(peopleSearchQueryProvider);
     final filter = ref.watch(peopleFilterProvider);
+    final online = ref.watch(connectivityProvider);
+    final listState = ref.read(peopleListProvider.notifier);
+    final savedAt = listState.loadedAt;
+    final syncNote = !people.hasValue || savedAt == null
+        ? null
+        : !online
+        ? l.offlineUsingList(ltr(formatSavedAt(savedAt, ref.read(clockProvider)())))
+        : listState.fromCache
+        ? l.lastUpdatedAt(ltr(formatSavedAt(savedAt, ref.read(clockProvider)())))
+        : null;
     final now = ref.watch(clockProvider)();
     final day = ramadanDay(ref.watch(appConfigProvider).ramadanStart, now);
     final bottomClearance =
@@ -78,6 +89,28 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
                 onQueryChanged: ref.read(peopleSearchQueryProvider.notifier).update,
               ),
             ),
+            if (syncNote != null)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(18, 10, 18, 0),
+                  child: Row(
+                    children: [
+                      Icon(
+                        online ? Icons.history_rounded : Icons.cloud_off_rounded,
+                        size: 16,
+                        color: context.colors.goldInk,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          syncNote,
+                          style: TextStyle(fontSize: 12.5, color: context.colors.goldInk),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             if (people.hasValue && people.value!.isNotEmpty)
               SliverToBoxAdapter(
                 child: _FilterRow(

@@ -1036,6 +1036,12 @@ abstract class AppLocalizations {
   /// **'Confirming…'**
   String get confirming;
 
+  /// No description provided for @sendingSlow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending… slow connection'**
+  String get sendingSlow;
+
   /// No description provided for @skip.
   ///
   /// In en, this message translates to:
@@ -1072,6 +1078,36 @@ abstract class AppLocalizations {
   /// **'Already served tonight'**
   String get alreadyServedTonight;
 
+  /// No description provided for @cantCheckTonight.
+  ///
+  /// In en, this message translates to:
+  /// **'Can’t check tonight'**
+  String get cantCheckTonight;
+
+  /// No description provided for @lastSyncNotServed.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync {time}: not served yet'**
+  String lastSyncNotServed(String time);
+
+  /// No description provided for @asOfTime.
+  ///
+  /// In en, this message translates to:
+  /// **'(as of {time})'**
+  String asOfTime(String time);
+
+  /// No description provided for @notOnPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Card #{id} isn’t on this phone'**
+  String notOnPhoneTitle(int id);
+
+  /// No description provided for @notOnPhoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection, and this card isn’t in the list saved on this phone.'**
+  String get notOnPhoneMessage;
+
   /// No description provided for @alreadyServedNote.
   ///
   /// In en, this message translates to:
@@ -1083,6 +1119,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nothing to hand over. Kindly let them know it was already collected tonight.'**
   String get alreadyServedNoteNoTime;
+
+  /// No description provided for @undoCountdown.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo · {seconds}'**
+  String undoCountdown(int seconds);
+
+  /// No description provided for @undone.
+  ///
+  /// In en, this message translates to:
+  /// **'Undone. {name} is not marked as served.'**
+  String undone(String name);
+
+  /// No description provided for @undoFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t undo. Try again from History.'**
+  String get undoFailed;
+
+  /// No description provided for @undoTooLate.
+  ///
+  /// In en, this message translates to:
+  /// **'It’s too late to undo. Ask an admin.'**
+  String get undoTooLate;
+
+  /// No description provided for @undoNeedsConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo needs a connection. Try again from History.'**
+  String get undoNeedsConnection;
+
+  /// No description provided for @servedAtBy.
+  ///
+  /// In en, this message translates to:
+  /// **'Served at {time} by {name}'**
+  String servedAtBy(String time, String name);
+
+  /// No description provided for @undoTonightsMeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo tonight’s meal'**
+  String get undoTonightsMeal;
+
+  /// No description provided for @servedBy.
+  ///
+  /// In en, this message translates to:
+  /// **'by {name}'**
+  String servedBy(String name);
 
   /// No description provided for @scanNextCard.
   ///
@@ -1509,6 +1593,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Version {version}'**
   String appVersion(String version);
+
+  /// No description provided for @offlineUsingList.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline · using the list saved at {time}'**
+  String offlineUsingList(String time);
+
+  /// No description provided for @lastUpdatedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated {time}'**
+  String lastUpdatedAt(String time);
+
+  /// No description provided for @offlineIndicator.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline'**
+  String get offlineIndicator;
 }
 
 class _AppLocalizationsDelegate

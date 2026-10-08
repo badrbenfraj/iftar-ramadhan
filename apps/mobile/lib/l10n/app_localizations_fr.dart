@@ -554,6 +554,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get confirming => 'Confirmation…';
 
   @override
+  String get sendingSlow => 'Envoi… connexion lente';
+
+  @override
   String get skip => 'Passer';
 
   @override
@@ -583,6 +586,28 @@ class AppLocalizationsFr extends AppLocalizations {
   String get alreadyServedTonight => 'Déjà servi ce soir';
 
   @override
+  String get cantCheckTonight => 'Impossible de vérifier ce soir';
+
+  @override
+  String lastSyncNotServed(String time) {
+    return 'Dernière synchro $time : pas encore servi';
+  }
+
+  @override
+  String asOfTime(String time) {
+    return '(à $time)';
+  }
+
+  @override
+  String notOnPhoneTitle(int id) {
+    return 'La carte n°$id n’est pas sur ce téléphone';
+  }
+
+  @override
+  String get notOnPhoneMessage =>
+      'Pas de connexion, et cette carte n’est pas dans la liste enregistrée sur ce téléphone.';
+
+  @override
   String alreadyServedNote(String time) {
     return 'Rien à remettre. Indiquez-lui avec douceur que le repas a été retiré à $time.';
   }
@@ -590,6 +615,41 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get alreadyServedNoteNoTime =>
       'Rien à remettre. Indiquez-lui avec douceur que le repas a déjà été retiré ce soir.';
+
+  @override
+  String undoCountdown(int seconds) {
+    return 'Annuler · $seconds';
+  }
+
+  @override
+  String undone(String name) {
+    return 'Annulé. $name n’est plus marqué comme servi.';
+  }
+
+  @override
+  String get undoFailed =>
+      'Impossible d’annuler. Réessayez depuis l’historique.';
+
+  @override
+  String get undoTooLate =>
+      'Il est trop tard pour annuler. Demandez à un administrateur.';
+
+  @override
+  String get undoNeedsConnection =>
+      'L’annulation nécessite une connexion. Réessayez depuis l’historique.';
+
+  @override
+  String servedAtBy(String time, String name) {
+    return 'Servi à $time par $name';
+  }
+
+  @override
+  String get undoTonightsMeal => 'Annuler le repas de ce soir';
+
+  @override
+  String servedBy(String name) {
+    return 'par $name';
+  }
 
   @override
   String get scanNextCard => 'Carte suivante';
@@ -825,4 +885,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String appVersion(String version) {
     return 'Version $version';
   }
+
+  @override
+  String offlineUsingList(String time) {
+    return 'Hors ligne · liste enregistrée à $time';
+  }
+
+  @override
+  String lastUpdatedAt(String time) {
+    return 'Mis à jour à $time';
+  }
+
+  @override
+  String get offlineIndicator => 'Hors ligne';
 }

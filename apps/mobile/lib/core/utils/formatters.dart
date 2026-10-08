@@ -48,3 +48,8 @@ String isolate(String text) => '⁨$text⁩';
 /// so "87 / 214" or "#0142" never flip inside Arabic text.
 // ignore: text_direction_code_point_in_literal, text_direction_code_point_in_comment
 String ltr(String text) => '⁦$text⁩';
+
+/// The time of [at] when it is on [now]'s day, else date and time: a
+/// saved list from yesterday must not read as tonight's (spec 2A §5.4).
+String formatSavedAt(DateTime at, DateTime now) =>
+    isSameDay(at, now) ? formatTime(at) : formatDateTime(at);

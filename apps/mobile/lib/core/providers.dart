@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'config/app_config.dart';
 import 'network/api_client.dart';
 import 'network/auth_interceptor.dart';
+import 'network/connectivity.dart';
 import 'storage/session_storage.dart';
 
 /// Dependency-injection roots. Tests override these with fakes.
@@ -38,6 +39,13 @@ final dioProvider = Provider<Dio>((ref) {
         onSessionExpired: () {
           if (!events.isClosed) events.add(null);
         },
+      ),
+    )
+    ..interceptors.add(
+      ConnectivityInterceptor(
+        onOnline: () => ref.read(connectivityProvider.notifier).reportOnline(),
+        onOffline: () =>
+            ref.read(connectivityProvider.notifier).reportOffline(),
       ),
     );
   ref.onDispose(dio.close);
