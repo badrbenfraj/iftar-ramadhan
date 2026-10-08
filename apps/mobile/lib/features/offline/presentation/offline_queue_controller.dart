@@ -107,6 +107,8 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
   Future<void> _restore() async {
     final saved = await _store.load();
     if (!ref.mounted) return;
+    // After a restart an earlier, unanswered send can't be ruled out.
+    _maybeSent.addAll(saved.pending.map((m) => m.clientEventId));
     // Anything queued before the file was read is kept as well.
     state = state.copyWith(
       pending: [...saved.pending, ...state.pending],
@@ -125,20 +127,29 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
     _schedule();
   }
 
-  /// Undo of an offline serve. [RemoveOutcome.removed] only when the server
-  /// provably never had the meal; [RemoveOutcome.synced] when it left the
-  /// queue (the server recorded it); [RemoveOutcome.unknown] when it was
-  /// sent without an answer and there is still none.
+  /// Waits until no flush is in progress.
+  Future<void> _settle() async {
+    while (state.syncing) {
+      await _flushing;
+    }
+  }
+
+  /// Undo of an offline serve. [RemoveOutcome.removed] only when no send of
+  /// this meal can have reached the server (never sent, or answered as not
+  /// recorded); [RemoveOutcome.synced] when it left the queue because the
+  /// server answered; [RemoveOutcome.unknown] when it was sent (or may have
+  /// been, e.g. before a restart) and there is still no answer.
   Future<RemoveOutcome> remove(String clientEventId) async {
     await _ready();
-    // A meal already sent in a flush may be on the server: wait for its
-    // answer instead of dropping it locally.
-    await _flushing;
+    // A meal being sent may be on the server: wait for its answer instead
+    // of dropping it locally.
+    await _settle();
     bool queued() => state.pending.any((m) => m.clientEventId == clientEventId);
     if (!queued()) return RemoveOutcome.synced;
     if (_maybeSent.contains(clientEventId)) {
       // An earlier send got no answer for this meal: ask again now.
       await flush();
+      await _settle();
       if (!queued()) return RemoveOutcome.synced;
       if (_maybeSent.contains(clientEventId)) return RemoveOutcome.unknown;
     }
@@ -168,6 +179,10 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
   /// dropped. Other volunteers' entries on this phone are kept.
   Future<void> discardFor(int userId) async {
     await _ready();
+    _maybeSent.removeAll([
+      for (final m in state.pending)
+        if (m.userId == userId) m.clientEventId,
+    ]);
     state = state.copyWith(
       pending: [
         for (final m in state.pending)
@@ -193,6 +208,8 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
     state = state.copyWith(syncing: true);
     final finished = Completer<void>();
     _flushing = finished.future;
+    // From the moment of sending, the server may have these.
+    _maybeSent.addAll(batch.map((m) => m.clientEventId));
     var applied = 0;
     try {
       final results = await ref
