@@ -100,6 +100,9 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
       final p = await ref
           .read(personDetailsProvider(widget.personId).notifier)
           .undoMeal(meal);
+      // A reused ID would be answered with the revoked meal (200), so the
+      // next confirm must start fresh.
+      _pendingEventId = null;
       if (mounted) showAppSnackBar(context, l.undone(isolate(p.fullName)));
     } on UndoRefusedFailure catch (e) {
       if (mounted) {
