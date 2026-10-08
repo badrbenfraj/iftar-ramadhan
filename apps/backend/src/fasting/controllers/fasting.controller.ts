@@ -37,6 +37,7 @@ import {
   UpdateFastingInput,
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
+import { MealSyncResultOutput, SyncMealsInput } from '../dtos/meal-sync.dto';
 import { DailyStatistics, FastingService } from '../services/fasting.service';
 
 @ApiTags('fastings')
@@ -202,6 +203,31 @@ export class FastingController {
 
     const fasting = await this.fastingService.revokeMeal(ctx, eventId);
     return { data: fasting, meta: {} };
+  }
+
+  @Post('meals/sync')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Sync meals served with no network (spec 2B §4.1)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'One result per event, in request order',
+    type: SwaggerBaseApiResponse([MealSyncResultOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async syncOfflineMeals(
+    @ReqContext() ctx: RequestContext,
+    @Body() input: SyncMealsInput,
+  ): Promise<BaseApiResponse<MealSyncResultOutput[]>> {
+    this.logger.log(ctx, `${this.syncOfflineMeals.name} was called`);
+    const results = await this.fastingService.syncOfflineMeals(
+      ctx,
+      input.events,
+    );
+    return { data: results, meta: {} };
   }
 
   @Delete(':region/:id')

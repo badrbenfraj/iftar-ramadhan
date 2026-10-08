@@ -31,6 +31,10 @@ import {
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
 import { MealEventOutput } from '../dtos/meal-event-output.dto';
+import {
+  MealSyncResultOutput,
+  SyncMealEventInput,
+} from '../dtos/meal-sync.dto';
 import { Fasting } from '../entities/fasting.entity';
 import { FastingRepository } from '../repositories/fasting.repository';
 import { FastingAclService } from './fasting-acl.service';
@@ -310,6 +314,15 @@ export class FastingService {
     const fasting = await this.repository.getByIdAndRegion(fastingId, regionId);
     const todayMeal = await this.meals.todayMealOf(fastingId);
     return this.toOutput(fasting, { todayMeal });
+  }
+
+  /** Meals served with no network (spec 2B §4.1). */
+  syncOfflineMeals(
+    ctx: RequestContext,
+    events: SyncMealEventInput[],
+  ): Promise<MealSyncResultOutput[]> {
+    this.logger.log(ctx, `${this.syncOfflineMeals.name} was called`);
+    return this.meals.syncOffline(ctx, events);
   }
 
   /**
