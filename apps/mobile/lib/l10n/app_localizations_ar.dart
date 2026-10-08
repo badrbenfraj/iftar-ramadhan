@@ -574,6 +574,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get alreadyServedTonight => 'استلم الليلة';
 
   @override
+  String get cantCheckTonight => 'تعذّر التحقق الليلة';
+
+  @override
+  String lastSyncNotServed(String time) {
+    return 'آخر مزامنة $time: لم يستلم بعد';
+  }
+
+  @override
+  String asOfTime(String time) {
+    return '(حتى الساعة $time)';
+  }
+
+  @override
+  String notOnPhoneTitle(int id) {
+    return 'البطاقة رقم $id غير موجودة على هذا الهاتف';
+  }
+
+  @override
+  String get notOnPhoneMessage =>
+      'لا يوجد اتصال، وهذه البطاقة ليست في القائمة المحفوظة على هذا الهاتف.';
+
+  @override
   String alreadyServedNote(String time) {
     return 'لا شيء للتسليم. أخبره بلطف أنه استلم على الساعة $time.';
   }

@@ -69,6 +69,8 @@ class ScanResultPanel extends ConsumerWidget {
     ScanNotFound(:final personId) => 'missing-$personId',
     ScanInvalidCode(:final raw) => 'invalid-$raw',
     ScanFailed(:final personId) => 'failed-$personId',
+    ScanUnverified(:final person) => 'unverified-${person.id}',
+    ScanNotOnPhone(:final personId) => 'notonphone-$personId',
   };
 
   Widget _content(BuildContext context, WidgetRef ref) {
@@ -140,7 +142,7 @@ class ScanResultPanel extends ConsumerWidget {
           onUndo: person.todayMeal == null ? null : controller.undo,
         );
 
-      case ScanAlreadyTaken(:final person, :final takenAt, :final servedByName):
+      case ScanAlreadyTaken(:final person, :final takenAt, :final servedByName, :final asOf):
         final time = takenAt == null ? null : ltr(formatTime(takenAt));
         return _Sheet(
           background: c.claySoft,
@@ -148,7 +150,9 @@ class ScanResultPanel extends ConsumerWidget {
             color: AppPalette.pausedBand,
             seal: Seal(SealKind.served, semanticLabel: l.sealServed),
             title: MealStatusWords.taken,
-            subtitle: l.alreadyServedTonight,
+            subtitle: asOf == null
+                ? l.alreadyServedTonight
+                : '${l.alreadyServedTonight} ${l.asOfTime(ltr(formatTime(asOf)))}',
             trailing: time,
           ),
           header: [_Name(person), _PersonMeta(person)],
@@ -233,6 +237,53 @@ class ScanResultPanel extends ConsumerWidget {
               onPressed: onFindWithoutCard,
               icon: const Icon(Icons.search_rounded),
               label: Text(l.findNoCard),
+            ),
+            _Links([(l.scanAgain, controller.scanNext)]),
+          ],
+        );
+
+      case ScanUnverified(:final person, :final syncedAt, :final noCard):
+        return _Sheet(
+          band: _Band(
+            color: c.systemBand,
+            seal: problem,
+            title: l.cantCheckTonight,
+            subtitle: l.lastSyncNotServed(ltr(formatTime(syncedAt))),
+            small: true,
+          ),
+          header: [
+            _Name(person),
+            _PersonMeta(person),
+            if (noCard) _NoCardCheck(person),
+          ],
+          body: [
+            _Label(l.handOver),
+            HandOverTiles(person: person),
+          ],
+          footer: [
+            FilledButton.icon(
+              onPressed: controller.retry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(l.retry),
+            ),
+            _Links([(l.skip, controller.scanNext)]),
+          ],
+        );
+
+      case ScanNotOnPhone(:final personId):
+        return _Sheet(
+          band: _Band(
+            color: c.systemBand,
+            seal: problem,
+            title: l.notOnPhoneTitle(personId),
+            subtitle: l.notOnPhoneMessage,
+            small: true,
+          ),
+          body: [
+            FilledButton.icon(
+              onPressed: controller.retry,
+              icon: const Icon(Icons.refresh_rounded),
+              label: Text(l.retry),
             ),
             _Links([(l.scanAgain, controller.scanNext)]),
           ],

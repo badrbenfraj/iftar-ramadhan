@@ -50,6 +50,23 @@ final class ScanNotFound extends ScanStatus {
   final int personId;
 }
 
+/// No answer from the server, but the person is in the list saved on this
+/// phone and was not served as of [syncedAt]. Display only: it can't be
+/// confirmed (spec 2A §5.6; Spec 2B adds "Serve offline").
+final class ScanUnverified extends ScanStatus {
+  const ScanUnverified(this.person, {required this.syncedAt, this.noCard = false});
+  final FastingPerson person;
+  final DateTime syncedAt;
+  final bool noCard;
+}
+
+/// No answer from the server, and this ID isn't in the list saved on this phone.
+final class ScanNotOnPhone extends ScanStatus {
+  const ScanNotOnPhone(this.personId, {this.noCard = false});
+  final int personId;
+  final bool noCard;
+}
+
 /// Eligible: has not collected today. Holds pending phone/comment edits.
 final class ScanReady extends ScanStatus {
   const ScanReady(this.person, {this.phone, this.comment, this.noCard = false});
@@ -89,9 +106,18 @@ final class ScanConfirmed extends ScanStatus {
 
 /// Already collected today — do not serve again.
 final class ScanAlreadyTaken extends ScanStatus {
-  const ScanAlreadyTaken(this.person, this.takenAt, {this.servedByName});
+  const ScanAlreadyTaken(
+    this.person,
+    this.takenAt, {
+    this.servedByName,
+    this.asOf,
+  });
   final FastingPerson person;
   final DateTime? takenAt;
+
+  /// Set when the verdict comes from the list saved on the phone (no answer
+  /// from the server): "as of" that time.
+  final DateTime? asOf;
 
   /// Who served it, when the server said (spec 2A §5.3).
   final String? servedByName;
@@ -165,7 +191,9 @@ class ScanState {
     ScanIdle() ||
     ScanInvalidCode() ||
     ScanNotFound() ||
-    ScanAlreadyTaken() => true,
+    ScanAlreadyTaken() ||
+    ScanUnverified() ||
+    ScanNotOnPhone() => true,
     ScanConfirmed(:final undoing) => !undoing,
     ScanFailed(:final duringConfirm) => !duringConfirm,
     ScanLookingUp() ||
@@ -338,12 +366,34 @@ class ScanController extends Notifier<ScanState> {
     } on NotFoundFailure {
       if (_stillLookingUp(personId)) _set(ScanNotFound(personId));
     } catch (e) {
-      if (_stillLookingUp(personId)) {
-        _set(
-          ScanFailed(toAppFailure(e), personId: personId, noCard: noCard),
-        );
-      }
+      if (!_stillLookingUp(personId)) return;
+      final failure = toAppFailure(e);
+      _set(
+        failure is NetworkFailure || failure is TimeoutFailure
+            ? _offlineVerdict(personId, noCard)
+            : ScanFailed(failure, personId: personId, noCard: noCard),
+      );
     }
+  }
+
+  /// No answer from the server: what the list saved on this phone says,
+  /// clearly marked as such. Never a confirm (spec 2A §5.6).
+  ScanStatus _offlineVerdict(int personId, bool noCard) {
+    final cached = _cached(personId);
+    final syncedAt = ref.read(peopleListProvider.notifier).loadedAt;
+    if (cached == null || syncedAt == null) {
+      return ScanNotOnPhone(personId, noCard: noCard);
+    }
+    if (cached.isMealTakenToday(_now())) {
+      final meal = cached.todayMealAt(_now());
+      return ScanAlreadyTaken(
+        cached,
+        meal?.servedAt ?? cached.lastTakenMeal,
+        servedByName: meal?.servedByName,
+        asOf: syncedAt,
+      );
+    }
+    return ScanUnverified(cached, syncedAt: syncedAt, noCard: noCard);
   }
 
   FastingPerson? _cached(int id) {
@@ -548,12 +598,17 @@ class ScanController extends Notifier<ScanState> {
   }
 
   Future<void> retry() async {
-    final status = state.status;
-    if (status is! ScanFailed) return;
-    if (status.duringConfirm) {
-      await confirm();
-    } else {
-      await _lookup(status.personId, noCard: status.noCard);
+    switch (state.status) {
+      case ScanFailed(duringConfirm: true):
+        await confirm();
+      case ScanFailed(:final personId, :final noCard):
+        await _lookup(personId, noCard: noCard);
+      case ScanUnverified(:final person, :final noCard):
+        await _lookup(person.id, noCard: noCard);
+      case ScanNotOnPhone(:final personId, :final noCard):
+        await _lookup(personId, noCard: noCard);
+      default:
+        return;
     }
   }
 

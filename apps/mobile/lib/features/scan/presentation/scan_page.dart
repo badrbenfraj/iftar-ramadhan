@@ -102,7 +102,11 @@ class _ScanPageState extends ConsumerState<ScanPage> {
       case ScanAlreadyTaken():
         HapticFeedback.heavyImpact();
         HapticFeedback.vibrate();
-      case ScanInvalidCode() || ScanNotFound() || ScanFailed():
+      case ScanInvalidCode() ||
+          ScanNotFound() ||
+          ScanFailed() ||
+          ScanUnverified() ||
+          ScanNotOnPhone():
         HapticFeedback.vibrate();
       case ScanIdle() || ScanLookingUp() || ScanIdentifying() || ScanConfirming():
         break;
@@ -142,7 +146,12 @@ class _ScanPageState extends ConsumerState<ScanPage> {
     final frameColor = switch (scan.status) {
       ScanReady() || ScanConfirming() => AppPalette.mint,
       ScanAlreadyTaken() => AppPalette.clayFrame,
-      ScanIdentifying() || ScanLookingUp() || ScanInvalidCode() || ScanFailed() => AppPalette.gold,
+      ScanIdentifying() ||
+      ScanLookingUp() ||
+      ScanInvalidCode() ||
+      ScanFailed() ||
+      ScanUnverified() ||
+      ScanNotOnPhone() => AppPalette.gold,
       ScanNotFound() => AppPalette.onSkyMuted,
       _ => AppPalette.onSky,
     };

@@ -586,6 +586,28 @@ class AppLocalizationsFr extends AppLocalizations {
   String get alreadyServedTonight => 'Déjà servi ce soir';
 
   @override
+  String get cantCheckTonight => 'Impossible de vérifier ce soir';
+
+  @override
+  String lastSyncNotServed(String time) {
+    return 'Dernière synchro $time : pas encore servi';
+  }
+
+  @override
+  String asOfTime(String time) {
+    return '(à $time)';
+  }
+
+  @override
+  String notOnPhoneTitle(int id) {
+    return 'La carte n°$id n’est pas sur ce téléphone';
+  }
+
+  @override
+  String get notOnPhoneMessage =>
+      'Pas de connexion, et cette carte n’est pas dans la liste enregistrée sur ce téléphone.';
+
+  @override
   String alreadyServedNote(String time) {
     return 'Rien à remettre. Indiquez-lui avec douceur que le repas a été retiré à $time.';
   }

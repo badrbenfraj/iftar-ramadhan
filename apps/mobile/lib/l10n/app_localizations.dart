@@ -1078,6 +1078,36 @@ abstract class AppLocalizations {
   /// **'Already served tonight'**
   String get alreadyServedTonight;
 
+  /// No description provided for @cantCheckTonight.
+  ///
+  /// In en, this message translates to:
+  /// **'Can’t check tonight'**
+  String get cantCheckTonight;
+
+  /// No description provided for @lastSyncNotServed.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sync {time}: not served yet'**
+  String lastSyncNotServed(String time);
+
+  /// No description provided for @asOfTime.
+  ///
+  /// In en, this message translates to:
+  /// **'(as of {time})'**
+  String asOfTime(String time);
+
+  /// No description provided for @notOnPhoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Card #{id} isn’t on this phone'**
+  String notOnPhoneTitle(int id);
+
+  /// No description provided for @notOnPhoneMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'No connection, and this card isn’t in the list saved on this phone.'**
+  String get notOnPhoneMessage;
+
   /// No description provided for @alreadyServedNote.
   ///
   /// In en, this message translates to:
