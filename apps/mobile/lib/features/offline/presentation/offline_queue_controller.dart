@@ -10,6 +10,18 @@ import '../../people/presentation/people_controller.dart';
 import '../data/meal_queue_store.dart';
 import '../domain/offline_meal.dart';
 
+/// What an undo of an offline meal achieved.
+enum RemoveOutcome {
+  /// Dropped from the phone; the server never had it.
+  removed,
+
+  /// The server recorded it: undo it on the server.
+  synced,
+
+  /// Sent but unanswered, and still no answer: the Undo needs a connection.
+  unknown,
+}
+
 /// Shown once as "{n} offline meals synced". A new object every time.
 class SyncedNotice {
   SyncedNotice(this.count);
@@ -70,6 +82,10 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
   /// Completes when the flush in progress, if any, is over.
   Future<void>? _flushing;
 
+  /// Meals sent in a flush that gave no answer for them: the server may
+  /// have them.
+  final Set<String> _maybeSent = {};
+
   MealQueueStore get _store => ref.read(mealQueueStoreProvider);
 
   int? get _userId => ref.read(authControllerProvider).value?.id;
@@ -109,22 +125,32 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
     _schedule();
   }
 
-  /// Undo of an offline serve. False when the meal already left the queue:
-  /// it was synced, and only the server can undo it now.
-  Future<bool> remove(String clientEventId) async {
+  /// Undo of an offline serve. [RemoveOutcome.removed] only when the server
+  /// provably never had the meal; [RemoveOutcome.synced] when it left the
+  /// queue (the server recorded it); [RemoveOutcome.unknown] when it was
+  /// sent without an answer and there is still none.
+  Future<RemoveOutcome> remove(String clientEventId) async {
     await _ready();
     // A meal already sent in a flush may be on the server: wait for its
     // answer instead of dropping it locally.
     await _flushing;
-    final kept = [
-      for (final m in state.pending)
-        if (m.clientEventId != clientEventId) m,
-    ];
-    if (kept.length == state.pending.length) return false;
-    state = state.copyWith(pending: kept);
+    bool queued() => state.pending.any((m) => m.clientEventId == clientEventId);
+    if (!queued()) return RemoveOutcome.synced;
+    if (_maybeSent.contains(clientEventId)) {
+      // An earlier send got no answer for this meal: ask again now.
+      await flush();
+      if (!queued()) return RemoveOutcome.synced;
+      if (_maybeSent.contains(clientEventId)) return RemoveOutcome.unknown;
+    }
+    state = state.copyWith(
+      pending: [
+        for (final m in state.pending)
+          if (m.clientEventId != clientEventId) m,
+      ],
+    );
     await _persist();
     _schedule();
-    return true;
+    return RemoveOutcome.removed;
   }
 
   Future<void> acknowledge(String clientEventId) async {
@@ -178,6 +204,11 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
       final toReview = <ReviewItem>[];
       for (final meal in batch) {
         final result = byId[meal.clientEventId];
+        if (result == null) {
+          _maybeSent.add(meal.clientEventId);
+        } else {
+          _maybeSent.remove(meal.clientEventId);
+        }
         switch (result?.status) {
           case MealSyncStatus.applied:
             applied++;
@@ -203,7 +234,13 @@ class OfflineQueueController extends Notifier<OfflineQueueState> {
       await _persist();
       if (done.isNotEmpty) unawaited(_refreshList());
     } on AppFailure {
-      // No network, expired session or server trouble: kept for later.
+      // No network, expired session or server trouble: kept for later. The
+      // server may have applied them before the answer was lost.
+      _maybeSent.addAll(batch.map((m) => m.clientEventId));
+    } on Object {
+      // Anything unexpected is treated the same way, and never rethrown to
+      // unawaited callers.
+      _maybeSent.addAll(batch.map((m) => m.clientEventId));
     } finally {
       finished.complete();
       if (ref.mounted) {
