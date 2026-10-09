@@ -1,4 +1,3 @@
-import { ROLE } from '../../auth/constants/role.constant';
 import { localDayKey } from '../../shared/utils/local-day';
 
 export type RevokeDecision =
@@ -16,25 +15,28 @@ export interface RevocableEvent {
 }
 
 /**
- * Who may undo a meal (spec 2A ยง4.2): the volunteer who served it, within
- * `windowMinutes` of the server receiving it; or an admin, on the meal's own
- * service day. Undoing twice is not an error.
+ * Who may undo a meal (spec 2A ง4.2, widened by the security spec ง2):
+ * the volunteer who served it, within `windowMinutes` of the server
+ * receiving it; or an admin of the meal's region (`canAdminister`), on the
+ * meal's own service day. Undoing twice is not an error.
  */
 export function decideRevoke(
   event: RevocableEvent,
-  actor: { id: number; roles: string[] },
+  actor: { id: number },
   now: Date,
-  opts: { windowMinutes: number; timeZone: string },
+  opts: { windowMinutes: number; timeZone: string; canAdminister: boolean },
 ): RevokeDecision {
   if (event.revokedAt) {
     return 'alreadyRevoked';
   }
-  const isAdmin = actor.roles.includes(ROLE.ADMIN);
-  if (isAdmin && event.serviceDay === localDayKey(now, opts.timeZone)) {
+  if (
+    opts.canAdminister &&
+    event.serviceDay === localDayKey(now, opts.timeZone)
+  ) {
     return 'allowed';
   }
   if (event.servedByUserId !== actor.id) {
-    return isAdmin ? 'windowExpired' : 'notAllowed';
+    return opts.canAdminister ? 'windowExpired' : 'notAllowed';
   }
   const ageMs = now.getTime() - new Date(event.receivedAt).getTime();
   return ageMs <= opts.windowMinutes * 60_000 ? 'allowed' : 'windowExpired';

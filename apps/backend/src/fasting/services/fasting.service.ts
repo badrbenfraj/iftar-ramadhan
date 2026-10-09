@@ -1,14 +1,21 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
-  UnauthorizedException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { plainToClass } from 'class-transformer';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
+import {
+  isGlobalAdmin,
+  regionForbidden,
+} from '../../auth/access/access-policy';
+import { AUTH_ERROR_CODES } from '../../auth/access/auth-error-codes';
 import { Region } from '../../region/entities/region.entity';
+import { RegionRepository } from '../../region/repositories/region.repository';
 import { Action } from '../../shared/acl/action.constant';
 import { Actor } from '../../shared/acl/actor.constant';
 import { AppLogger } from '../../shared/logger/logger.service';
@@ -61,6 +68,7 @@ export interface DailyStatistics {
 export class FastingService {
   constructor(
     private repository: FastingRepository,
+    private regionRepository: RegionRepository,
     private userService: UserService,
     private aclService: FastingAclService,
     private meals: MealEventService,
@@ -109,12 +117,17 @@ export class FastingService {
     const actor: Actor = ctx.user;
 
     const user = await this.userService.getUserById(ctx, actor.id);
+    if (!user.region) {
+      throw new BadRequestException({
+        message: 'Your account has no region',
+        code: AUTH_ERROR_CODES.NO_REGION,
+      });
+    }
 
-    const isAllowed = this.aclService
-      .forActor(actor)
-      .canDoAction(Action.Create, fasting);
+    // No resource: the person's region is forced to the creator's below.
+    const isAllowed = this.aclService.forActor(actor).canDoAction(Action.Create);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw regionForbidden();
     }
 
     // IDs are chosen by volunteers (printed on the QR card). `save()` would
@@ -166,7 +179,7 @@ export class FastingService {
 
     const isAllowed = this.aclService.forActor(actor).canDoAction(Action.List);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw regionForbidden();
     }
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.findAndCount`);
@@ -197,7 +210,7 @@ export class FastingService {
 
     const isAllowed = this.aclService.forActor(actor).canDoAction(Action.List);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw regionForbidden();
     }
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.findAndCount`);
@@ -226,7 +239,7 @@ export class FastingService {
       .forActor(actor)
       .canDoAction(Action.Read, fasting);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw regionForbidden();
     }
 
     const meals = await this.meals.mealsOf(fasting.id);
@@ -251,13 +264,13 @@ export class FastingService {
       .forActor(actor)
       .canDoAction(Action.Update, fasting);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw regionForbidden();
     }
 
     // The meal history is owned by the confirm endpoint; a regular edit must
     // not be able to rewrite or reset it with stale client data.
 
-    const { lastTakenMeal, takenMeals, ...editable } = input;
+    const { lastTakenMeal, takenMeals, region: _region, ...editable } = input;
 
     // Write only the editable columns: a full save would put back the stale
     // takenMeals / lastTakenMeal loaded above, dropping a concurrent confirm.
@@ -271,13 +284,26 @@ export class FastingService {
       singleMeal: edits.singleMeal,
       familyMeal: edits.familyMeal,
     };
-    if (edits.region !== undefined) columns.region = edits.region;
+
+    const target = input.region?.id;
+    if (target !== undefined && target !== region) {
+      if (!isGlobalAdmin(actor)) {
+        throw regionForbidden();
+      }
+      const exists = await this.regionRepository.findOne({
+        where: { id: target },
+      });
+      if (!exists) {
+        throw new NotFoundException(`Region with ID ${target} not found`);
+      }
+      columns.region = { id: target };
+    }
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.update`);
     await this.repository.update({ id: fasting.id }, columns);
     const savedFasting = await this.repository.getByIdAndRegion(
       fastingId,
-      region,
+      (columns.region as { id: number } | undefined)?.id ?? region,
     );
 
     const todayMeal = await this.meals.todayMealOf(savedFasting.id);
@@ -419,7 +445,7 @@ export class FastingService {
       .forActor(actor)
       .canDoAction(Action.Delete, fasting);
     if (!isAllowed) {
-      throw new UnauthorizedException();
+      throw new ForbiddenException('Only an admin of this region can delete');
     }
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.remove`);

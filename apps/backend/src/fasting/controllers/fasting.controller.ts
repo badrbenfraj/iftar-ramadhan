@@ -7,6 +7,7 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  ParseIntPipe,
   ParseUUIDPipe,
   Patch,
   Post,
@@ -23,7 +24,9 @@ import {
 
 import { ROLE } from '../../auth/constants/role.constant';
 import { Roles } from '../../auth/decorators/role.decorator';
+import { SkipRegionCheck } from '../../auth/decorators/skip-region-check.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RegionAccessGuard } from '../../auth/guards/region-access.guard';
 import { RolesGuard } from '../../auth/guards/roles.guard';
 import {
   BaseApiErrorResponse,
@@ -46,6 +49,7 @@ import { DailyStatistics, FastingService } from '../services/fasting.service';
 
 @ApiTags('fastings')
 @Controller('fastings')
+@UseGuards(JwtAuthGuard, RegionAccessGuard)
 export class FastingController {
   constructor(
     private readonly fastingService: FastingService,
@@ -65,10 +69,9 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getFastingsStatisticsByRegion(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: number,
+    @Param('region', ParseIntPipe) region: number,
     @Query('start') start: string,
     @Query('end') end: string,
   ): Promise<BaseApiResponse<DailyStatistics[]>> {
@@ -97,11 +100,11 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(ROLE.ADMIN)
+  @UseGuards(RolesGuard)
+  @Roles(ROLE.ADMIN, ROLE.REGION_ADMIN)
   async getMealReview(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: number,
+    @Param('region', ParseIntPipe) region: number,
     @Query('day') day?: string,
   ): Promise<BaseApiResponse<MealReviewItemOutput[]>> {
     this.logger.log(ctx, `${this.getMealReview.name} was called`);
@@ -122,11 +125,10 @@ export class FastingController {
     type: BaseApiErrorResponse,
   })
   @UseInterceptors(ClassSerializerInterceptor)
-  @UseGuards(JwtAuthGuard)
   async getFasting(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: number,
-    @Param('id') id: number,
+    @Param('region', ParseIntPipe) region: number,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<BaseApiResponse<FastingOutput>> {
     this.logger.log(ctx, `${this.getFasting.name} was called`);
 
@@ -144,11 +146,10 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async updateFasting(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: number,
-    @Param('id') fastingId: number,
+    @Param('region', ParseIntPipe) region: number,
+    @Param('id', ParseIntPipe) fastingId: number,
     @Body() input: UpdateFastingInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
     const fasting = await this.fastingService.updateFasting(
@@ -180,11 +181,10 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async confirmFastingMeal(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: number,
-    @Param('id') fastingId: number,
+    @Param('region', ParseIntPipe) region: number,
+    @Param('id', ParseIntPipe) fastingId: number,
     @Body() input: ConfirmMealInput,
   ): Promise<BaseApiResponse<FastingOutput>> {
     this.logger.log(ctx, `${this.confirmFastingMeal.name} was called`);
@@ -220,7 +220,7 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @SkipRegionCheck()
   async revokeMeal(
     @ReqContext() ctx: RequestContext,
     @Param('eventId', new ParseUUIDPipe()) eventId: string,
@@ -243,7 +243,7 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @SkipRegionCheck()
   async syncOfflineMeals(
     @ReqContext() ctx: RequestContext,
     @Body() input: SyncMealsInput,
@@ -264,11 +264,12 @@ export class FastingController {
     status: HttpStatus.NO_CONTENT,
   })
   @UseInterceptors(ClassSerializerInterceptor)
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(RolesGuard)
+  @Roles(ROLE.ADMIN, ROLE.REGION_ADMIN)
   async deleteFasting(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: number,
-    @Param('id') id: number,
+    @Param('region', ParseIntPipe) region: number,
+    @Param('id', ParseIntPipe) id: number,
   ): Promise<void> {
     this.logger.log(ctx, `${this.deleteFasting.name} was called`);
 
@@ -285,10 +286,9 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
   async getFastingsByRegion(
     @ReqContext() ctx: RequestContext,
-    @Param('region') region: number,
+    @Param('region', ParseIntPipe) region: number,
     @Query() query: PaginationParamsDto,
   ): Promise<BaseApiResponse<FastingOutput[]>> {
     this.logger.log(ctx, `${this.getFastingsByRegion.name} was called`);
@@ -314,7 +314,7 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @SkipRegionCheck()
   async createFasting(
     @ReqContext() ctx: RequestContext,
     @Body() input: CreateFastingInput,
@@ -344,7 +344,9 @@ export class FastingController {
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @SkipRegionCheck()
+  @UseGuards(RolesGuard)
+  @Roles(ROLE.ADMIN)
   async getFastings(
     @ReqContext() ctx: RequestContext,
     @Query() query: PaginationParamsDto,
