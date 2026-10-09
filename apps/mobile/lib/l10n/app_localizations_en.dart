@@ -841,6 +841,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logoutBody => 'You will need to sign in again to scan cards.';
 
   @override
+  String get unsyncedTitle => 'Meals not synced yet';
+
+  @override
+  String unsyncedBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count meals haven’t synced yet.',
+      one: '1 meal hasn’t synced yet.',
+    );
+    return '$_temp0 Connect to sync before logging out.';
+  }
+
+  @override
+  String get logoutAnyway => 'Log out anyway (meals will be lost)';
+
+  @override
   String get updateAvailableTitle => 'A new version is available';
 
   @override

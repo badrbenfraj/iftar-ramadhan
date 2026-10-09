@@ -14,6 +14,7 @@ import '../../../core/widgets/night_sky.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../offline/presentation/offline_queue_controller.dart';
 import '../../people/presentation/people_controller.dart';
 import '../../update/data/version_repository.dart';
 import '../data/export_service.dart';
@@ -52,6 +53,41 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   Future<void> _logout() async {
     final l = AppLocalizations.of(context);
+    // Unsynced meals are real meals: try once more, then make losing them
+    // an explicit choice (spec 2B §5.4).
+    final userId = ref.read(authControllerProvider).value?.id;
+    final queue = ref.read(offlineQueueProvider.notifier);
+    if (userId != null) {
+      await queue.flush();
+      if (!mounted) return;
+      final unsynced = ref.read(offlineQueueProvider).pendingFor(userId).length;
+      if (unsynced > 0) {
+        final anyway = await showDialog<bool>(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Text(l.unsyncedTitle),
+            content: Text(l.unsyncedBody(unsynced)),
+            actions: [
+              TextButton(
+                style: TextButton.styleFrom(
+                  foregroundColor: Theme.of(context).colorScheme.error,
+                ),
+                onPressed: () => Navigator.pop(context, true),
+                child: Text(l.logoutAnyway),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: Text(l.cancel),
+              ),
+            ],
+          ),
+        );
+        if (anyway != true) return;
+        await queue.discardFor(userId);
+        await ref.read(authControllerProvider.notifier).logout();
+        return;
+      }
+    }
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(

@@ -841,6 +841,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get logoutBody => 'ستحتاج إلى تسجيل الدخول من جديد لمسح البطاقات.';
 
   @override
+  String get unsyncedTitle => 'وجبات لم تُزامَن بعد';
+
+  @override
+  String unsyncedBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count وجبات لم تُزامَن بعد.',
+      one: 'وجبة واحدة لم تُزامَن بعد.',
+    );
+    return '$_temp0 اتصل بالشبكة قبل تسجيل الخروج.';
+  }
+
+  @override
+  String get logoutAnyway => 'تسجيل الخروج رغم ذلك (ستضيع الوجبات)';
+
+  @override
   String get updateAvailableTitle => 'يتوفّر إصدار جديد';
 
   @override

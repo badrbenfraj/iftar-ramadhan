@@ -858,6 +858,23 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous devrez vous reconnecter pour scanner les cartes.';
 
   @override
+  String get unsyncedTitle => 'Repas non synchronisés';
+
+  @override
+  String unsyncedBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repas ne sont pas encore synchronisés.',
+      one: '1 repas n’est pas encore synchronisé.',
+    );
+    return '$_temp0 Connectez-vous au réseau avant de vous déconnecter.';
+  }
+
+  @override
+  String get logoutAnyway => 'Se déconnecter quand même (repas perdus)';
+
+  @override
   String get updateAvailableTitle => 'Une nouvelle version est disponible';
 
   @override

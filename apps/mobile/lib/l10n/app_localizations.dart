@@ -1546,6 +1546,24 @@ abstract class AppLocalizations {
   /// **'You will need to sign in again to scan cards.'**
   String get logoutBody;
 
+  /// No description provided for @unsyncedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meals not synced yet'**
+  String get unsyncedTitle;
+
+  /// No description provided for @unsyncedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 meal hasn’t synced yet.} other{{count} meals haven’t synced yet.}} Connect to sync before logging out.'**
+  String unsyncedBody(int count);
+
+  /// No description provided for @logoutAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out anyway (meals will be lost)'**
+  String get logoutAnyway;
+
   /// No description provided for @updateAvailableTitle.
   ///
   /// In en, this message translates to:
