@@ -50,6 +50,7 @@ docker run -d --name iftar-db -p 5432:5432 \
 # 2. Configuration
 cd apps/backend
 cp .env.template .env            # set DB_*, APP_PORT, DEFAULT_ADMIN_USER_PASSWORD
+# `.env` files are git-ignored; never commit real values
 ./scripts/generate-jwt-keys      # paste JWT_PUBLIC_KEY_BASE64 / JWT_PRIVATE_KEY_BASE64 into .env
 
 # 3. Install, migrate, seed (admin user + default regions), run

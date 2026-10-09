@@ -1,6 +1,6 @@
 # Security fixes and region access control — design
 
-Date: 2026-10-09 · Status: draft for review · Branch: `feat/security-region-access`
+Date: 2026-10-09 · Status: implemented on feat/security-region-access (2026-10-09) · Branch: `feat/security-region-access`
 
 ## 1. Goal
 
