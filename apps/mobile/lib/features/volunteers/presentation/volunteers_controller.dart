@@ -10,12 +10,16 @@ import '../domain/volunteer.dart';
 /// admin picked (null = all regions, global admin only).
 class SelectedRegion extends Notifier<int?> {
   @override
-  int? build() => ref.read(authControllerProvider).value?.region?.id;
+  int? build() {
+    // Rebuild (and so reset the choice) when another account signs in.
+    ref.watch(authControllerProvider.select((a) => a.value?.id));
+    return ref.read(authControllerProvider).value?.region?.id;
+  }
 
   void select(int? regionId) => state = regionId;
 }
 
-final selectedRegionProvider = NotifierProvider<SelectedRegion, int?>(
+final selectedRegionProvider = NotifierProvider.autoDispose<SelectedRegion, int?>(
   SelectedRegion.new,
 );
 

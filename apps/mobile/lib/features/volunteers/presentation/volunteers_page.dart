@@ -34,6 +34,7 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
         showAppSnackBar(context, failureText(AppLocalizations.of(context), e), isError: true);
       }
     }
+    if (!mounted) return;
     ref.invalidate(volunteersProvider);
   }
 
@@ -71,7 +72,7 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
         ),
       ),
     );
-    if (regionId == null) return;
+    if (regionId == null || !mounted) return;
     await _act(
       () => ref.read(volunteersRepositoryProvider).changeRole(
         v.id,
@@ -173,13 +174,16 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
                       _VolunteerRow(
                         volunteer: v,
                         showRegion: isGlobal && regionId == null,
-                        actions: [
+                        actions: !isGlobal && (v.isCoordinator || v.isGlobalAdmin)
+                            ? const []
+                            : [
                           if (v.status == 'pending') ...[
                             (l.approve, () => _act(() => repo.approve(v.id))),
                             (
                               l.refuse,
                               () async {
-                                if (await _confirm(l.refuseTitle(v.name), l.refuseBody, l.refuse)) {
+                                if (await _confirm(l.refuseTitle(v.name), l.refuseBody, l.refuse) &&
+                                    mounted) {
                                   await _act(() => repo.refuse(v.id));
                                 }
                               },
@@ -189,7 +193,8 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
                             (
                               l.disable,
                               () async {
-                                if (await _confirm(l.disableTitle(v.name), l.disableBody, l.disable)) {
+                                if (await _confirm(l.disableTitle(v.name), l.disableBody, l.disable) &&
+                                    mounted) {
                                   await _act(() => repo.disable(v.id));
                                 }
                               },

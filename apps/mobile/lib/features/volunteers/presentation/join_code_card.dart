@@ -49,6 +49,7 @@ class JoinCodeCard extends ConsumerWidget {
   Future<void> _run(BuildContext context, WidgetRef ref, Future<void> Function() action) async {
     try {
       await action();
+      if (!context.mounted) return;
       ref.invalidate(joinCodeProvider(regionId));
     } on AppFailure catch (e) {
       if (context.mounted) {
