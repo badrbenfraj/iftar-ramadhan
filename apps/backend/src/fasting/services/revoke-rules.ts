@@ -15,7 +15,7 @@ export interface RevocableEvent {
 }
 
 /**
- * Who may undo a meal (spec 2A ง4.2, widened by the security spec ง2):
+ * Who may undo a meal (spec 2A ยง4.2, widened by the security spec ยง2):
  * the volunteer who served it, within `windowMinutes` of the server
  * receiving it; or an admin of the meal's region (`canAdminister`), on the
  * meal's own service day. Undoing twice is not an error.

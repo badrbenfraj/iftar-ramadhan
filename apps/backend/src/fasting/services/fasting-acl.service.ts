@@ -8,7 +8,7 @@ import { Actor } from '../../shared/acl/actor.constant';
 import { Fasting } from '../entities/fasting.entity';
 
 /**
- * Security spec ง2: volunteers create, read and edit in their own region;
+ * Security spec ยง2: volunteers create, read and edit in their own region;
  * regional admins also delete there; global admins do everything. The
  * RegionAccessGuard has already checked the URL region; this re-checks the
  * loaded person, so a wrong join can never leak another region.
