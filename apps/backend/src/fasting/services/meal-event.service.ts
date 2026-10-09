@@ -3,13 +3,17 @@ import {
   ForbiddenException,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DataSource, EntityManager } from 'typeorm';
 
-import { ROLE } from '../../auth/constants/role.constant';
+import {
+  canAccessRegion,
+  isGlobalAdmin,
+  isRegionAdmin,
+  regionForbidden,
+} from '../../auth/access/access-policy';
 import { Action } from '../../shared/acl/action.constant';
 import { Actor } from '../../shared/acl/actor.constant';
 import { AppLogger } from '../../shared/logger/logger.service';
@@ -133,12 +137,13 @@ export class MealEventService {
 
       const fasting = await manager.findOne(Fasting, {
         where: { id: fastingId },
+        relations: { region: true },
       });
       const isAllowed = this.aclService
         .forActor(actor)
         .canDoAction(Action.Update, fasting);
       if (!isAllowed) {
-        throw new UnauthorizedException();
+        throw regionForbidden();
       }
 
       if (input.clientEventId) {
@@ -283,17 +288,11 @@ export class MealEventService {
       `${this.syncOffline.name} was called with ${events.length} events`,
     );
     const actor: Actor = ctx.user;
-    const isAdmin = actor.roles.includes(ROLE.ADMIN);
-    const [me]: Array<{ regionId: number | null }> =
-      await this.dataSource.query(
-        `SELECT "regionId" FROM "users" WHERE "id" = $1`,
-        [actor.id],
-      );
+    const isAdmin = isGlobalAdmin(actor);
+    const actorRegionId = actor.regionId ?? null;
     const results: MealSyncResultOutput[] = [];
     for (const event of events) {
-      results.push(
-        await this.syncOne(event, actor, isAdmin, me?.regionId ?? null),
-      );
+      results.push(await this.syncOne(event, actor, isAdmin, actorRegionId));
     }
     return results;
   }
@@ -601,6 +600,13 @@ export class MealEventService {
           code: FASTING_ERROR_CODES.MEAL_EVENT_NOT_FOUND,
         });
       }
+      // A meal of another region looks like no meal at all (no id probing).
+      if (!canAccessRegion(actor, found.regionId)) {
+        throw new NotFoundException({
+          message: 'Meal not found',
+          code: FASTING_ERROR_CODES.MEAL_EVENT_NOT_FOUND,
+        });
+      }
       // Same lock order as confirm: the person first, then the event.
       await manager.query(
         `SELECT "id" FROM "fastings" WHERE "id" = $1 FOR UPDATE`,
@@ -613,6 +619,7 @@ export class MealEventService {
         decideRevoke(event, actor, new Date(), {
           windowMinutes: this.undoWindowMinutes,
           timeZone: this.timeZone,
+          canAdminister: isRegionAdmin(actor, event.regionId),
         })
       ) {
         case 'alreadyRevoked':

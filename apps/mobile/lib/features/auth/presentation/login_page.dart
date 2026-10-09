@@ -11,7 +11,10 @@ import 'auth_controller.dart';
 import 'auth_scaffold.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
-  const LoginPage({super.key});
+  const LoginPage({super.key, this.username});
+
+  /// Prefilled after registering with a join code.
+  final String? username;
 
   @override
   ConsumerState<LoginPage> createState() => _LoginPageState();
@@ -28,6 +31,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   @override
   void initState() {
     super.initState();
+    final username = widget.username;
+    if (username != null) _username.text = username;
     _failure = ref.read(authControllerProvider.notifier).lastSignOutFailure;
   }
 
@@ -50,6 +55,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           .read(authControllerProvider.notifier)
           .login(_username.text, _password.text);
       // The router redirects to the app once signed in.
+    } on AccountPendingFailure {
+      if (mounted) context.go('/pending');
     } on AppFailure catch (e) {
       if (mounted) setState(() => _failure = e);
     } finally {

@@ -85,7 +85,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get emailInvalid => 'Enter a valid email address.';
 
   @override
-  String get passwordTooShort => 'Use at least 6 characters.';
+  String get passwordTooShort => 'Use at least 8 characters.';
 
   @override
   String get regionRequired => 'Region is required.';
@@ -106,7 +106,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errLoginFailed => 'Wrong username or password.';
 
   @override
-  String get errAccountDisabled => 'This account has been disabled.';
+  String get errAccountDisabled =>
+      'This account is disabled. Ask your coordinator.';
 
   @override
   String get errNetwork =>
@@ -122,6 +123,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errForbidden => 'You are not allowed to perform this action.';
+
+  @override
+  String get errTooManyRequests =>
+      'Too many attempts. Wait a minute and try again.';
 
   @override
   String get errNotFound => 'Not found.';
@@ -982,4 +987,143 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get acknowledge => 'Acknowledge';
+
+  @override
+  String get joinCodeHint => 'Join code (if you have one)';
+
+  @override
+  String get joinCodeHelp =>
+      'With your region\'s code you can start at once. Without it, a coordinator approves your account.';
+
+  @override
+  String get errInvalidJoinCode =>
+      'This code isn\'t valid. Check it with your coordinator.';
+
+  @override
+  String get errAccountPending =>
+      'This account is waiting for a coordinator\'s approval.';
+
+  @override
+  String get pendingTitle => 'Waiting for approval';
+
+  @override
+  String get pendingBody =>
+      'Your account is created. A coordinator of your region must approve it before you can sign in. You can ask them directly.';
+
+  @override
+  String get backToSignIn => 'Back to sign in';
+
+  @override
+  String get teamSection => 'Team';
+
+  @override
+  String get volunteers => 'Volunteers';
+
+  @override
+  String get joinCodeTitle => 'Join code';
+
+  @override
+  String get joinCodeOff =>
+      'Joining by code is off. New volunteers wait for approval.';
+
+  @override
+  String get joinCodeShare => 'Share';
+
+  @override
+  String get joinCodeNew => 'New code';
+
+  @override
+  String get joinCodeTurnOn => 'Create a code';
+
+  @override
+  String get joinCodeTurnOff => 'Turn off';
+
+  @override
+  String get joinCodeNewTitle => 'Make a new code?';
+
+  @override
+  String get joinCodeNewBody =>
+      'The current code stops working at once. Accounts already created stay active.';
+
+  @override
+  String get joinCodeOffTitle => 'Turn off joining by code?';
+
+  @override
+  String get joinCodeOffBody =>
+      'New volunteers will have to wait for approval.';
+
+  @override
+  String joinCodeShareMessage(String region, String code) {
+    return 'Join the iftar volunteers of $region: install the app, tap Create account and enter the code $code.';
+  }
+
+  @override
+  String get tabWaiting => 'Waiting';
+
+  @override
+  String get tabActive => 'Active';
+
+  @override
+  String get tabDisabled => 'Disabled';
+
+  @override
+  String tabWithCount(String label, int count) {
+    return '$label · $count';
+  }
+
+  @override
+  String get approve => 'Approve';
+
+  @override
+  String get refuse => 'Refuse';
+
+  @override
+  String get disable => 'Disable';
+
+  @override
+  String get enable => 'Enable';
+
+  @override
+  String refuseTitle(String name) {
+    return 'Refuse $name?';
+  }
+
+  @override
+  String get refuseBody => 'Their account is deleted. They can register again.';
+
+  @override
+  String disableTitle(String name) {
+    return 'Disable $name?';
+  }
+
+  @override
+  String get disableBody =>
+      'They are signed out on their next action and can\'t sign in until enabled again.';
+
+  @override
+  String get makeCoordinator => 'Make coordinator';
+
+  @override
+  String get makeVolunteer => 'Make volunteer';
+
+  @override
+  String get moveToRegion => 'Move to region';
+
+  @override
+  String get coordinator => 'Coordinator';
+
+  @override
+  String get joinedWithCode => 'Joined with code';
+
+  @override
+  String get noneWaiting => 'Nobody is waiting for approval.';
+
+  @override
+  String get noneActive => 'No active volunteers yet.';
+
+  @override
+  String get noneDisabled => 'No disabled accounts.';
+
+  @override
+  String get allRegions => 'All regions';
 }

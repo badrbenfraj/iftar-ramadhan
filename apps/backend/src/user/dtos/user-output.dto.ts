@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Expose, Type } from 'class-transformer';
+import { Expose, Transform, Type } from 'class-transformer';
 
 import { ROLE } from '../../auth/constants/role.constant';
 import { Region } from '../../region/entities/region.entity';
+import { USER_STATUS, type UserStatus } from '../constants/user-status.constant';
 
 /** Region summary embedded in user responses (no nested user data). */
 export class UserRegionOutput {
@@ -49,8 +50,18 @@ export class UserOutput {
   email: string;
 
   @Expose()
+  @ApiProperty({ enum: ['pending', 'active', 'disabled'] })
+  status: UserStatus;
+
+  /** Kept for app versions that predate `status`. */
+  @Expose()
+  @Transform(({ obj }) => obj.status === USER_STATUS.DISABLED)
   @ApiProperty()
   isAccountDisabled: boolean;
+
+  @Expose()
+  @ApiProperty()
+  joinedWithCode: boolean;
 
   @Expose()
   @ApiProperty({ example: [ROLE.USER] })

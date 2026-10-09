@@ -24,19 +24,19 @@ class AuthController extends AsyncNotifier<User?> {
     _expirySub = ref
         .watch(sessionExpiredEventsProvider)
         .stream
-        .listen((_) => _signOut(reason: const UnauthorizedFailure()));
+        .listen((reason) => _signOut(reason: reason));
     ref.onDispose(() => _expirySub?.cancel());
 
     final cached = await _repo.restoreSession();
     if (cached != null) {
       // Refresh the profile (region may have changed) without blocking
       // startup; offline, the cached profile keeps the app usable.
-      unawaited(_refreshProfile());
+      unawaited(refreshProfile());
     }
     return cached;
   }
 
-  Future<void> _refreshProfile() async {
+  Future<void> refreshProfile() async {
     try {
       final user = await _repo.fetchProfile();
       if (state.value != null) state = AsyncData(user);

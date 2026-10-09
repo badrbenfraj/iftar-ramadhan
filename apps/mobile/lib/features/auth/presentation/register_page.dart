@@ -30,15 +30,26 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _username = TextEditingController();
   final _email = TextEditingController();
   final _password = TextEditingController();
+  final _joinCode = TextEditingController();
   int? _regionId;
   bool _submitting = false;
   AppFailure? _failure;
+  String? _joinCodeError;
 
   static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
+  bool get _hasCode => _joinCode.text.trim().isNotEmpty;
+
+  @override
+  void initState() {
+    super.initState();
+    // Typing a code hides the region picker.
+    _joinCode.addListener(() => setState(() => _joinCodeError = null));
+  }
+
   @override
   void dispose() {
-    for (final c in [_name, _username, _email, _password]) {
+    for (final c in [_name, _username, _email, _password, _joinCode]) {
       c.dispose();
     }
     super.dispose();
@@ -50,20 +61,32 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
     setState(() {
       _submitting = true;
       _failure = null;
+      _joinCodeError = null;
     });
     try {
-      await ref
+      final outcome = await ref
           .read(authRepositoryProvider)
           .register(
             name: _name.text,
             username: _username.text,
             email: _email.text,
             password: _password.text,
-            regionId: _regionId!,
+            joinCode: _hasCode ? _joinCode.text : null,
+            regionId: _hasCode ? null : _regionId,
           );
       if (!mounted) return;
-      showAppSnackBar(context, AppLocalizations.of(context).accountCreated);
-      context.pushReplacement('/login');
+      if (outcome == RegisterOutcome.pending) {
+        context.go('/pending');
+      } else {
+        showAppSnackBar(context, AppLocalizations.of(context).accountCreated);
+        context.pushReplacement('/login', extra: _username.text.trim());
+      }
+    } on InvalidJoinCodeFailure {
+      if (mounted) {
+        setState(
+          () => _joinCodeError = AppLocalizations.of(context).errInvalidJoinCode,
+        );
+      }
     } on AppFailure catch (e) {
       if (mounted) setState(() => _failure = e);
     } finally {
@@ -104,12 +127,28 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? l.usernameRequired : null,
               ),
-              _RegionPicker(
-                regions: regions,
-                value: _regionId,
-                onChanged: (id) => setState(() => _regionId = id),
-                onRetry: () => ref.invalidate(regionsProvider),
+              PillTextField(
+                controller: _joinCode,
+                hint: l.joinCodeHint,
+                icon: Icons.key_rounded,
+                textInputAction: TextInputAction.next,
+                textCapitalization: TextCapitalization.characters,
+                errorText: _joinCodeError,
               ),
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(4, 0, 4, 12),
+                child: Text(
+                  l.joinCodeHelp,
+                  style: TextStyle(color: context.colors.inkMuted, fontSize: 12),
+                ),
+              ),
+              if (!_hasCode)
+                _RegionPicker(
+                  regions: regions,
+                  value: _regionId,
+                  onChanged: (id) => setState(() => _regionId = id),
+                  onRetry: () => ref.invalidate(regionsProvider),
+                ),
               PillTextField(
                 controller: _email,
                 hint: l.email,
@@ -132,10 +171,10 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 textInputAction: TextInputAction.done,
                 autofillHints: const [AutofillHints.newPassword],
                 onSubmitted: (_) => _submit(),
-                // Matches the backend rule (6–100 characters).
+                // Matches the backend rule (8–100 characters).
                 validator: (v) {
                   if (v == null || v.isEmpty) return l.passwordRequired;
-                  if (v.length < 6) return l.passwordTooShort;
+                  if (v.length < 8) return l.passwordTooShort;
                   return null;
                 },
               ),

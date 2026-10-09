@@ -5,4 +5,6 @@ export interface Actor {
   id: number;
 
   roles: string[];
+
+  regionId?: number | null;
 }

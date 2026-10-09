@@ -49,12 +49,25 @@ final class InvalidCredentialsFailure extends UnauthorizedFailure {
 /// The account exists but an administrator disabled it.
 final class AccountDisabledFailure extends UnauthorizedFailure {
   const AccountDisabledFailure() : super('This account has been disabled.');
+
+  static const code = 'ACCOUNT_DISABLED';
+}
+
+/// Registered without a join code; a coordinator has not approved it yet.
+final class AccountPendingFailure extends UnauthorizedFailure {
+  const AccountPendingFailure()
+    : super('This account is waiting for approval.');
+
+  static const code = 'ACCOUNT_PENDING';
 }
 
 class ForbiddenFailure extends AppFailure {
   const ForbiddenFailure([
     super.message = 'You are not allowed to perform this action.',
   ]);
+
+  /// The account can't act in that region (security spec §2).
+  static const regionForbidden = 'REGION_FORBIDDEN';
 }
 
 /// 403 on undo: someone else's meal, or too late (spec 2A §4.2).
@@ -99,6 +112,22 @@ final class MealAlreadyTakenFailure extends ConflictFailure {
 /// 400 — the server rejected the input.
 final class ValidationFailure extends AppFailure {
   const ValidationFailure(super.message);
+}
+
+/// 400 INVALID_JOIN_CODE on register.
+final class InvalidJoinCodeFailure extends ValidationFailure {
+  const InvalidJoinCodeFailure() : super('This join code is not valid.');
+
+  static const code = 'INVALID_JOIN_CODE';
+}
+
+/// 429: the server's rate limit (login, register, refresh).
+final class TooManyRequestsFailure extends AppFailure {
+  const TooManyRequestsFailure()
+    : super('Too many attempts. Wait a minute and try again.');
+
+  @override
+  bool get isRetryable => true;
 }
 
 /// 5xx or an unexpected response.
@@ -168,8 +197,17 @@ AppFailure failureFromResponse(int? status, Object? body) {
 
   switch (status) {
     case 400:
+      if (code == InvalidJoinCodeFailure.code) {
+        return const InvalidJoinCodeFailure();
+      }
       return ValidationFailure(message ?? 'Some fields are invalid.');
     case 401:
+      if (code == AccountPendingFailure.code) {
+        return const AccountPendingFailure();
+      }
+      if (code == AccountDisabledFailure.code) {
+        return const AccountDisabledFailure();
+      }
       return UnauthorizedFailure(
         message == null || message == 'Unauthorized'
             ? const UnauthorizedFailure().message
@@ -198,6 +236,8 @@ AppFailure failureFromResponse(int? status, Object? body) {
         );
       }
       return ConflictFailure(message ?? 'Conflict.', code: code);
+    case 429:
+      return const TooManyRequestsFailure();
   }
   if (status != null && status >= 500) {
     return ServerFailure(statusCode: status);

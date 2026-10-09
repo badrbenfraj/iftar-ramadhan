@@ -7,17 +7,21 @@ import '../../../core/providers.dart';
 import '../../../core/storage/session_storage.dart';
 import '../domain/user.dart';
 
+/// Whether a new account can sign in now or waits for a coordinator.
+enum RegisterOutcome { active, pending }
+
 abstract interface class AuthRepository {
   /// Cached user from secure storage, if a session exists.
   Future<User?> restoreSession();
   Future<User> login(String username, String password);
   Future<User> fetchProfile();
-  Future<void> register({
+  Future<RegisterOutcome> register({
     required String name,
     required String username,
     required String email,
     required String password,
-    required int regionId,
+    String? joinCode,
+    int? regionId,
   });
   Future<void> logout();
 }
@@ -56,10 +60,12 @@ class ApiAuthRepository implements AuthRepository {
         accessToken: tokens['accessToken'] as String,
         refreshToken: tokens['refreshToken'] as String?,
       );
-    } on UnauthorizedFailure catch (e) {
-      throw e.message.toLowerCase().contains('disabled')
-          ? const AccountDisabledFailure()
-          : const InvalidCredentialsFailure();
+    } on AccountPendingFailure {
+      rethrow;
+    } on AccountDisabledFailure {
+      rethrow;
+    } on UnauthorizedFailure {
+      throw const InvalidCredentialsFailure();
     }
 
     final user = await fetchProfile();
@@ -79,25 +85,31 @@ class ApiAuthRepository implements AuthRepository {
   }
 
   @override
-  Future<void> register({
+  Future<RegisterOutcome> register({
     required String name,
     required String username,
     required String email,
     required String password,
-    required int regionId,
+    String? joinCode,
+    int? regionId,
   }) async {
+    final code = joinCode?.trim() ?? '';
     try {
-      await _api.post(
+      final envelope = await _api.post(
         '/auth/register',
         body: {
           'name': name.trim(),
           'username': username.trim(),
           'email': email.trim(),
           'password': password,
-          'region': {'id': regionId},
+          if (code.isNotEmpty) 'joinCode': code,
+          if (code.isEmpty && regionId != null) 'region': {'id': regionId},
         },
         extra: _public,
       );
+      return envelope.object['status'] == 'pending'
+          ? RegisterOutcome.pending
+          : RegisterOutcome.active;
     } on ConflictFailure {
       throw const ConflictFailure(
         'Username or email is already in use',
@@ -123,7 +135,7 @@ class ApiRegionRepository implements RegionRepository {
   Future<List<Region>> listRegions() async {
     final envelope = await _api.get(
       '/regions',
-      query: {'limit': 1000, 'offset': 0},
+      query: {'limit': 500, 'offset': 0},
       extra: {skipAuthKey: true},
     );
     return envelope.list.map(Region.fromJson).toList();

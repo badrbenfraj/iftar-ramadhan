@@ -84,7 +84,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get emailInvalid => 'أدخل بريداً إلكترونياً صحيحاً.';
 
   @override
-  String get passwordTooShort => '6 أحرف على الأقل.';
+  String get passwordTooShort => '8 أحرف على الأقل.';
 
   @override
   String get regionRequired => 'المنطقة مطلوبة.';
@@ -105,7 +105,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errLoginFailed => 'اسم المستخدم أو كلمة المرور غير صحيحة.';
 
   @override
-  String get errAccountDisabled => 'تم تعطيل هذا الحساب.';
+  String get errAccountDisabled => 'هذا الحساب معطّل. تواصل مع منسّقك.';
 
   @override
   String get errNetwork =>
@@ -119,6 +119,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get errForbidden => 'غير مسموح لك بهذا الإجراء.';
+
+  @override
+  String get errTooManyRequests =>
+      'محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.';
 
   @override
   String get errNotFound => 'غير موجود.';
@@ -982,4 +986,140 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get acknowledge => 'فهمت';
+
+  @override
+  String get joinCodeHint => 'رمز الانضمام (إن وُجد)';
+
+  @override
+  String get joinCodeHelp =>
+      'برمز منطقتك تبدأ فورًا. بدونه، يوافق منسّق على حسابك.';
+
+  @override
+  String get errInvalidJoinCode => 'هذا الرمز غير صالح. تحقّق منه مع منسّقك.';
+
+  @override
+  String get errAccountPending => 'هذا الحساب في انتظار موافقة المنسّق.';
+
+  @override
+  String get pendingTitle => 'في انتظار الموافقة';
+
+  @override
+  String get pendingBody =>
+      'تمّ إنشاء حسابك. يجب أن يوافق عليه منسّق منطقتك قبل أن تتمكّن من الدخول. يمكنك أن تطلب منه ذلك مباشرة.';
+
+  @override
+  String get backToSignIn => 'العودة إلى تسجيل الدخول';
+
+  @override
+  String get teamSection => 'الفريق';
+
+  @override
+  String get volunteers => 'المتطوّعون';
+
+  @override
+  String get joinCodeTitle => 'رمز الانضمام';
+
+  @override
+  String get joinCodeOff =>
+      'الانضمام بالرمز متوقّف. ينتظر المتطوّعون الجدد الموافقة.';
+
+  @override
+  String get joinCodeShare => 'مشاركة';
+
+  @override
+  String get joinCodeNew => 'رمز جديد';
+
+  @override
+  String get joinCodeTurnOn => 'إنشاء رمز';
+
+  @override
+  String get joinCodeTurnOff => 'إيقاف';
+
+  @override
+  String get joinCodeNewTitle => 'إنشاء رمز جديد؟';
+
+  @override
+  String get joinCodeNewBody =>
+      'يتوقّف الرمز الحالي فورًا. تبقى الحسابات المنشأة نشطة.';
+
+  @override
+  String get joinCodeOffTitle => 'إيقاف الانضمام بالرمز؟';
+
+  @override
+  String get joinCodeOffBody => 'سيتعيّن على المتطوّعين الجدد انتظار الموافقة.';
+
+  @override
+  String joinCodeShareMessage(String region, String code) {
+    return 'انضمّ إلى متطوّعي الإفطار في $region: ثبّت التطبيق، اضغط على إنشاء حساب وأدخل الرمز $code.';
+  }
+
+  @override
+  String get tabWaiting => 'في الانتظار';
+
+  @override
+  String get tabActive => 'نشطون';
+
+  @override
+  String get tabDisabled => 'معطّلون';
+
+  @override
+  String tabWithCount(String label, int count) {
+    return '$label · $count';
+  }
+
+  @override
+  String get approve => 'موافقة';
+
+  @override
+  String get refuse => 'رفض';
+
+  @override
+  String get disable => 'تعطيل';
+
+  @override
+  String get enable => 'تفعيل';
+
+  @override
+  String refuseTitle(String name) {
+    return 'رفض $name؟';
+  }
+
+  @override
+  String get refuseBody => 'يُحذف حسابه. يمكنه التسجيل من جديد.';
+
+  @override
+  String disableTitle(String name) {
+    return 'تعطيل $name؟';
+  }
+
+  @override
+  String get disableBody =>
+      'يُسجَّل خروجه عند إجرائه التالي ولا يمكنه الدخول حتى يُعاد تفعيله.';
+
+  @override
+  String get makeCoordinator => 'تعيين منسّقًا';
+
+  @override
+  String get makeVolunteer => 'إرجاعه متطوّعًا';
+
+  @override
+  String get moveToRegion => 'نقل إلى منطقة';
+
+  @override
+  String get coordinator => 'منسّق';
+
+  @override
+  String get joinedWithCode => 'انضمّ بالرمز';
+
+  @override
+  String get noneWaiting => 'لا أحد ينتظر الموافقة.';
+
+  @override
+  String get noneActive => 'لا متطوّعين نشطين بعد.';
+
+  @override
+  String get noneDisabled => 'لا حسابات معطّلة.';
+
+  @override
+  String get allRegions => 'كل المناطق';
 }

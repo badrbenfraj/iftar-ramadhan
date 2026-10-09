@@ -9,6 +9,10 @@ export class RegionRepository extends Repository<Region> {
     super(Region, dataSource.createEntityManager());
   }
 
+  findActiveByJoinCode(code: string): Promise<Region | null> {
+    return this.findOne({ where: { joinCode: code, active: true } });
+  }
+
   async getRegionById(id: number): Promise<Region> {
     const region = await this.findOne({ where: { id } });
     if (!region) {

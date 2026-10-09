@@ -35,7 +35,7 @@ class User {
     required this.username,
     required this.email,
     required this.roles,
-    required this.isAccountDisabled,
+    this.status = 'active',
     this.region,
   });
 
@@ -47,7 +47,9 @@ class User {
       username: (json['username'] as String?) ?? '',
       email: (json['email'] as String?) ?? '',
       roles: ((json['roles'] as List?) ?? const []).map((r) => '$r').toList(),
-      isAccountDisabled: json['isAccountDisabled'] == true,
+      status:
+          (json['status'] as String?) ??
+          (json['isAccountDisabled'] == true ? 'disabled' : 'active'),
       region: region is Map<String, dynamic> ? Region.fromJson(region) : null,
     );
   }
@@ -57,12 +59,20 @@ class User {
   final String username;
   final String email;
   final List<String> roles;
-  final bool isAccountDisabled;
+  final String status;
 
   /// Every fasting-person call is scoped to the volunteer's region.
   final Region? region;
 
   bool get isAdmin => roles.contains('ADMIN');
+
+  bool get isAccountDisabled => status == 'disabled';
+
+  /// Coordinator of [region] (security spec §2).
+  bool get isRegionAdmin => roles.contains('REGION_ADMIN');
+
+  /// Sees Profile → Volunteers.
+  bool get canManageVolunteers => isAdmin || isRegionAdmin;
 
   String get initials {
     final parts = name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty);
@@ -79,7 +89,7 @@ class User {
     'username': username,
     'email': email,
     'roles': roles,
-    'isAccountDisabled': isAccountDisabled,
+    'status': status,
     'region': region?.toJson(),
   };
 }

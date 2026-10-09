@@ -25,6 +25,11 @@ export class UserAccessTokenClaims {
   @Expose()
   @ApiProperty({ type: () => [String], enum: ROLE, isArray: true })
   roles: ROLE[];
+
+  /** The user's region, read from the database on every request. */
+  @Expose()
+  @ApiProperty({ type: () => Number, nullable: true })
+  regionId: number | null;
 }
 
 export class UserRefreshTokenClaims {

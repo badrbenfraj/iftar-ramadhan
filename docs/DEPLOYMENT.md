@@ -387,3 +387,20 @@ docker exec iftar-db pg_dump -U iftar iftar_db | gzip > iftar-$(date +%F).sql.gz
 3. Delete the VPS in the OVH console.
 
 Keep the GitHub secrets, above all the Android keystore ones, for next year.
+
+## Rotating secrets (do this once now: old values are in public git history)
+
+Old JWT keys, database and admin passwords were committed before October 2026. They
+are useless once replaced:
+
+1. New JWT pair: `cd apps/backend && ./scripts/generate-jwt-keys` → GitHub secrets
+   `JWT_PUBLIC_KEY_BASE64`, `JWT_PRIVATE_KEY_BASE64`.
+2. New `DB_PASS` and `DEFAULT_ADMIN_USER_PASSWORD` (`openssl rand -base64 24`) →
+   GitHub secrets of the same name.
+3. If a server is already running:
+   - change the Postgres password:
+     `docker exec -it iftar-db psql -U iftar -d iftar_db -c "ALTER USER iftar PASSWORD '<new>'"`
+   - run the "Deploy backend" workflow (writes the new `.env`, restarts the API;
+     every phone is signed out once because the JWT keys changed);
+   - set the admin password: `docker exec iftar-app node dist/src/cli.js reset-admin-password`.
+4. Locally: `apps/backend/.env*` are no longer tracked; copy `.env.template`.

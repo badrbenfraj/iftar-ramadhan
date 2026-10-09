@@ -1,23 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsArray,
   IsBoolean,
   IsDateString,
-  IsDefined,
+  IsInt,
   IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUUID,
+  Max,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 
-import { Region } from '../../region/entities/region.entity';
+/** `{ id }` of a region; other fields the app sends are stripped. */
+export class RegionRefInput {
+  @IsInt()
+  @Min(1)
+  @ApiProperty()
+  id: number;
+}
 
 export class CreateFastingInput {
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
+  @Min(1)
   @ApiProperty()
   id: number;
 
@@ -51,13 +60,15 @@ export class CreateFastingInput {
   @ApiProperty()
   phone: string;
 
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
+  @Min(0)
+  @Max(50)
   @ApiProperty()
   singleMeal: number;
 
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
+  @Min(0)
+  @Max(50)
   @ApiProperty()
   familyMeal: number;
 
@@ -67,8 +78,7 @@ export class CreateFastingInput {
   lastTakenMeal: Date;
 
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => Date)
+  @IsArray()
   takenMeals: Date[];
 
   @IsBoolean()
@@ -93,9 +103,12 @@ export class UpdateFastingInput {
   @ApiProperty({ required: false })
   cin: string;
 
-  @ApiProperty()
-  @IsDefined()
-  region: Region;
+  /** Only a global admin may move a person; others must send the URL region. */
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => RegionRefInput)
+  @ApiProperty({ required: false, type: () => RegionRefInput })
+  region?: RegionRefInput;
 
   @IsString()
   @IsOptional()
@@ -107,13 +120,15 @@ export class UpdateFastingInput {
   @ApiProperty()
   phone: string;
 
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
+  @Min(0)
+  @Max(50)
   @ApiProperty()
   singleMeal: number;
 
-  @IsNumber()
-  @IsNotEmpty()
+  @IsInt()
+  @Min(0)
+  @Max(50)
   @ApiProperty()
   familyMeal: number;
 
@@ -123,8 +138,7 @@ export class UpdateFastingInput {
   lastTakenMeal: Date;
 
   @IsOptional()
-  @ValidateNested({ each: true })
-  @Type(() => Date)
+  @IsArray()
   takenMeals: Date[];
 }
 

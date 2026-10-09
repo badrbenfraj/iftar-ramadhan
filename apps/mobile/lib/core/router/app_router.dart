@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/domain/user.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_page.dart';
+import '../../features/auth/presentation/pending_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/welcome_page.dart';
 import '../../features/people/presentation/people_list_page.dart';
@@ -15,12 +16,13 @@ import '../../features/scan/presentation/find_person_page.dart';
 import '../../features/scan/presentation/scan_page.dart';
 import '../../features/scan/presentation/session_summary_page.dart';
 import '../../features/statistics/presentation/statistics_page.dart';
+import '../../features/volunteers/presentation/volunteers_page.dart';
 import '../../shell/home_shell.dart';
 import '../settings/settings_controller.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
-const _publicRoutes = {'/welcome', '/login', '/register'};
+const _publicRoutes = {'/welcome', '/login', '/register', '/pending'};
 
 /// Pure redirect rule, unit-tested: where should [location] go given [auth]?
 ///
@@ -70,8 +72,10 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomePage()),
-      GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
+      GoRoute(path: '/login', builder: (_, state) => LoginPage(username: state.extra as String?),
+      ),
       GoRoute(path: '/register', builder: (_, _) => const RegisterPage()),
+      GoRoute(path: '/pending', builder: (_, _) => const PendingPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(navigationShell: shell),
         branches: [
@@ -109,6 +113,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/volunteers',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const VolunteersPage(),
       ),
       GoRoute(
         path: '/scan',

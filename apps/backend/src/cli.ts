@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
+import { hash } from 'bcrypt';
 
 import { AppModule } from './app.module';
 import { ROLE } from './auth/constants/role.constant';
@@ -8,7 +9,9 @@ import { CreateRegionInput } from './region/dtos/region-input.dto';
 import { RegionRepository } from './region/repositories/region.repository';
 import { RegionService } from './region/services/region.service';
 import { RequestContext } from './shared/request-context/request-context.dto';
+import { USER_STATUS } from './user/constants/user-status.constant';
 import { CreateUserInput } from './user/dtos/user-create-input.dto';
+import { UserRepository } from './user/repositories/user.repository';
 import { UserService } from './user/services/user.service';
 
 async function bootstrap() {
@@ -20,9 +23,23 @@ async function bootstrap() {
     const defaultAdminUserPassword = configService.get<string>(
       'defaultAdminUserPassword',
     );
-    console.log('defaultAdminUserPassword:', defaultAdminUserPassword);
     if (!defaultAdminUserPassword) {
       throw new Error('Default admin password not configured');
+    }
+
+    // `reset-admin-password`: set the existing admin's password from
+    // DEFAULT_ADMIN_USER_PASSWORD (secret rotation on a running server).
+    if (process.argv.includes('reset-admin-password')) {
+      const users = app.get(UserRepository);
+      const admin = await users.findOne({ where: { username: 'admin' } });
+      if (!admin) {
+        throw new Error('No "admin" user to reset');
+      }
+      admin.password = await hash(defaultAdminUserPassword, 10);
+      await users.save(admin);
+      logger.log('Admin password reset from DEFAULT_ADMIN_USER_PASSWORD');
+      await app.close();
+      return;
     }
 
     const userService = app.get(UserService);
@@ -36,6 +53,7 @@ async function bootstrap() {
       id: 0,
       roles: [ROLE.ADMIN],
       username: 'system',
+      regionId: null,
     };
 
     // Create initial admin user without region
@@ -45,7 +63,7 @@ async function bootstrap() {
       username: 'admin',
       password: defaultAdminUserPassword,
       roles: [ROLE.ADMIN],
-      isAccountDisabled: false,
+      status: USER_STATUS.ACTIVE,
       email: 'default-admin@example.com',
     };
 
@@ -63,6 +81,7 @@ async function bootstrap() {
       id: adminUser.id,
       roles: adminUser.roles,
       username: adminUser.username,
+      regionId: null,
     };
 
     // Now create default regions with proper admin user as creator

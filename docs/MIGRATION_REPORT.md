@@ -141,9 +141,7 @@ surfaces. The teal primary and the Ionic pill shapes are unchanged. The design t
    be created once (`docs/DEPLOYMENT.md` §3.1). Releases target arm + arm64 only.
 4. **iOS**: build and test on macOS (`pod install`/SPM, signing). No iOS app icon set was
    generated (the Ionic project had no iOS target).
-5. **Rotate secrets**: JWT private keys and DB/admin passwords are committed in `setup.sh` and
-   `apps/backend/.env*`. `src/cli.ts` also logs the admin password at startup.
-6. **Region access control** is still not enforced: any logged-in user can read or modify
-   another region by changing the URL. `GET /users` also lists all users to any volunteer.
+5. **Rotate secrets**: secrets removed from the repo; rotation steps in DEPLOYMENT.md (to do by the owner).
+6. **Region access control**: done (security spec 2026-10-09).
 7. Once validated during a distribution, delete `apps/legacy-ionic`. (The Ionic-era
    `deploy.sh` and workflow were replaced by `deploy/` and `.github/workflows/`.)

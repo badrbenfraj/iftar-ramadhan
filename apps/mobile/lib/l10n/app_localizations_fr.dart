@@ -86,7 +86,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get emailInvalid => 'Saisissez une adresse e-mail valide.';
 
   @override
-  String get passwordTooShort => 'Au moins 6 caractères.';
+  String get passwordTooShort => 'Au moins 8 caractères.';
 
   @override
   String get regionRequired => 'La région est obligatoire.';
@@ -107,7 +107,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get errLoginFailed => 'Nom d’utilisateur ou mot de passe incorrect.';
 
   @override
-  String get errAccountDisabled => 'Ce compte a été désactivé.';
+  String get errAccountDisabled =>
+      'Ce compte est désactivé. Adressez-vous à votre coordinateur.';
 
   @override
   String get errNetwork =>
@@ -122,6 +123,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get errForbidden => 'Vous n’êtes pas autorisé à faire cette action.';
+
+  @override
+  String get errTooManyRequests =>
+      'Trop de tentatives. Attendez une minute et réessayez.';
 
   @override
   String get errNotFound => 'Introuvable.';
@@ -1002,4 +1007,144 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get acknowledge => 'J’ai compris';
+
+  @override
+  String get joinCodeHint => 'Code d’accès (si vous en avez un)';
+
+  @override
+  String get joinCodeHelp =>
+      'Avec le code de votre région, vous commencez tout de suite. Sans code, un coordinateur valide votre compte.';
+
+  @override
+  String get errInvalidJoinCode =>
+      'Ce code n’est pas valide. Vérifiez-le avec votre coordinateur.';
+
+  @override
+  String get errAccountPending =>
+      'Ce compte attend la validation d’un coordinateur.';
+
+  @override
+  String get pendingTitle => 'En attente de validation';
+
+  @override
+  String get pendingBody =>
+      'Votre compte est créé. Un coordinateur de votre région doit le valider avant que vous puissiez vous connecter. Vous pouvez le lui demander directement.';
+
+  @override
+  String get backToSignIn => 'Retour à la connexion';
+
+  @override
+  String get teamSection => 'Équipe';
+
+  @override
+  String get volunteers => 'Bénévoles';
+
+  @override
+  String get joinCodeTitle => 'Code d’accès';
+
+  @override
+  String get joinCodeOff =>
+      'L’accès par code est désactivé. Les nouveaux bénévoles attendent une validation.';
+
+  @override
+  String get joinCodeShare => 'Partager';
+
+  @override
+  String get joinCodeNew => 'Nouveau code';
+
+  @override
+  String get joinCodeTurnOn => 'Créer un code';
+
+  @override
+  String get joinCodeTurnOff => 'Désactiver';
+
+  @override
+  String get joinCodeNewTitle => 'Créer un nouveau code ?';
+
+  @override
+  String get joinCodeNewBody =>
+      'Le code actuel cesse de fonctionner tout de suite. Les comptes déjà créés restent actifs.';
+
+  @override
+  String get joinCodeOffTitle => 'Désactiver l’accès par code ?';
+
+  @override
+  String get joinCodeOffBody =>
+      'Les nouveaux bénévoles devront attendre une validation.';
+
+  @override
+  String joinCodeShareMessage(String region, String code) {
+    return 'Rejoignez les bénévoles de l’iftar de $region : installez l’application, touchez Créer un compte et saisissez le code $code.';
+  }
+
+  @override
+  String get tabWaiting => 'En attente';
+
+  @override
+  String get tabActive => 'Actifs';
+
+  @override
+  String get tabDisabled => 'Désactivés';
+
+  @override
+  String tabWithCount(String label, int count) {
+    return '$label · $count';
+  }
+
+  @override
+  String get approve => 'Valider';
+
+  @override
+  String get refuse => 'Refuser';
+
+  @override
+  String get disable => 'Désactiver';
+
+  @override
+  String get enable => 'Réactiver';
+
+  @override
+  String refuseTitle(String name) {
+    return 'Refuser $name ?';
+  }
+
+  @override
+  String get refuseBody =>
+      'Son compte est supprimé. Il ou elle peut s’inscrire à nouveau.';
+
+  @override
+  String disableTitle(String name) {
+    return 'Désactiver $name ?';
+  }
+
+  @override
+  String get disableBody =>
+      'Déconnexion à sa prochaine action, et plus de connexion possible jusqu’à réactivation.';
+
+  @override
+  String get makeCoordinator => 'Nommer coordinateur';
+
+  @override
+  String get makeVolunteer => 'Repasser bénévole';
+
+  @override
+  String get moveToRegion => 'Changer de région';
+
+  @override
+  String get coordinator => 'Coordinateur';
+
+  @override
+  String get joinedWithCode => 'Inscrit avec le code';
+
+  @override
+  String get noneWaiting => 'Personne n’attend de validation.';
+
+  @override
+  String get noneActive => 'Aucun bénévole actif pour l’instant.';
+
+  @override
+  String get noneDisabled => 'Aucun compte désactivé.';
+
+  @override
+  String get allRegions => 'Toutes les régions';
 }

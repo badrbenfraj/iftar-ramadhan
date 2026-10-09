@@ -19,6 +19,8 @@ class PillTextField extends StatelessWidget {
     this.onSubmitted,
     this.suffix,
     this.enabled = true,
+    this.textCapitalization = TextCapitalization.none,
+    this.errorText,
   });
 
   final TextEditingController controller;
@@ -32,6 +34,8 @@ class PillTextField extends StatelessWidget {
   final ValueChanged<String>? onSubmitted;
   final Widget? suffix;
   final bool enabled;
+  final TextCapitalization textCapitalization;
+  final String? errorText;
 
   @override
   Widget build(BuildContext context) {
@@ -46,6 +50,7 @@ class PillTextField extends StatelessWidget {
         autofillHints: autofillHints,
         onFieldSubmitted: onSubmitted,
         enabled: enabled,
+        textCapitalization: textCapitalization,
         style: const TextStyle(fontSize: 15),
         decoration: InputDecoration(
           // A floating label, so the field keeps its accessible name
@@ -55,6 +60,7 @@ class PillTextField extends StatelessWidget {
               ? null
               : Icon(icon, color: context.colors.inkMuted, size: 20),
           suffixIcon: suffix,
+          errorText: errorText,
         ),
       ),
     );
