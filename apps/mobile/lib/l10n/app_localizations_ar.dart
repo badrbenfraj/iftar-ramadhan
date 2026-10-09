@@ -905,4 +905,59 @@ class AppLocalizationsAr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String offlineSynced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'زومنت $count وجبات قُدّمت دون اتصال',
+      one: 'زومنت وجبة واحدة قُدّمت دون اتصال',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String toReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تقديمات للمراجعة',
+      one: 'تقديم واحد للمراجعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewTitle => 'تقديمات للمراجعة';
+
+  @override
+  String reviewServedAt(String time) {
+    return 'قُدّمت دون اتصال على الساعة $time';
+  }
+
+  @override
+  String reviewConflict(String time, String name) {
+    return 'استلم أيضًا على الساعة $time، قدّمها $name';
+  }
+
+  @override
+  String reviewConflictNoName(String time) {
+    return 'استلم أيضًا على الساعة $time';
+  }
+
+  @override
+  String get reviewClock => 'تحقق من تاريخ الهاتف وساعته';
+
+  @override
+  String get reviewNotFound => 'هذا الشخص ليس في هذه المنطقة';
+
+  @override
+  String get reviewRegion => 'قُدّمت لمنطقة أخرى';
+
+  @override
+  String get reviewOther => 'تعذّر حفظها';
+
+  @override
+  String get acknowledge => 'فهمت';
 }

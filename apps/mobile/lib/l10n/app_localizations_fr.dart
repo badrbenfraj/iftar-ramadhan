@@ -923,4 +923,59 @@ class AppLocalizationsFr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String offlineSynced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repas hors ligne synchronisés',
+      one: '1 repas hors ligne synchronisé',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String toReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count services à vérifier',
+      one: '1 service à vérifier',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewTitle => 'Services à vérifier';
+
+  @override
+  String reviewServedAt(String time) {
+    return 'Servi hors ligne à $time';
+  }
+
+  @override
+  String reviewConflict(String time, String name) {
+    return 'Déjà servi à $time par $name';
+  }
+
+  @override
+  String reviewConflictNoName(String time) {
+    return 'Déjà servi à $time';
+  }
+
+  @override
+  String get reviewClock => 'Vérifiez la date et l’heure du téléphone';
+
+  @override
+  String get reviewNotFound => 'Cette personne n’est pas dans cette région';
+
+  @override
+  String get reviewRegion => 'Servi pour une autre région';
+
+  @override
+  String get reviewOther => 'N’a pas pu être enregistré';
+
+  @override
+  String get acknowledge => 'J’ai compris';
 }

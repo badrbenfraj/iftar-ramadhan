@@ -256,5 +256,16 @@
   "serveOfflineTitle": "Servir sans vérifier ?",
   "serveOfflineBody": "À faire seulement si aucun autre bénévole ne sert cette région en ce moment. Le repas est enregistré sur ce téléphone et sera synchronisé au retour du réseau. S’il s’agit d’un deuxième repas, ce sera signalé.",
   "savedOnPhone": "Enregistré sur ce téléphone. Synchronisé au retour du réseau.",
-  "toSync": "{count, plural, =1{1 à synchroniser} other{{count} à synchroniser}}"
+  "toSync": "{count, plural, =1{1 à synchroniser} other{{count} à synchroniser}}",
+  "offlineSynced": "{count, plural, =1{1 repas hors ligne synchronisé} other{{count} repas hors ligne synchronisés}}",
+  "toReview": "{count, plural, =1{1 service à vérifier} other{{count} services à vérifier}}",
+  "reviewTitle": "Services à vérifier",
+  "reviewServedAt": "Servi hors ligne à {time}",
+  "reviewConflict": "Déjà servi à {time} par {name}",
+  "reviewConflictNoName": "Déjà servi à {time}",
+  "reviewClock": "Vérifiez la date et l’heure du téléphone",
+  "reviewNotFound": "Cette personne n’est pas dans cette région",
+  "reviewRegion": "Servi pour une autre région",
+  "reviewOther": "N’a pas pu être enregistré",
+  "acknowledge": "J’ai compris"
 }

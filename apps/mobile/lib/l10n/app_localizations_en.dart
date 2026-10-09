@@ -905,4 +905,59 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String offlineSynced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count offline meals synced',
+      one: '1 offline meal synced',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String toReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count servings to review',
+      one: '1 serving to review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewTitle => 'Servings to review';
+
+  @override
+  String reviewServedAt(String time) {
+    return 'Served offline at $time';
+  }
+
+  @override
+  String reviewConflict(String time, String name) {
+    return 'Also served at $time by $name';
+  }
+
+  @override
+  String reviewConflictNoName(String time) {
+    return 'Also served at $time';
+  }
+
+  @override
+  String get reviewClock => 'Check the phone’s date and time';
+
+  @override
+  String get reviewNotFound => 'This person isn’t in this region';
+
+  @override
+  String get reviewRegion => 'Served for another region';
+
+  @override
+  String get reviewOther => 'Couldn’t be saved';
+
+  @override
+  String get acknowledge => 'Acknowledge';
 }

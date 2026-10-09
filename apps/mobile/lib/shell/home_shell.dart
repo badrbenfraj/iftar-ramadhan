@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/widgets/state_views.dart';
+import '../features/offline/presentation/offline_queue_controller.dart';
 import '../features/update/presentation/update_views.dart';
 import '../l10n/app_localizations.dart';
 
 /// Tabs on a sky-colored bar, with the mint scan button in the middle of the
 /// bar. It sits inside the bar, not raised above it, so it never covers the
 /// page or its sheets (user decision, 2026-10-02).
-class HomeShell extends StatelessWidget {
+class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.navigationShell});
 
   final StatefulNavigationShell navigationShell;
@@ -19,7 +22,12 @@ class HomeShell extends StatelessWidget {
   );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // "{n} offline meals synced" (spec 2B §5.2), once per sync.
+    ref.listen(offlineQueueProvider.select((s) => s.lastSynced), (prev, next) {
+      if (next == null || identical(prev, next)) return;
+      showAppSnackBar(context, AppLocalizations.of(context).offlineSynced(next.count));
+    });
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
       body: UpdatePrompter(child: navigationShell),

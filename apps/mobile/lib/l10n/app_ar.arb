@@ -256,5 +256,16 @@
   "serveOfflineTitle": "التقديم دون تحقق؟",
   "serveOfflineBody": "افعل ذلك فقط إن لم يكن متطوع آخر يوزّع في هذه المنطقة الآن. تُحفظ الوجبة على هذا الهاتف وتُزامَن عند عودة الاتصال. وإن تبيّن أنها وجبة ثانية فسيُبلَّغ عنها.",
   "savedOnPhone": "حُفظت على هذا الهاتف. تُزامَن عند عودة الاتصال.",
-  "toSync": "{count, plural, =1{1 في انتظار المزامنة} other{{count} في انتظار المزامنة}}"
+  "toSync": "{count, plural, =1{1 في انتظار المزامنة} other{{count} في انتظار المزامنة}}",
+  "offlineSynced": "{count, plural, =1{زومنت وجبة واحدة قُدّمت دون اتصال} other{زومنت {count} وجبات قُدّمت دون اتصال}}",
+  "toReview": "{count, plural, =1{تقديم واحد للمراجعة} other{{count} تقديمات للمراجعة}}",
+  "reviewTitle": "تقديمات للمراجعة",
+  "reviewServedAt": "قُدّمت دون اتصال على الساعة {time}",
+  "reviewConflict": "استلم أيضًا على الساعة {time}، قدّمها {name}",
+  "reviewConflictNoName": "استلم أيضًا على الساعة {time}",
+  "reviewClock": "تحقق من تاريخ الهاتف وساعته",
+  "reviewNotFound": "هذا الشخص ليس في هذه المنطقة",
+  "reviewRegion": "قُدّمت لمنطقة أخرى",
+  "reviewOther": "تعذّر حفظها",
+  "acknowledge": "فهمت"
 }

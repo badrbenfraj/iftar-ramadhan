@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +16,9 @@ import '../../../core/widgets/night_sky.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../offline/presentation/offline_queue_controller.dart';
+import '../../offline/presentation/review_sheet.dart';
 import '../domain/fasting_person.dart';
 import 'people_controller.dart';
 import 'people_filter.dart';
@@ -41,6 +46,7 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
 
   Future<void> _refresh() async {
     try {
+      unawaited(ref.read(offlineQueueProvider.notifier).flush());
       await ref.read(peopleListProvider.notifier).refresh();
     } on AppFailure catch (e) {
       if (!mounted) return;
@@ -69,6 +75,10 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
         : listState.fromCache
         ? l.lastUpdatedAt(ltr(formatSavedAt(savedAt, ref.read(clockProvider)())))
         : null;
+    final userId = ref.watch(authControllerProvider.select((a) => a.value?.id));
+    final toReview = ref.watch(
+      offlineQueueProvider.select((s) => s.reviewFor(userId).length),
+    );
     final now = ref.watch(clockProvider)();
     final day = ramadanDay(ref.watch(appConfigProvider).ramadanStart, now);
     final bottomClearance =
@@ -108,6 +118,36 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
                         ),
                       ),
                     ],
+                  ),
+                ),
+              ),
+            if (toReview > 0)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(14, 10, 14, 0),
+                  child: Material(
+                    color: context.colors.claySoft,
+                    borderRadius: BorderRadius.circular(12),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(12),
+                      onTap: () => showReviewSheet(context),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        child: Row(
+                          children: [
+                            Icon(Icons.fact_check_outlined, size: 18, color: context.colors.clayInk),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                l.toReview(toReview),
+                                style: TextStyle(color: context.colors.clayInk, fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            Icon(Icons.chevron_right_rounded, color: context.colors.clayInk),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),

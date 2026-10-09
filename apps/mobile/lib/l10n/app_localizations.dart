@@ -1641,6 +1641,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 to sync} other{{count} to sync}}'**
   String toSync(int count);
+
+  /// No description provided for @offlineSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 offline meal synced} other{{count} offline meals synced}}'**
+  String offlineSynced(int count);
+
+  /// No description provided for @toReview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 serving to review} other{{count} servings to review}}'**
+  String toReview(int count);
+
+  /// No description provided for @reviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Servings to review'**
+  String get reviewTitle;
+
+  /// No description provided for @reviewServedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Served offline at {time}'**
+  String reviewServedAt(String time);
+
+  /// No description provided for @reviewConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Also served at {time} by {name}'**
+  String reviewConflict(String time, String name);
+
+  /// No description provided for @reviewConflictNoName.
+  ///
+  /// In en, this message translates to:
+  /// **'Also served at {time}'**
+  String reviewConflictNoName(String time);
+
+  /// No description provided for @reviewClock.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the phone’s date and time'**
+  String get reviewClock;
+
+  /// No description provided for @reviewNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'This person isn’t in this region'**
+  String get reviewNotFound;
+
+  /// No description provided for @reviewRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Served for another region'**
+  String get reviewRegion;
+
+  /// No description provided for @reviewOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t be saved'**
+  String get reviewOther;
+
+  /// No description provided for @acknowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Acknowledge'**
+  String get acknowledge;
 }
 
 class _AppLocalizationsDelegate
