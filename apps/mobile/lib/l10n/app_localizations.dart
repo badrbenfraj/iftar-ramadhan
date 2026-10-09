@@ -253,7 +253,7 @@ abstract class AppLocalizations {
   /// No description provided for @passwordTooShort.
   ///
   /// In en, this message translates to:
-  /// **'Use at least 6 characters.'**
+  /// **'Use at least 8 characters.'**
   String get passwordTooShort;
 
   /// No description provided for @regionRequired.
@@ -295,7 +295,7 @@ abstract class AppLocalizations {
   /// No description provided for @errAccountDisabled.
   ///
   /// In en, this message translates to:
-  /// **'This account has been disabled.'**
+  /// **'This account is disabled. Ask your coordinator.'**
   String get errAccountDisabled;
 
   /// No description provided for @errNetwork.
@@ -1731,6 +1731,252 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Acknowledge'**
   String get acknowledge;
+
+  /// No description provided for @joinCodeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Join code (if you have one)'**
+  String get joinCodeHint;
+
+  /// No description provided for @joinCodeHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'With your region\'s code you can start at once. Without it, a coordinator approves your account.'**
+  String get joinCodeHelp;
+
+  /// No description provided for @errInvalidJoinCode.
+  ///
+  /// In en, this message translates to:
+  /// **'This code isn\'t valid. Check it with your coordinator.'**
+  String get errInvalidJoinCode;
+
+  /// No description provided for @errAccountPending.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is waiting for a coordinator\'s approval.'**
+  String get errAccountPending;
+
+  /// No description provided for @pendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for approval'**
+  String get pendingTitle;
+
+  /// No description provided for @pendingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is created. A coordinator of your region must approve it before you can sign in. You can ask them directly.'**
+  String get pendingBody;
+
+  /// No description provided for @backToSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to sign in'**
+  String get backToSignIn;
+
+  /// No description provided for @teamSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Team'**
+  String get teamSection;
+
+  /// No description provided for @volunteers.
+  ///
+  /// In en, this message translates to:
+  /// **'Volunteers'**
+  String get volunteers;
+
+  /// No description provided for @joinCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join code'**
+  String get joinCodeTitle;
+
+  /// No description provided for @joinCodeOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining by code is off. New volunteers wait for approval.'**
+  String get joinCodeOff;
+
+  /// No description provided for @joinCodeShare.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get joinCodeShare;
+
+  /// No description provided for @joinCodeNew.
+  ///
+  /// In en, this message translates to:
+  /// **'New code'**
+  String get joinCodeNew;
+
+  /// No description provided for @joinCodeTurnOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Create a code'**
+  String get joinCodeTurnOn;
+
+  /// No description provided for @joinCodeTurnOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off'**
+  String get joinCodeTurnOff;
+
+  /// No description provided for @joinCodeNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Make a new code?'**
+  String get joinCodeNewTitle;
+
+  /// No description provided for @joinCodeNewBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The current code stops working at once. Accounts already created stay active.'**
+  String get joinCodeNewBody;
+
+  /// No description provided for @joinCodeOffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off joining by code?'**
+  String get joinCodeOffTitle;
+
+  /// No description provided for @joinCodeOffBody.
+  ///
+  /// In en, this message translates to:
+  /// **'New volunteers will have to wait for approval.'**
+  String get joinCodeOffBody;
+
+  /// No description provided for @joinCodeShareMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the iftar volunteers of {region}: install the app, tap Create account and enter the code {code}.'**
+  String joinCodeShareMessage(String region, String code);
+
+  /// No description provided for @tabWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting'**
+  String get tabWaiting;
+
+  /// No description provided for @tabActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get tabActive;
+
+  /// No description provided for @tabDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get tabDisabled;
+
+  /// No description provided for @tabWithCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · {count}'**
+  String tabWithCount(String label, int count);
+
+  /// No description provided for @approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get approve;
+
+  /// No description provided for @refuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Refuse'**
+  String get refuse;
+
+  /// No description provided for @disable.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable'**
+  String get disable;
+
+  /// No description provided for @enable.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get enable;
+
+  /// No description provided for @refuseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Refuse {name}?'**
+  String refuseTitle(String name);
+
+  /// No description provided for @refuseBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Their account is deleted. They can register again.'**
+  String get refuseBody;
+
+  /// No description provided for @disableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disable {name}?'**
+  String disableTitle(String name);
+
+  /// No description provided for @disableBody.
+  ///
+  /// In en, this message translates to:
+  /// **'They are signed out on their next action and can\'t sign in until enabled again.'**
+  String get disableBody;
+
+  /// No description provided for @makeCoordinator.
+  ///
+  /// In en, this message translates to:
+  /// **'Make coordinator'**
+  String get makeCoordinator;
+
+  /// No description provided for @makeVolunteer.
+  ///
+  /// In en, this message translates to:
+  /// **'Make volunteer'**
+  String get makeVolunteer;
+
+  /// No description provided for @moveToRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Move to region'**
+  String get moveToRegion;
+
+  /// No description provided for @coordinator.
+  ///
+  /// In en, this message translates to:
+  /// **'Coordinator'**
+  String get coordinator;
+
+  /// No description provided for @joinedWithCode.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined with code'**
+  String get joinedWithCode;
+
+  /// No description provided for @noneWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is waiting for approval.'**
+  String get noneWaiting;
+
+  /// No description provided for @noneActive.
+  ///
+  /// In en, this message translates to:
+  /// **'No active volunteers yet.'**
+  String get noneActive;
+
+  /// No description provided for @noneDisabled.
+  ///
+  /// In en, this message translates to:
+  /// **'No disabled accounts.'**
+  String get noneDisabled;
+
+  /// No description provided for @allRegions.
+  ///
+  /// In en, this message translates to:
+  /// **'All regions'**
+  String get allRegions;
 }
 
 class _AppLocalizationsDelegate

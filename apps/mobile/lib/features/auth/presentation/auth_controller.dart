@@ -24,7 +24,7 @@ class AuthController extends AsyncNotifier<User?> {
     _expirySub = ref
         .watch(sessionExpiredEventsProvider)
         .stream
-        .listen((_) => _signOut(reason: const UnauthorizedFailure()));
+        .listen((reason) => _signOut(reason: reason));
     ref.onDispose(() => _expirySub?.cancel());
 
     final cached = await _repo.restoreSession();

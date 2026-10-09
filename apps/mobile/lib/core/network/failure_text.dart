@@ -5,6 +5,7 @@ import 'app_failure.dart';
 /// validation and conflict messages are already human text and pass through.
 String failureText(AppLocalizations l, AppFailure failure) => switch (failure) {
   InvalidCredentialsFailure() => l.errLoginFailed,
+  AccountPendingFailure() => l.errAccountPending,
   AccountDisabledFailure() => l.errAccountDisabled,
   UnauthorizedFailure() => l.errSessionExpired,
   NetworkFailure() => l.errNetwork,
@@ -14,6 +15,7 @@ String failureText(AppLocalizations l, AppFailure failure) => switch (failure) {
   MealAlreadyTakenFailure() => l.alreadyCollected,
   ConflictFailure(code: ConflictFailure.usernameTaken) => l.errUsernameTaken,
   ConflictFailure(:final message) => message,
+  InvalidJoinCodeFailure() => l.errInvalidJoinCode,
   ValidationFailure(:final message) => message,
   ServerFailure() => l.errServer,
   AppStateFailure(code: AppStateFailure.noRegion) => l.errNoRegion,

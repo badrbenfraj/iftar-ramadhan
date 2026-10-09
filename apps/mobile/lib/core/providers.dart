@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'config/app_config.dart';
 import 'network/api_client.dart';
+import 'network/app_failure.dart';
 import 'network/auth_interceptor.dart';
 import 'network/connectivity.dart';
 import 'storage/session_storage.dart';
@@ -19,9 +20,11 @@ final sessionStorageProvider = Provider<SessionStorage>(
   (_) => SecureSessionStorage(),
 );
 
-/// Emits when the refresh token is rejected; the auth controller signs out.
-final sessionExpiredEventsProvider = Provider<StreamController<void>>((ref) {
-  final controller = StreamController<void>.broadcast();
+/// Emits why the server ended the session; the auth controller signs out.
+final sessionExpiredEventsProvider = Provider<StreamController<AppFailure>>((
+  ref,
+) {
+  final controller = StreamController<AppFailure>.broadcast();
   ref.onDispose(controller.close);
   return controller;
 });
@@ -36,8 +39,8 @@ final dioProvider = Provider<Dio>((ref) {
       AuthInterceptor(
         storage: ref.watch(sessionStorageProvider),
         refreshClient: Dio(options),
-        onSessionExpired: () {
-          if (!events.isClosed) events.add(null);
+        onSessionExpired: (reason) {
+          if (!events.isClosed) events.add(reason);
         },
       ),
     )

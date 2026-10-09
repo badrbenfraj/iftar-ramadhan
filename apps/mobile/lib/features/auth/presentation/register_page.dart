@@ -59,7 +59,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
             username: _username.text,
             email: _email.text,
             password: _password.text,
-            regionId: _regionId!,
+            regionId: _regionId,
           );
       if (!mounted) return;
       showAppSnackBar(context, AppLocalizations.of(context).accountCreated);

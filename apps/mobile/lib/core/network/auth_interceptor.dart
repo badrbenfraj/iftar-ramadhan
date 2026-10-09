@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../storage/session_storage.dart';
+import 'app_failure.dart';
 
 /// Marks a request that must not carry or refresh credentials (login, register).
 const skipAuthKey = 'skipAuth';
@@ -20,7 +21,8 @@ class AuthInterceptor extends QueuedInterceptor {
 
   /// A bare client (no interceptors) used for the refresh call and retries.
   final Dio refreshClient;
-  final void Function() onSessionExpired;
+  final void Function(AppFailure reason) onSessionExpired;
+  AppFailure? _refreshFailure;
 
   @override
   Future<void> onRequest(
@@ -57,7 +59,7 @@ class AuthInterceptor extends QueuedInterceptor {
         token = await _refresh();
       }
       if (token == null) {
-        onSessionExpired();
+        onSessionExpired(_sessionEndReason(err));
         return handler.next(err);
       }
 
@@ -66,12 +68,25 @@ class AuthInterceptor extends QueuedInterceptor {
       final response = await refreshClient.fetch<dynamic>(options);
       return handler.resolve(response);
     } on DioException catch (retryError) {
-      if (retryError.response?.statusCode == 401) onSessionExpired();
+      if (retryError.response?.statusCode == 401) {
+        onSessionExpired(_sessionEndReason(retryError));
+      }
       return handler.next(retryError);
     }
   }
 
+  /// Disabled or pending accounts get their own message on the login page.
+  AppFailure _sessionEndReason(DioException err) {
+    final fromResponse = failureFromResponse(
+      err.response?.statusCode,
+      err.response?.data,
+    );
+    final reason = _refreshFailure ?? fromResponse;
+    return reason is UnauthorizedFailure ? reason : const UnauthorizedFailure();
+  }
+
   Future<String?> _refresh() async {
+    _refreshFailure = null;
     final refreshToken = await storage.readRefreshToken();
     if (refreshToken == null) return null;
     try {
@@ -91,6 +106,10 @@ class AuthInterceptor extends QueuedInterceptor {
     } on DioException catch (e) {
       // Offline while refreshing: keep the session, surface the network error.
       if (e.response == null) rethrow;
+      _refreshFailure = failureFromResponse(
+        e.response?.statusCode,
+        e.response?.data,
+      );
       return null;
     }
   }
