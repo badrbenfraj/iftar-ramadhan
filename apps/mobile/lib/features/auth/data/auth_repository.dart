@@ -135,7 +135,7 @@ class ApiRegionRepository implements RegionRepository {
   Future<List<Region>> listRegions() async {
     final envelope = await _api.get(
       '/regions',
-      query: {'limit': 1000, 'offset': 0},
+      query: {'limit': 500, 'offset': 0},
       extra: {skipAuthKey: true},
     );
     return envelope.list.map(Region.fromJson).toList();

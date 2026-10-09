@@ -17,6 +17,7 @@ String failureText(AppLocalizations l, AppFailure failure) => switch (failure) {
   ConflictFailure(:final message) => message,
   InvalidJoinCodeFailure() => l.errInvalidJoinCode,
   ValidationFailure(:final message) => message,
+  TooManyRequestsFailure() => l.errTooManyRequests,
   ServerFailure() => l.errServer,
   AppStateFailure(code: AppStateFailure.noRegion) => l.errNoRegion,
   AppStateFailure(:final message) => message,

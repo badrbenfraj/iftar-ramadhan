@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { compare, hash } from 'bcrypt';
 import { plainToClass } from 'class-transformer';
+import { Raw } from 'typeorm';
 
 import {
   canManageUser,
@@ -99,6 +100,14 @@ export class UserService {
     const [users, count] = await this.repository.findAndCount({
       where: {
         ...(query.status ? { status: query.status } : {}),
+        // Regional admins must not see global admins (their emails).
+        ...(isGlobalAdmin(actor)
+          ? {}
+          : {
+              roles: Raw(
+                (col) => `(',' || ${col} || ',') NOT LIKE '%,${ROLE.ADMIN},%'`,
+              ),
+            }),
         ...(regionId ? { region: { id: regionId } } : {}),
       },
       relations: { region: true },

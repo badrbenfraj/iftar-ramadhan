@@ -173,8 +173,8 @@ Under `/regions/:id/join-code`, `isRegionAdmin(regionId)`:
 - `POST` → generate a new code, replacing the old one, return it;
 - `DELETE` → turn joining by code off.
 
-Code format `WORD-1234`: a word from a short built-in list of easy Latin words (e.g.
-`NOUR`, `RAHMA`, `SABR`, `BARAKA`) + 4 random digits from `crypto.randomInt`, retried on
+Code format `WORD-123456`: a word from a short built-in list of easy Latin words (e.g.
+`NOUR`, `RAHMA`, `SABR`, `BARAKA`) + 6 random digits (changed from 4 in the 2026-10-09 final review: 10^4 per word was guessable) from `crypto.randomInt`, retried on
 the unique constraint. Accounts created with an old code stay active.
 
 Region CRUD (`POST/PATCH/DELETE /regions`) and `allowOfflineServing` become global-admin

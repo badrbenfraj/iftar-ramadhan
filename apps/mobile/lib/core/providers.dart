@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../features/auth/presentation/auth_controller.dart';
 import 'config/app_config.dart';
 import 'network/api_client.dart';
 import 'network/app_failure.dart';
@@ -42,6 +43,9 @@ final dioProvider = Provider<Dio>((ref) {
         onSessionExpired: (reason) {
           if (!events.isClosed) events.add(reason);
         },
+        onRegionForbidden: () => unawaited(
+          ref.read(authControllerProvider.notifier).refreshProfile(),
+        ),
       ),
     )
     ..interceptors.add(

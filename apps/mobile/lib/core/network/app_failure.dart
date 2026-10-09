@@ -121,6 +121,15 @@ final class InvalidJoinCodeFailure extends ValidationFailure {
   static const code = 'INVALID_JOIN_CODE';
 }
 
+/// 429: the server's rate limit (login, register, refresh).
+final class TooManyRequestsFailure extends AppFailure {
+  const TooManyRequestsFailure()
+    : super('Too many attempts. Wait a minute and try again.');
+
+  @override
+  bool get isRetryable => true;
+}
+
 /// 5xx or an unexpected response.
 final class ServerFailure extends AppFailure {
   const ServerFailure({this.statusCode})
@@ -227,6 +236,8 @@ AppFailure failureFromResponse(int? status, Object? body) {
         );
       }
       return ConflictFailure(message ?? 'Conflict.', code: code);
+    case 429:
+      return const TooManyRequestsFailure();
   }
   if (status != null && status >= 500) {
     return ServerFailure(statusCode: status);

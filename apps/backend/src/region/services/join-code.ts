@@ -6,16 +6,16 @@ const WORDS = [
   'HILAL', 'IFTAR', 'SUHUR', 'TAQWA', 'JANNA', 'FAJR', 'DUA', 'ZAKAT',
 ] as const;
 
-/** `NOUR-4821`: a word and 4 random digits. */
+/** `NOUR-482193`: a word and 6 random digits. */
 export function generateJoinCode(): string {
   const word = WORDS[randomInt(WORDS.length)];
-  const digits = String(randomInt(10_000)).padStart(4, '0');
+  const digits = String(randomInt(1_000_000)).padStart(6, '0');
   return `${word}-${digits}`;
 }
 
 /** What volunteers type: spaces, case and a missing dash are forgiven. */
 export function normalizeJoinCode(raw: string): string {
   const compact = raw.trim().toUpperCase().replace(/[\s_]+/g, '');
-  const match = /^([A-Z]+)-?(\d{4})$/.exec(compact);
+  const match = /^([A-Z]+)-?(\d{6})$/.exec(compact);
   return match ? `${match[1]}-${match[2]}` : compact;
 }

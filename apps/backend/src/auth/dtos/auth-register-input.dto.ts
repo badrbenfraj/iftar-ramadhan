@@ -42,7 +42,7 @@ export class RegisterInput {
   @IsString()
   username: string;
 
-  @ApiPropertyOptional({ example: 'NOUR-4821' })
+  @ApiPropertyOptional({ example: 'NOUR-482193' })
   @IsOptional()
   @IsString()
   @MaxLength(32)

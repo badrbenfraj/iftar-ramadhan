@@ -15,6 +15,7 @@ class AuthInterceptor extends QueuedInterceptor {
     required this.storage,
     required this.refreshClient,
     required this.onSessionExpired,
+    this.onRegionForbidden,
   });
 
   final SessionStorage storage;
@@ -22,6 +23,8 @@ class AuthInterceptor extends QueuedInterceptor {
   /// A bare client (no interceptors) used for the refresh call and retries.
   final Dio refreshClient;
   final void Function(AppFailure reason) onSessionExpired;
+  /// Called on a 403 REGION_FORBIDDEN (the account may have been moved).
+  final void Function()? onRegionForbidden;
   AppFailure? _refreshFailure;
 
   @override
@@ -45,6 +48,9 @@ class AuthInterceptor extends QueuedInterceptor {
   ) async {
     final options = err.requestOptions;
     final isUnauthorized = err.response?.statusCode == 401;
+    if (err.response?.statusCode == 403 && _isRegionForbidden(err.response)) {
+      onRegionForbidden?.call();
+    }
     if (!isUnauthorized ||
         options.extra[skipAuthKey] == true ||
         options.extra[_retriedKey] == true) {
@@ -73,6 +79,14 @@ class AuthInterceptor extends QueuedInterceptor {
       }
       return handler.next(retryError);
     }
+  }
+
+  bool _isRegionForbidden(Response<dynamic>? response) {
+    final data = response?.data;
+    final error = data is Map ? data['error'] : null;
+    final details = error is Map ? error['details'] : null;
+    return details is Map &&
+        details['code'] == ForbiddenFailure.regionForbidden;
   }
 
   /// Disabled or pending accounts get their own message on the login page.
@@ -104,8 +118,10 @@ class AuthInterceptor extends QueuedInterceptor {
       );
       return accessToken;
     } on DioException catch (e) {
-      // Offline while refreshing: keep the session, surface the network error.
-      if (e.response == null) rethrow;
+      // Offline, rate limited or a server error while refreshing: temporary,
+      // keep the session and surface the error. Only 401/403 ends it.
+      final status = e.response?.statusCode;
+      if (status == null || status == 429 || status >= 500) rethrow;
       _refreshFailure = failureFromResponse(
         e.response?.statusCode,
         e.response?.data,

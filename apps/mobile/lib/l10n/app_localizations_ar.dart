@@ -121,6 +121,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errForbidden => 'غير مسموح لك بهذا الإجراء.';
 
   @override
+  String get errTooManyRequests =>
+      'محاولات كثيرة. انتظر دقيقة ثم أعد المحاولة.';
+
+  @override
   String get errNotFound => 'غير موجود.';
 
   @override

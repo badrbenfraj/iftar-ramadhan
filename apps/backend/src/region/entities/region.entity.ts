@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import {
   Column,
   CreateDateColumn,
@@ -29,6 +30,7 @@ export class Region {
   allowOfflineServing: boolean;
 
   /** Shared in the volunteers' group; registering with it skips approval. Null = off. */
+  @Exclude()
   @Column({ type: 'varchar', length: 32, nullable: true })
   joinCode: string | null;
 

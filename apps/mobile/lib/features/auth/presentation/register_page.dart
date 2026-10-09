@@ -79,7 +79,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
         context.go('/pending');
       } else {
         showAppSnackBar(context, AppLocalizations.of(context).accountCreated);
-        context.pushReplacement('/login');
+        context.pushReplacement('/login', extra: _username.text.trim());
       }
     } on InvalidJoinCodeFailure {
       if (mounted) {

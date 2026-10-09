@@ -322,6 +322,12 @@ abstract class AppLocalizations {
   /// **'You are not allowed to perform this action.'**
   String get errForbidden;
 
+  /// No description provided for @errTooManyRequests.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Wait a minute and try again.'**
+  String get errTooManyRequests;
+
   /// No description provided for @errNotFound.
   ///
   /// In en, this message translates to:

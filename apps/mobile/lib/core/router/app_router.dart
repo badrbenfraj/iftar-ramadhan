@@ -72,7 +72,8 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomePage()),
-      GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
+      GoRoute(path: '/login', builder: (_, state) => LoginPage(username: state.extra as String?),
+      ),
       GoRoute(path: '/register', builder: (_, _) => const RegisterPage()),
       GoRoute(path: '/pending', builder: (_, _) => const PendingPage()),
       StatefulShellRoute.indexedStack(

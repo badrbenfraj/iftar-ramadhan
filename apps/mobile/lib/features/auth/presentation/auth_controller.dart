@@ -31,12 +31,12 @@ class AuthController extends AsyncNotifier<User?> {
     if (cached != null) {
       // Refresh the profile (region may have changed) without blocking
       // startup; offline, the cached profile keeps the app usable.
-      unawaited(_refreshProfile());
+      unawaited(refreshProfile());
     }
     return cached;
   }
 
-  Future<void> _refreshProfile() async {
+  Future<void> refreshProfile() async {
     try {
       final user = await _repo.fetchProfile();
       if (state.value != null) state = AsyncData(user);

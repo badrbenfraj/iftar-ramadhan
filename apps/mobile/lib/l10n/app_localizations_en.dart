@@ -125,6 +125,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get errForbidden => 'You are not allowed to perform this action.';
 
   @override
+  String get errTooManyRequests =>
+      'Too many attempts. Wait a minute and try again.';
+
+  @override
   String get errNotFound => 'Not found.';
 
   @override

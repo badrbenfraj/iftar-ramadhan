@@ -37,6 +37,7 @@
   "errTimeout": "Le serveur met trop de temps à répondre. Réessayez.",
   "errSessionExpired": "Votre session a expiré. Reconnectez-vous.",
   "errForbidden": "Vous n’êtes pas autorisé à faire cette action.",
+  "errTooManyRequests": "Trop de tentatives. Attendez une minute et réessayez.",
   "errNotFound": "Introuvable.",
   "errServer": "Un problème est survenu sur le serveur. Réessayez dans un instant.",
   "errUnknown": "Erreur inattendue. Réessayez.",

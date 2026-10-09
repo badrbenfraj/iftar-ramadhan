@@ -37,6 +37,7 @@
   "errTimeout": "The server is taking too long to respond. Try again.",
   "errSessionExpired": "Your session has expired. Please sign in again.",
   "errForbidden": "You are not allowed to perform this action.",
+  "errTooManyRequests": "Too many attempts. Wait a minute and try again.",
   "errNotFound": "Not found.",
   "errServer": "Something went wrong on the server. Try again in a moment.",
   "errUnknown": "Unexpected error. Try again.",
