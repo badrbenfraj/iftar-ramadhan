@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsEmail,
   IsEnum,
+  IsIn,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -15,6 +16,7 @@ import {
 
 import { ROLE } from '../../auth/constants/role.constant';
 import { Region } from '../../region/entities/region.entity';
+import { type UserStatus } from '../constants/user-status.constant';
 
 export class CreateUserInput {
   @ApiPropertyOptional()
@@ -51,7 +53,11 @@ export class CreateUserInput {
   @MaxLength(100)
   email: string;
 
-  @ApiProperty()
+  @ApiProperty({ enum: ['pending', 'active', 'disabled'] })
+  @IsIn(['pending', 'active', 'disabled'])
+  status: UserStatus;
+
+  @IsOptional()
   @IsBoolean()
-  isAccountDisabled: boolean;
+  joinedWithCode?: boolean;
 }

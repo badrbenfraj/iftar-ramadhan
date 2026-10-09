@@ -28,6 +28,10 @@ export class Region {
   @Column({ default: false })
   allowOfflineServing: boolean;
 
+  /** Shared in the volunteers' group; registering with it skips approval. Null = off. */
+  @Column({ type: 'varchar', length: 32, nullable: true })
+  joinCode: string | null;
+
   @OneToMany(() => Fasting, (fastingPerson) => fastingPerson.region)
   fastingPeople: Fasting[];
 

@@ -11,6 +11,7 @@ import {
 
 import { Fasting } from '../../fasting/entities/fasting.entity';
 import { Region } from '../../region/entities/region.entity';
+import { USER_STATUS, type UserStatus } from '../constants/user-status.constant';
 
 @Entity('users')
 export class User {
@@ -33,8 +34,18 @@ export class User {
   @Column('simple-array')
   roles: string[];
 
-  @Column()
-  isAccountDisabled: boolean;
+  @Column({ length: 16, default: USER_STATUS.ACTIVE })
+  status: UserStatus;
+
+  /** Who approved a pending account (null for code joins and old accounts). */
+  @Column({ type: 'int', nullable: true })
+  approvedByUserId: number | null;
+
+  @Column({ type: 'timestamptz', nullable: true })
+  approvedAt: Date | null;
+
+  @Column({ default: false })
+  joinedWithCode: boolean;
 
   @Unique('email', ['email'])
   @Column({ length: 200 })

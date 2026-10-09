@@ -9,6 +9,7 @@ import {
 } from 'class-validator';
 
 import { Region } from '../../region/entities/region.entity';
+import { type UserStatus } from '../../user/constants/user-status.constant';
 import { ROLE } from '../constants/role.constant';
 
 export class RegisterInput {
@@ -41,5 +42,6 @@ export class RegisterInput {
 
   // These keys can only be set by ADMIN user.
   roles: ROLE[] = [ROLE.USER];
-  isAccountDisabled: boolean;
+  status: UserStatus;
+  joinedWithCode = false;
 }

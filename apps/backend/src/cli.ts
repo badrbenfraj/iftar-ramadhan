@@ -9,6 +9,7 @@ import { CreateRegionInput } from './region/dtos/region-input.dto';
 import { RegionRepository } from './region/repositories/region.repository';
 import { RegionService } from './region/services/region.service';
 import { RequestContext } from './shared/request-context/request-context.dto';
+import { USER_STATUS } from './user/constants/user-status.constant';
 import { CreateUserInput } from './user/dtos/user-create-input.dto';
 import { UserRepository } from './user/repositories/user.repository';
 import { UserService } from './user/services/user.service';
@@ -61,7 +62,7 @@ async function bootstrap() {
       username: 'admin',
       password: defaultAdminUserPassword,
       roles: [ROLE.ADMIN],
-      isAccountDisabled: false,
+      status: USER_STATUS.ACTIVE,
       email: 'default-admin@example.com',
     };
 

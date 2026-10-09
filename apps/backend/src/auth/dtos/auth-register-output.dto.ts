@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Expose } from 'class-transformer';
 
 import { Region } from '../../region/entities/region.entity';
+import { type UserStatus } from '../../user/constants/user-status.constant';
 import { ROLE } from '../constants/role.constant';
 
 export class RegisterOutput {
@@ -31,7 +32,7 @@ export class RegisterOutput {
 
   @Expose()
   @ApiProperty()
-  isAccountDisabled: boolean;
+  status: UserStatus;
 
   @Expose()
   @ApiProperty()

@@ -9,9 +9,11 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
 
+import { Region } from '../../region/entities/region.entity';
 import { RegionService } from '../../region/services/region.service';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
+import { USER_STATUS } from '../../user/constants/user-status.constant';
 import { UserOutput } from '../../user/dtos/user-output.dto';
 import { UserService } from '../../user/services/user.service';
 import { ROLE } from '../constants/role.constant';
@@ -49,7 +51,7 @@ export class AuthService {
     );
 
     // Prevent disabled users from logging in.
-    if (user.isAccountDisabled) {
+    if (user.status !== USER_STATUS.ACTIVE) {
       throw new UnauthorizedException('This user account has been disabled');
     }
 
@@ -79,8 +81,8 @@ export class AuthService {
 
       // Set default values and include region
       input.roles = [ROLE.USER];
-      input.isAccountDisabled = false;
-      input.region = region;
+      input.status = USER_STATUS.ACTIVE;
+      input.region = region as Region;
 
       const registeredUser = await this.userService.createUser(ctx, input);
       return plainToClass(RegisterOutput, registeredUser, {
