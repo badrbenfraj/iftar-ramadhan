@@ -44,7 +44,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   void initState() {
     super.initState();
     // Typing a code hides the region picker.
-    _joinCode.addListener(() => setState(() {}));
+    _joinCode.addListener(() => setState(() => _joinCodeError = null));
   }
 
   @override
