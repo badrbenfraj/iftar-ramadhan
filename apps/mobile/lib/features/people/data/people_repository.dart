@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/api_client.dart';
 import '../../../core/providers.dart';
 import '../../auth/domain/user.dart';
+import '../../offline/domain/offline_meal.dart';
 import '../domain/fasting_person.dart';
 import '../domain/person_draft.dart';
 
@@ -29,6 +30,10 @@ abstract interface class PeopleRepository {
   /// Undoes a meal (spec 2A §4.2). Throws `UndoRefusedFailure` when the
   /// server refuses (someone else's meal, or too late).
   Future<FastingPerson> revokeMeal(String eventId);
+
+  /// Sends meals served with no network (spec 2B §4.1). One result per
+  /// meal, in order.
+  Future<List<MealSyncResult>> syncMeals(List<PendingMeal> meals);
 }
 
 class ApiPeopleRepository implements PeopleRepository {
@@ -141,6 +146,18 @@ class ApiPeopleRepository implements PeopleRepository {
       timeout: ApiClient.mutationTimeout,
     );
     return _person(envelope.object);
+  }
+
+  @override
+  Future<List<MealSyncResult>> syncMeals(List<PendingMeal> meals) async {
+    final envelope = await _api.post(
+      '/fastings/meals/sync',
+      body: {
+        'events': [for (final m in meals) m.toSyncJson()],
+      },
+      timeout: ApiClient.mutationTimeout,
+    );
+    return [for (final r in envelope.list) MealSyncResult.fromJson(r)];
   }
 
   static String? _opt(String? value) {

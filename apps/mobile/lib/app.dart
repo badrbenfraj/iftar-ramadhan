@@ -9,6 +9,7 @@ import 'core/settings/locale_resolution.dart';
 import 'core/settings/settings_controller.dart';
 import 'core/theme/app_theme.dart';
 import 'core/utils/startup_permissions.dart';
+import 'features/offline/presentation/offline_queue_controller.dart';
 import 'features/people/presentation/people_controller.dart';
 import 'features/update/domain/app_version_info.dart';
 import 'features/update/presentation/update_controller.dart';
@@ -36,11 +37,14 @@ class _IftarAppState extends ConsumerState<IftarApp> {
       requestStartupPermissions();
       // In the background: an offline start is never held up by it.
       unawaited(ref.read(updateControllerProvider.notifier).check());
+      // Restores meals served offline before a restart and starts syncing.
+      ref.read(offlineQueueProvider);
     });
   }
 
   void _onResume() {
     unawaited(ref.read(updateControllerProvider.notifier).checkIfStale());
+    unawaited(ref.read(offlineQueueProvider.notifier).flush());
     if (!ref.exists(peopleListProvider)) return;
     unawaited(ref.read(peopleListProvider.notifier).reloadIfDayChanged());
   }

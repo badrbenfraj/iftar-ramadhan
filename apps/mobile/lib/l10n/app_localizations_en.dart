@@ -841,6 +841,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logoutBody => 'You will need to sign in again to scan cards.';
 
   @override
+  String get unsyncedTitle => 'Meals not synced yet';
+
+  @override
+  String unsyncedBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count meals haven’t synced yet.',
+      one: '1 meal hasn’t synced yet.',
+    );
+    return '$_temp0 Connect to sync before logging out.';
+  }
+
+  @override
+  String get logoutAnyway => 'Log out anyway (meals will be lost)';
+
+  @override
   String get updateAvailableTitle => 'A new version is available';
 
   @override
@@ -881,4 +898,88 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get offlineIndicator => 'Offline';
+
+  @override
+  String get serveOffline => 'Serve offline';
+
+  @override
+  String get serveOfflineTitle => 'Serve without checking?';
+
+  @override
+  String get serveOfflineBody =>
+      'Only do this if no other volunteer is serving this region right now. The meal is saved on this phone and syncs when you’re back online. If it turns out to be a second meal, it will be reported.';
+
+  @override
+  String get savedOnPhone => 'Saved on this phone. Syncs when online.';
+
+  @override
+  String toSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count to sync',
+      one: '1 to sync',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offlineSynced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count offline meals synced',
+      one: '1 offline meal synced',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String toReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count servings to review',
+      one: '1 serving to review',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewTitle => 'Servings to review';
+
+  @override
+  String reviewServedAt(String time) {
+    return 'Served offline at $time';
+  }
+
+  @override
+  String reviewConflict(String time, String name) {
+    return 'Also served at $time by $name';
+  }
+
+  @override
+  String reviewConflictNoName(String time) {
+    return 'Also served at $time';
+  }
+
+  @override
+  String get reviewClock => 'Not recorded: check the phone’s date and time';
+
+  @override
+  String get reviewNotFound => 'Not recorded: this person isn’t in this region';
+
+  @override
+  String get reviewRegion => 'Not recorded: served for another region';
+
+  @override
+  String get reviewOther => 'Not recorded';
+
+  @override
+  String servedOnThisPhone(String time) {
+    return 'Served on this phone at $time, not synced yet';
+  }
+
+  @override
+  String get acknowledge => 'Acknowledge';
 }

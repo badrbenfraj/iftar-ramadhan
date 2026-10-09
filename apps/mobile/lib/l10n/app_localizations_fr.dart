@@ -858,6 +858,23 @@ class AppLocalizationsFr extends AppLocalizations {
       'Vous devrez vous reconnecter pour scanner les cartes.';
 
   @override
+  String get unsyncedTitle => 'Repas non synchronisés';
+
+  @override
+  String unsyncedBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repas ne sont pas encore synchronisés.',
+      one: '1 repas n’est pas encore synchronisé.',
+    );
+    return '$_temp0 Connectez-vous au réseau avant de vous déconnecter.';
+  }
+
+  @override
+  String get logoutAnyway => 'Se déconnecter quand même (repas perdus)';
+
+  @override
   String get updateAvailableTitle => 'Une nouvelle version est disponible';
 
   @override
@@ -898,4 +915,91 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get offlineIndicator => 'Hors ligne';
+
+  @override
+  String get serveOffline => 'Servir hors ligne';
+
+  @override
+  String get serveOfflineTitle => 'Servir sans vérifier ?';
+
+  @override
+  String get serveOfflineBody =>
+      'À faire seulement si aucun autre bénévole ne sert cette région en ce moment. Le repas est enregistré sur ce téléphone et sera synchronisé au retour du réseau. S’il s’agit d’un deuxième repas, ce sera signalé.';
+
+  @override
+  String get savedOnPhone =>
+      'Enregistré sur ce téléphone. Synchronisé au retour du réseau.';
+
+  @override
+  String toSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count à synchroniser',
+      one: '1 à synchroniser',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offlineSynced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count repas hors ligne synchronisés',
+      one: '1 repas hors ligne synchronisé',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String toReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count services à vérifier',
+      one: '1 service à vérifier',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewTitle => 'Services à vérifier';
+
+  @override
+  String reviewServedAt(String time) {
+    return 'Servi hors ligne à $time';
+  }
+
+  @override
+  String reviewConflict(String time, String name) {
+    return 'Déjà servi à $time par $name';
+  }
+
+  @override
+  String reviewConflictNoName(String time) {
+    return 'Déjà servi à $time';
+  }
+
+  @override
+  String get reviewClock =>
+      'Non enregistré : vérifiez la date et l’heure du téléphone';
+
+  @override
+  String get reviewNotFound =>
+      'Non enregistré : cette personne n’est pas dans cette région';
+
+  @override
+  String get reviewRegion => 'Non enregistré : servi pour une autre région';
+
+  @override
+  String get reviewOther => 'Non enregistré';
+
+  @override
+  String servedOnThisPhone(String time) {
+    return 'Servi sur ce téléphone à $time, pas encore synchronisé';
+  }
+
+  @override
+  String get acknowledge => 'J’ai compris';
 }

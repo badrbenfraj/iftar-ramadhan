@@ -1,6 +1,11 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 
+import { ROLE } from '../../auth/constants/role.constant';
 import { Action } from '../../shared/acl/action.constant';
 import { Actor } from '../../shared/acl/actor.constant';
 import { AppLogger } from '../../shared/logger/logger.service';
@@ -95,6 +100,16 @@ export class RegionService {
       .canDoAction(Action.Update, region);
     if (!isAllowed) {
       throw new UnauthorizedException();
+    }
+
+    // Offline serving trades double-serve safety for availability: an
+    // admin decision (spec 2B §4.3).
+    if (
+      input.allowOfflineServing !== undefined &&
+      input.allowOfflineServing !== region.allowOfflineServing &&
+      !actor.roles.includes(ROLE.ADMIN)
+    ) {
+      throw new ForbiddenException('Only admins can change offline serving');
     }
 
     const updatedRegion: Region = {

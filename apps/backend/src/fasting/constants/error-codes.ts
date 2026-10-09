@@ -7,4 +7,11 @@ export const FASTING_ERROR_CODES = {
   MEAL_EVENT_NOT_FOUND: 'MEAL_EVENT_NOT_FOUND',
   UNDO_NOT_ALLOWED: 'UNDO_NOT_ALLOWED',
   UNDO_WINDOW_EXPIRED: 'UNDO_WINDOW_EXPIRED',
+  CLOCK_OUT_OF_RANGE: 'CLOCK_OUT_OF_RANGE',
+  REGION_NOT_ALLOWED: 'REGION_NOT_ALLOWED',
+} as const;
+
+/** Admin-review markers on meal events; they don't change validity. */
+export const OFFLINE_FLAGS = {
+  OFFLINE_NOT_ALLOWED: 'OFFLINE_NOT_ALLOWED',
 } as const;

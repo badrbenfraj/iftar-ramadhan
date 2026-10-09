@@ -21,7 +21,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 
+import { ROLE } from '../../auth/constants/role.constant';
+import { Roles } from '../../auth/decorators/role.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../../auth/guards/roles.guard';
 import {
   BaseApiErrorResponse,
   BaseApiResponse,
@@ -37,6 +40,8 @@ import {
   UpdateFastingInput,
 } from '../dtos/fasting-input.dto';
 import { FastingOutput } from '../dtos/fasting-output.dto';
+import { MealReviewItemOutput } from '../dtos/meal-review-output.dto';
+import { MealSyncResultOutput, SyncMealsInput } from '../dtos/meal-sync.dto';
 import { DailyStatistics, FastingService } from '../services/fasting.service';
 
 @ApiTags('fastings')
@@ -80,6 +85,28 @@ export class FastingController {
     );
 
     return { data: statistics, meta: {} };
+  }
+
+  @Get('meals/review/:region')
+  @ApiOperation({
+    summary: 'Admin: double serves and flagged meals of a day (spec 2B §4.2)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([MealReviewItemOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLE.ADMIN)
+  async getMealReview(
+    @ReqContext() ctx: RequestContext,
+    @Param('region') region: number,
+    @Query('day') day?: string,
+  ): Promise<BaseApiResponse<MealReviewItemOutput[]>> {
+    this.logger.log(ctx, `${this.getMealReview.name} was called`);
+    const items = await this.fastingService.getMealReview(ctx, region, day);
+    return { data: items, meta: {} };
   }
 
   @Get(':region/:id')
@@ -202,6 +229,31 @@ export class FastingController {
 
     const fasting = await this.fastingService.revokeMeal(ctx, eventId);
     return { data: fasting, meta: {} };
+  }
+
+  @Post('meals/sync')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Sync meals served with no network (spec 2B §4.1)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'One result per event, in request order',
+    type: SwaggerBaseApiResponse([MealSyncResultOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  async syncOfflineMeals(
+    @ReqContext() ctx: RequestContext,
+    @Body() input: SyncMealsInput,
+  ): Promise<BaseApiResponse<MealSyncResultOutput[]>> {
+    this.logger.log(ctx, `${this.syncOfflineMeals.name} was called`);
+    const results = await this.fastingService.syncOfflineMeals(
+      ctx,
+      input.events,
+    );
+    return { data: results, meta: {} };
   }
 
   @Delete(':region/:id')

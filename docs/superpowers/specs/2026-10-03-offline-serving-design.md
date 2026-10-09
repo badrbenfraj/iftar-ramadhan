@@ -1,7 +1,7 @@
 # Spec 2B: Serving with no network (offline serve, sync, conflict review)
 
 - **Date:** 2026-10-03 (split out of Spec 2, dated 2026-10-01)
-- **Status:** Draft for review
+- **Status:** Implemented (branch feat/offline-serving-2b, plan docs/superpowers/plans/2026-10-08-offline-serving-2b.md)
 - **Scope:** `apps/backend` (NestJS + PostgreSQL) and `apps/mobile` (Flutter)
 - **Depends on:** [Spec 2A](2026-10-01-serving-safety-backend-design.md), shipped and used in the January field dry run. 2B reuses its `meal_events` table, `clientEventId` / `deviceId`, dual-write, `PeopleCache`, connectivity detection, and the **Unverified** scan state.
 - **Reference prototype:** [assets/2026-10-01-fusion-prototype.html](assets/2026-10-01-fusion-prototype.html). The offline and sync flows are already clickable there.

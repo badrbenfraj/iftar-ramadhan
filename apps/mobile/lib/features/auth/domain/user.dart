@@ -1,13 +1,22 @@
 class Region {
-  const Region({required this.id, required this.name});
+  const Region({
+    required this.id,
+    required this.name,
+    this.allowOfflineServing = false,
+  });
 
   factory Region.fromJson(Map<String, dynamic> json) => Region(
     id: (json['id'] as num).toInt(),
     name: (json['name'] as String?) ?? '',
+    allowOfflineServing: json['allowOfflineServing'] == true,
   );
 
   final int id;
   final String name;
+
+  /// Spec 2B: volunteers may serve with no network here. Off by default and
+  /// from an older backend.
+  final bool allowOfflineServing;
 
   Map<String, dynamic> toJson() => {'id': id, 'name': name};
 

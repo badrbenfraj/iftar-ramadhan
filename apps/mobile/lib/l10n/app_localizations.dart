@@ -1546,6 +1546,24 @@ abstract class AppLocalizations {
   /// **'You will need to sign in again to scan cards.'**
   String get logoutBody;
 
+  /// No description provided for @unsyncedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Meals not synced yet'**
+  String get unsyncedTitle;
+
+  /// No description provided for @unsyncedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 meal hasn’t synced yet.} other{{count} meals haven’t synced yet.}} Connect to sync before logging out.'**
+  String unsyncedBody(int count);
+
+  /// No description provided for @logoutAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Log out anyway (meals will be lost)'**
+  String get logoutAnyway;
+
   /// No description provided for @updateAvailableTitle.
   ///
   /// In en, this message translates to:
@@ -1611,6 +1629,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Offline'**
   String get offlineIndicator;
+
+  /// No description provided for @serveOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Serve offline'**
+  String get serveOffline;
+
+  /// No description provided for @serveOfflineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Serve without checking?'**
+  String get serveOfflineTitle;
+
+  /// No description provided for @serveOfflineBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Only do this if no other volunteer is serving this region right now. The meal is saved on this phone and syncs when you’re back online. If it turns out to be a second meal, it will be reported.'**
+  String get serveOfflineBody;
+
+  /// No description provided for @savedOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this phone. Syncs when online.'**
+  String get savedOnPhone;
+
+  /// No description provided for @toSync.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 to sync} other{{count} to sync}}'**
+  String toSync(int count);
+
+  /// No description provided for @offlineSynced.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 offline meal synced} other{{count} offline meals synced}}'**
+  String offlineSynced(int count);
+
+  /// No description provided for @toReview.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 serving to review} other{{count} servings to review}}'**
+  String toReview(int count);
+
+  /// No description provided for @reviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Servings to review'**
+  String get reviewTitle;
+
+  /// No description provided for @reviewServedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Served offline at {time}'**
+  String reviewServedAt(String time);
+
+  /// No description provided for @reviewConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'Also served at {time} by {name}'**
+  String reviewConflict(String time, String name);
+
+  /// No description provided for @reviewConflictNoName.
+  ///
+  /// In en, this message translates to:
+  /// **'Also served at {time}'**
+  String reviewConflictNoName(String time);
+
+  /// No description provided for @reviewClock.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded: check the phone’s date and time'**
+  String get reviewClock;
+
+  /// No description provided for @reviewNotFound.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded: this person isn’t in this region'**
+  String get reviewNotFound;
+
+  /// No description provided for @reviewRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded: served for another region'**
+  String get reviewRegion;
+
+  /// No description provided for @reviewOther.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded'**
+  String get reviewOther;
+
+  /// No description provided for @servedOnThisPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Served on this phone at {time}, not synced yet'**
+  String servedOnThisPhone(String time);
+
+  /// No description provided for @acknowledge.
+  ///
+  /// In en, this message translates to:
+  /// **'Acknowledge'**
+  String get acknowledge;
 }
 
 class _AppLocalizationsDelegate

@@ -841,6 +841,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get logoutBody => 'ستحتاج إلى تسجيل الدخول من جديد لمسح البطاقات.';
 
   @override
+  String get unsyncedTitle => 'وجبات لم تُزامَن بعد';
+
+  @override
+  String unsyncedBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count وجبات لم تُزامَن بعد.',
+      one: 'وجبة واحدة لم تُزامَن بعد.',
+    );
+    return '$_temp0 اتصل بالشبكة قبل تسجيل الخروج.';
+  }
+
+  @override
+  String get logoutAnyway => 'تسجيل الخروج رغم ذلك (ستضيع الوجبات)';
+
+  @override
   String get updateAvailableTitle => 'يتوفّر إصدار جديد';
 
   @override
@@ -881,4 +898,88 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get offlineIndicator => 'غير متصل';
+
+  @override
+  String get serveOffline => 'التقديم دون اتصال';
+
+  @override
+  String get serveOfflineTitle => 'التقديم دون تحقق؟';
+
+  @override
+  String get serveOfflineBody =>
+      'افعل ذلك فقط إن لم يكن متطوع آخر يوزّع في هذه المنطقة الآن. تُحفظ الوجبة على هذا الهاتف وتُزامَن عند عودة الاتصال. وإن تبيّن أنها وجبة ثانية فسيُبلَّغ عنها.';
+
+  @override
+  String get savedOnPhone => 'حُفظت على هذا الهاتف. تُزامَن عند عودة الاتصال.';
+
+  @override
+  String toSync(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count في انتظار المزامنة',
+      one: '1 في انتظار المزامنة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String offlineSynced(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تمت مزامنة $count من الوجبات المقدّمة دون اتصال',
+      one: 'تمت مزامنة وجبة واحدة قُدّمت دون اتصال',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String toReview(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تقديمات للمراجعة',
+      one: 'تقديم واحد للمراجعة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get reviewTitle => 'تقديمات للمراجعة';
+
+  @override
+  String reviewServedAt(String time) {
+    return 'قُدّمت دون اتصال على الساعة $time';
+  }
+
+  @override
+  String reviewConflict(String time, String name) {
+    return 'سبق تقديم وجبة على الساعة $time من طرف $name';
+  }
+
+  @override
+  String reviewConflictNoName(String time) {
+    return 'سبق تقديم وجبة على الساعة $time';
+  }
+
+  @override
+  String get reviewClock => 'لم تُسجَّل: تحقق من تاريخ الهاتف وساعته';
+
+  @override
+  String get reviewNotFound => 'لم تُسجَّل: هذا الشخص ليس في هذه المنطقة';
+
+  @override
+  String get reviewRegion => 'لم تُسجَّل: قُدّمت لمنطقة أخرى';
+
+  @override
+  String get reviewOther => 'لم تُسجَّل';
+
+  @override
+  String servedOnThisPhone(String time) {
+    return 'قُدّمت على هذا الهاتف على الساعة $time، لم تُزامَن بعد';
+  }
+
+  @override
+  String get acknowledge => 'فهمت';
 }

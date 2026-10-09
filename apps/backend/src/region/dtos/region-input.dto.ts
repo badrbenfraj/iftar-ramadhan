@@ -1,5 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsBoolean, IsDefined, IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsDefined,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CreateRegionInput {
   @IsString()
@@ -11,6 +17,11 @@ export class CreateRegionInput {
   @IsDefined()
   @ApiProperty()
   active: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({ required: false, description: 'Admins only (spec 2B)' })
+  allowOfflineServing?: boolean;
 }
 
 export class UpdateRegionInput {
@@ -23,4 +34,9 @@ export class UpdateRegionInput {
   @IsDefined()
   @ApiProperty()
   active: boolean;
+
+  @IsBoolean()
+  @IsOptional()
+  @ApiProperty({ required: false, description: 'Admins only (spec 2B)' })
+  allowOfflineServing?: boolean;
 }
