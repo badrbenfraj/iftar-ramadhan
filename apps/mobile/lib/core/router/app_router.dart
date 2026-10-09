@@ -16,6 +16,7 @@ import '../../features/scan/presentation/find_person_page.dart';
 import '../../features/scan/presentation/scan_page.dart';
 import '../../features/scan/presentation/session_summary_page.dart';
 import '../../features/statistics/presentation/statistics_page.dart';
+import '../../features/volunteers/presentation/volunteers_page.dart';
 import '../../shell/home_shell.dart';
 import '../settings/settings_controller.dart';
 
@@ -111,6 +112,11 @@ final routerProvider = Provider<GoRouter>((ref) {
             ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/volunteers',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const VolunteersPage(),
       ),
       GoRoute(
         path: '/scan',

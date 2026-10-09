@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/network/app_failure.dart';
 import '../../../core/network/failure_text.dart';
@@ -288,6 +289,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.lg),
+                if (user.canManageVolunteers) ...[
+                  InfoCard(
+                    title: l.teamSection,
+                    children: [
+                      InfoTile(
+                        icon: Icons.groups_rounded,
+                        label: l.volunteers,
+                        showPlaceholder: false,
+                        trailing: chevron,
+                        onTap: () => context.push('/volunteers'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
                 InfoCard(
                   title: l.settings,
                   children: [
