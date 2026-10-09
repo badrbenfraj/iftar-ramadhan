@@ -53,6 +53,7 @@ async function bootstrap() {
       id: 0,
       roles: [ROLE.ADMIN],
       username: 'system',
+      regionId: null,
     };
 
     // Create initial admin user without region
@@ -80,6 +81,7 @@ async function bootstrap() {
       id: adminUser.id,
       roles: adminUser.roles,
       username: adminUser.username,
+      regionId: null,
     };
 
     // Now create default regions with proper admin user as creator

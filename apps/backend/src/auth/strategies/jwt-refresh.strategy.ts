@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { DataSource } from 'typeorm';
 
+import { loadRequestUser } from '../access/load-request-user';
 import { STRATEGY_JWT_REFRESH } from '../constants/strategy.constant';
 import { UserRefreshTokenClaims } from '../dtos/auth-token-output.dto';
 
@@ -11,7 +13,10 @@ export class JwtRefreshStrategy extends PassportStrategy(
   Strategy,
   STRATEGY_JWT_REFRESH,
 ) {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly dataSource: DataSource,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromBodyField('refreshToken'),
       secretOrKey: configService.get<string>('jwt.publicKey'),
@@ -19,9 +24,9 @@ export class JwtRefreshStrategy extends PassportStrategy(
     });
   }
 
-  async validate(payload: any): Promise<UserRefreshTokenClaims> {
-    // Passport automatically creates a user object, based on the value we return from the validate() method,
-    // and assigns it to the Request object as req.user
-    return { id: payload.sub };
+  /** A disabled or pending account cannot refresh either. */
+  async validate(payload: { sub: number }): Promise<UserRefreshTokenClaims> {
+    const user = await loadRequestUser(this.dataSource, payload.sub);
+    return { id: user.id };
   }
 }

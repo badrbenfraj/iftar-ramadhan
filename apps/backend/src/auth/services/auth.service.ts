@@ -55,7 +55,12 @@ export class AuthService {
       throw new UnauthorizedException('This user account has been disabled');
     }
 
-    return user;
+    return {
+      id: user.id,
+      username: user.username,
+      roles: user.roles,
+      regionId: user.region?.id ?? null,
+    };
   }
 
   login(ctx: RequestContext): AuthTokenOutput {

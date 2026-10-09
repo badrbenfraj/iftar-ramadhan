@@ -2,7 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { DataSource } from 'typeorm';
 
+import { loadRequestUser } from '../access/load-request-user';
 import { STRATEGY_JWT_AUTH } from '../constants/strategy.constant';
 import { UserAccessTokenClaims } from '../dtos/auth-token-output.dto';
 
@@ -11,7 +13,10 @@ export class JwtAuthStrategy extends PassportStrategy(
   Strategy,
   STRATEGY_JWT_AUTH,
 ) {
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    configService: ConfigService,
+    private readonly dataSource: DataSource,
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: configService.get<string>('jwt.publicKey'),
@@ -19,13 +24,8 @@ export class JwtAuthStrategy extends PassportStrategy(
     });
   }
 
-  async validate(payload: any): Promise<UserAccessTokenClaims> {
-    // Passport automatically creates a user object, based on the value we return from the validate() method,
-    // and assigns it to the Request object as req.user
-    return {
-      id: payload.sub,
-      username: payload.username,
-      roles: payload.roles,
-    };
+  /** The token's roles claim is ignored: the database is the source of truth. */
+  validate(payload: { sub: number }): Promise<UserAccessTokenClaims> {
+    return loadRequestUser(this.dataSource, payload.sub);
   }
 }
