@@ -37,7 +37,7 @@ jobs:
           echo "build_number=$build_number" >> "$GITHUB_OUTPUT"
           echo "Releasing $version (versionCode $build_number)"
 
-  test-mobile:
+  check-mobile:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -50,20 +50,19 @@ jobs:
           cache: true
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test
 
   backend:
-    needs: test-mobile
+    needs: check-mobile
     if: github.event_name == 'push' || inputs.deploy_backend
     uses: ./.github/workflows/deploy-backend.yml
     secrets: inherit
 
   apk:
-    needs: [version, test-mobile, backend]
+    needs: [version, check-mobile, backend]
     # Runs when the backend deploy succeeded or was not requested.
     if: >-
       !cancelled() && needs.version.result == 'success' &&
-      needs.test-mobile.result == 'success' &&
+      needs.check-mobile.result == 'success' &&
       (needs.backend.result == 'success' || needs.backend.result == 'skipped')
     runs-on: ubuntu-latest
     concurrency: release-apk

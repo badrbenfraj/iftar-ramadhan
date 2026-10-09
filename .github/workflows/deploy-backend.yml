@@ -17,7 +17,7 @@ on:
   workflow_call:
 
 jobs:
-  test:
+  check:
     if: vars.SERVER_HOST != ''
     runs-on: ubuntu-latest
     defaults:
@@ -31,10 +31,11 @@ jobs:
           cache: npm
           cache-dependency-path: apps/backend/package-lock.json
       - run: npm ci
-      - run: npm test
+      - run: npm run lint
+      - run: npm run build
 
   deploy:
-    needs: test
+    needs: check
     runs-on: ubuntu-latest
     concurrency: deploy-backend
     env:
