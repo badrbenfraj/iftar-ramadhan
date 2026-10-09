@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsDefined,
   IsEmail,
   IsInt,
   IsNotEmpty,
@@ -49,6 +50,7 @@ export class RegisterInput {
 
   @ApiPropertyOptional({ type: () => RegisterRegionInput })
   @ValidateIf((o: RegisterInput) => !o.joinCode?.trim())
+  @IsDefined()
   @ValidateNested()
   @Type(() => RegisterRegionInput)
   region?: RegisterRegionInput;

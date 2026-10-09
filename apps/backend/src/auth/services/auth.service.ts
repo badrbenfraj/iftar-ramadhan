@@ -103,6 +103,11 @@ export class AuthService {
       }
       joinedWithCode = true;
     } else {
+      if (!input.region?.id) {
+        throw new BadRequestException(
+          'region is required without a join code',
+        );
+      }
       region = await this.regionRepository.findOne({
         where: { id: input.region.id, active: true },
       });
