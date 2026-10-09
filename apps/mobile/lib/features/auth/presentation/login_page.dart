@@ -50,6 +50,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           .read(authControllerProvider.notifier)
           .login(_username.text, _password.text);
       // The router redirects to the app once signed in.
+    } on AccountPendingFailure {
+      if (mounted) context.go('/pending');
     } on AppFailure catch (e) {
       if (mounted) setState(() => _failure = e);
     } finally {

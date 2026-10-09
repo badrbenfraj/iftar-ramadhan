@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../features/auth/domain/user.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_page.dart';
+import '../../features/auth/presentation/pending_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/welcome_page.dart';
 import '../../features/people/presentation/people_list_page.dart';
@@ -20,7 +21,7 @@ import '../settings/settings_controller.dart';
 
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
-const _publicRoutes = {'/welcome', '/login', '/register'};
+const _publicRoutes = {'/welcome', '/login', '/register', '/pending'};
 
 /// Pure redirect rule, unit-tested: where should [location] go given [auth]?
 ///
@@ -72,6 +73,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomePage()),
       GoRoute(path: '/login', builder: (_, _) => const LoginPage()),
       GoRoute(path: '/register', builder: (_, _) => const RegisterPage()),
+      GoRoute(path: '/pending', builder: (_, _) => const PendingPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(navigationShell: shell),
         branches: [
