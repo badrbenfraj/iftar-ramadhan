@@ -1,10 +1,17 @@
 import {
+  ConflictException,
   ForbiddenException,
   Injectable,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 
+import {
+  canAccessRegion,
+  isRegionAdmin,
+  regionForbidden,
+} from '../../auth/access/access-policy';
 import { ROLE } from '../../auth/constants/role.constant';
 import { Action } from '../../shared/acl/action.constant';
 import { Actor } from '../../shared/acl/actor.constant';
@@ -12,11 +19,13 @@ import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { User } from '../../user/entities/user.entity';
 import { UserService } from '../../user/services/user.service';
+import { JoinCodeOutput } from '../dtos/join-code-output.dto';
 import { PublicRegionOutput } from '../dtos/public-region-output.dto';
 import { CreateRegionInput, UpdateRegionInput } from '../dtos/region-input.dto';
 import { RegionOutput } from '../dtos/region-output.dto';
 import { Region } from '../entities/region.entity';
 import { RegionRepository } from '../repositories/region.repository';
+import { generateJoinCode } from './join-code';
 import { RegionAclService } from './region-acl.service';
 
 @Injectable()
@@ -53,7 +62,9 @@ export class RegionService {
     this.logger.log(ctx, `calling ${RegionRepository.name}.save`);
     const savedRegion = await this.repository.save(region);
 
-    return plainToClass(RegionOutput, savedRegion);
+    return plainToClass(RegionOutput, savedRegion, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async getRegions(
@@ -81,9 +92,12 @@ export class RegionService {
     this.logger.log(ctx, `${this.getRegionById.name} was called`);
 
     this.logger.log(ctx, `calling ${RegionRepository.name}.getRegionById`);
+    if (!canAccessRegion(ctx.user, id)) throw regionForbidden();
     const region = await this.repository.getRegionById(id);
 
-    return plainToClass(RegionOutput, region);
+    return plainToClass(RegionOutput, region, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async updateRegion(
@@ -123,7 +137,9 @@ export class RegionService {
     this.logger.log(ctx, `calling ${RegionRepository.name}.save`);
     const savedRegion = await this.repository.save(updatedRegion);
 
-    return plainToClass(RegionOutput, savedRegion);
+    return plainToClass(RegionOutput, savedRegion, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async deleteRegion(ctx: RequestContext, id: number): Promise<void> {
@@ -143,5 +159,45 @@ export class RegionService {
 
     this.logger.log(ctx, `calling ${RegionRepository.name}.remove`);
     await this.repository.remove(region);
+  }
+
+  private async regionForAdmin(
+    ctx: RequestContext,
+    id: number,
+  ): Promise<Region> {
+    if (!isRegionAdmin(ctx.user, id)) throw regionForbidden();
+    const region = await this.repository.findOne({ where: { id } });
+    if (!region) throw new NotFoundException('Region not found');
+    return region;
+  }
+
+  async getJoinCode(ctx: RequestContext, id: number): Promise<JoinCodeOutput> {
+    const region = await this.regionForAdmin(ctx, id);
+    return { joinCode: region.joinCode ?? null };
+  }
+
+  /** Replaces the code; the old one stops working at once. */
+  async newJoinCode(ctx: RequestContext, id: number): Promise<JoinCodeOutput> {
+    await this.regionForAdmin(ctx, id);
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const joinCode = generateJoinCode();
+      try {
+        await this.repository.update({ id }, { joinCode });
+        return { joinCode };
+      } catch (error) {
+        // 23505 = unique_violation: another region drew the same code.
+        if (error?.code !== '23505') throw error;
+      }
+    }
+    throw new ConflictException('Could not draw a unique code, try again');
+  }
+
+  async turnOffJoinCode(
+    ctx: RequestContext,
+    id: number,
+  ): Promise<JoinCodeOutput> {
+    await this.regionForAdmin(ctx, id);
+    await this.repository.update({ id }, { joinCode: null });
+    return { joinCode: null };
   }
 }

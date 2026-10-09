@@ -1,5 +1,7 @@
 import {
+  BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
   UnauthorizedException,
@@ -7,8 +9,17 @@ import {
 import { compare, hash } from 'bcrypt';
 import { plainToClass } from 'class-transformer';
 
+import {
+  canManageUser,
+  isAnyAdmin,
+  isGlobalAdmin,
+  regionForbidden,
+} from '../../auth/access/access-policy';
+import { ROLE } from '../../auth/constants/role.constant';
+import { Region } from '../../region/entities/region.entity';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
+import { USER_STATUS, UserStatus } from '../constants/user-status.constant';
 import { CreateUserInput } from '../dtos/user-create-input.dto';
 import { UserOutput } from '../dtos/user-output.dto';
 import { User } from '../entities/user.entity';
@@ -66,25 +77,127 @@ export class UserService {
     return plainToClass(UserOutput, user, { excludeExtraneousValues: true });
   }
 
-  async getUsers(
+  /** Volunteers screen list (security spec §4.3). */
+  async listForAdmin(
     ctx: RequestContext,
-    limit: number,
-    offset: number,
+    query: {
+      status?: UserStatus;
+      regionId?: number;
+      limit: number;
+      offset: number;
+    },
   ): Promise<{ users: UserOutput[]; count: number }> {
-    this.logger.log(ctx, `${this.getUsers.name} was called`);
-
-    this.logger.log(ctx, `calling ${UserRepository.name}.findAndCount`);
+    const actor = ctx.user;
+    if (!isAnyAdmin(actor)) {
+      throw new ForbiddenException('Admins only');
+    }
+    let regionId = query.regionId;
+    if (!isGlobalAdmin(actor)) {
+      if (actor.regionId == null) throw regionForbidden();
+      regionId = actor.regionId;
+    }
     const [users, count] = await this.repository.findAndCount({
-      where: {},
-      take: limit,
-      skip: offset,
+      where: {
+        ...(query.status ? { status: query.status } : {}),
+        ...(regionId ? { region: { id: regionId } } : {}),
+      },
+      relations: { region: true },
+      order: { createdAt: 'DESC' },
+      take: query.limit,
+      skip: query.offset,
     });
+    return {
+      users: plainToClass(UserOutput, users, { excludeExtraneousValues: true }),
+      count,
+    };
+  }
 
-    const usersOutput = plainToClass(UserOutput, users, {
-      excludeExtraneousValues: true,
+  private async loadManageable(ctx: RequestContext, id: number): Promise<User> {
+    const target = await this.repository.findOne({
+      where: { id },
+      relations: { region: true },
     });
+    // Someone you may not manage looks like nobody (no id probing).
+    if (
+      !target ||
+      !canManageUser(ctx.user, {
+        id: target.id,
+        roles: target.roles,
+        regionId: target.region?.id ?? null,
+      })
+    ) {
+      throw new NotFoundException('User not found');
+    }
+    return target;
+  }
 
-    return { users: usersOutput, count };
+  private async setStatus(
+    ctx: RequestContext,
+    id: number,
+    from: UserStatus,
+    to: UserStatus,
+  ): Promise<UserOutput> {
+    const target = await this.loadManageable(ctx, id);
+    if (target.status !== from) {
+      throw new BadRequestException(`This account is not ${from}`);
+    }
+    target.status = to;
+    if (from === USER_STATUS.PENDING && to === USER_STATUS.ACTIVE) {
+      target.approvedByUserId = ctx.user.id;
+      target.approvedAt = new Date();
+    }
+    const saved = await this.repository.save(target);
+    return plainToClass(UserOutput, saved, { excludeExtraneousValues: true });
+  }
+
+  approve(ctx: RequestContext, id: number): Promise<UserOutput> {
+    return this.setStatus(ctx, id, USER_STATUS.PENDING, USER_STATUS.ACTIVE);
+  }
+
+  disable(ctx: RequestContext, id: number): Promise<UserOutput> {
+    return this.setStatus(ctx, id, USER_STATUS.ACTIVE, USER_STATUS.DISABLED);
+  }
+
+  enable(ctx: RequestContext, id: number): Promise<UserOutput> {
+    return this.setStatus(ctx, id, USER_STATUS.DISABLED, USER_STATUS.ACTIVE);
+  }
+
+  /** Refusing deletes the pending account, so the username is free again. */
+  async refuse(ctx: RequestContext, id: number): Promise<void> {
+    const target = await this.loadManageable(ctx, id);
+    if (target.status !== USER_STATUS.PENDING) {
+      throw new BadRequestException('Only a waiting account can be refused');
+    }
+    await this.repository.remove(target);
+  }
+
+  /** Global admins only: make coordinator / volunteer, or move region. */
+  async changeRole(
+    ctx: RequestContext,
+    id: number,
+    input: { role: ROLE.USER | ROLE.REGION_ADMIN; regionId: number },
+  ): Promise<UserOutput> {
+    if (!isGlobalAdmin(ctx.user)) {
+      throw new ForbiddenException('Global admins only');
+    }
+    const target = await this.repository.findOne({
+      where: { id },
+      relations: { region: true },
+    });
+    if (!target) throw new NotFoundException('User not found');
+    if (target.id === ctx.user.id || target.roles.includes(ROLE.ADMIN)) {
+      throw new BadRequestException(
+        'Global admin accounts are not changed here',
+      );
+    }
+    const region = await this.repository.manager.findOne(Region, {
+      where: { id: input.regionId },
+    });
+    if (!region) throw new NotFoundException('Region not found');
+    target.roles = [input.role];
+    target.region = region;
+    const saved = await this.repository.save(target);
+    return plainToClass(UserOutput, saved, { excludeExtraneousValues: true });
   }
 
   async findById(ctx: RequestContext, id: number): Promise<UserOutput> {
