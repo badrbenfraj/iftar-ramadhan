@@ -982,16 +982,23 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get reviewClock => 'Vérifiez la date et l’heure du téléphone';
+  String get reviewClock =>
+      'Non enregistré : vérifiez la date et l’heure du téléphone';
 
   @override
-  String get reviewNotFound => 'Cette personne n’est pas dans cette région';
+  String get reviewNotFound =>
+      'Non enregistré : cette personne n’est pas dans cette région';
 
   @override
-  String get reviewRegion => 'Servi pour une autre région';
+  String get reviewRegion => 'Non enregistré : servi pour une autre région';
 
   @override
-  String get reviewOther => 'N’a pas pu être enregistré';
+  String get reviewOther => 'Non enregistré';
+
+  @override
+  String servedOnThisPhone(String time) {
+    return 'Servi sur ce téléphone à $time, pas encore synchronisé';
+  }
 
   @override
   String get acknowledge => 'J’ai compris';

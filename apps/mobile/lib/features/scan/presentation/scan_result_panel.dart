@@ -142,7 +142,7 @@ class ScanResultPanel extends ConsumerWidget {
           onUndo: person.todayMeal == null ? null : controller.undo,
         );
 
-      case ScanAlreadyTaken(:final person, :final takenAt, :final servedByName, :final asOf):
+      case ScanAlreadyTaken(:final person, :final takenAt, :final servedByName, :final asOf, :final onPhone):
         final time = takenAt == null ? null : ltr(formatTime(takenAt));
         return _Sheet(
           background: c.claySoft,
@@ -150,7 +150,9 @@ class ScanResultPanel extends ConsumerWidget {
             color: AppPalette.pausedBand,
             seal: Seal(SealKind.served, semanticLabel: l.sealServed),
             title: MealStatusWords.taken,
-            subtitle: asOf == null
+            subtitle: onPhone && time != null
+                ? l.servedOnThisPhone(time)
+                : asOf == null
                 ? l.alreadyServedTonight
                 : '${l.alreadyServedTonight} ${l.asOfTime(ltr(formatSavedAt(asOf, ref.read(clockProvider)())))}',
             trailing: time,

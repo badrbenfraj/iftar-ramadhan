@@ -1699,26 +1699,32 @@ abstract class AppLocalizations {
   /// No description provided for @reviewClock.
   ///
   /// In en, this message translates to:
-  /// **'Check the phone’s date and time'**
+  /// **'Not recorded: check the phone’s date and time'**
   String get reviewClock;
 
   /// No description provided for @reviewNotFound.
   ///
   /// In en, this message translates to:
-  /// **'This person isn’t in this region'**
+  /// **'Not recorded: this person isn’t in this region'**
   String get reviewNotFound;
 
   /// No description provided for @reviewRegion.
   ///
   /// In en, this message translates to:
-  /// **'Served for another region'**
+  /// **'Not recorded: served for another region'**
   String get reviewRegion;
 
   /// No description provided for @reviewOther.
   ///
   /// In en, this message translates to:
-  /// **'Couldn’t be saved'**
+  /// **'Not recorded'**
   String get reviewOther;
+
+  /// No description provided for @servedOnThisPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Served on this phone at {time}, not synced yet'**
+  String servedOnThisPhone(String time);
 
   /// No description provided for @acknowledge.
   ///

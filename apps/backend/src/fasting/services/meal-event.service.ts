@@ -305,6 +305,38 @@ export class MealEventService {
     actorRegionId: number | null,
   ): Promise<MealSyncResultOutput> {
     const base = { clientEventId: event.clientEventId };
+
+    // Idempotency first: a retry of a meal the server already has gets its
+    // original answer, whatever the clock, region or person say by now.
+    const stored = await this.findEvent(
+      this.dataSource.manager,
+      event.clientEventId,
+    );
+    if (stored) {
+      if (stored.fastingId !== event.fastingId) {
+        return {
+          ...base,
+          status: 'rejected',
+          code: FASTING_ERROR_CODES.CLIENT_EVENT_ID_REUSED,
+        };
+      }
+      if (!stored.conflict) return { ...base, status: 'duplicate' };
+      const other = await this.activeEventOn(
+        this.dataSource.manager,
+        stored.fastingId,
+        stored.serviceDay,
+      );
+      const out = other ? toMealEventOutput(other) : null;
+      return {
+        ...base,
+        status: 'conflict',
+        other: {
+          servedAt: out?.servedAt ?? new Date(stored.servedAt).toISOString(),
+          servedBy: out?.servedBy ?? null,
+        },
+      };
+    }
+
     const servedAt = new Date(event.servedAt);
     const now = Date.now();
     if (

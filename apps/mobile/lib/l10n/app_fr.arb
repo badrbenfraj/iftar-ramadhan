@@ -266,9 +266,10 @@
   "reviewServedAt": "Servi hors ligne à {time}",
   "reviewConflict": "Déjà servi à {time} par {name}",
   "reviewConflictNoName": "Déjà servi à {time}",
-  "reviewClock": "Vérifiez la date et l’heure du téléphone",
-  "reviewNotFound": "Cette personne n’est pas dans cette région",
-  "reviewRegion": "Servi pour une autre région",
-  "reviewOther": "N’a pas pu être enregistré",
+  "reviewClock": "Non enregistré : vérifiez la date et l’heure du téléphone",
+  "reviewNotFound": "Non enregistré : cette personne n’est pas dans cette région",
+  "reviewRegion": "Non enregistré : servi pour une autre région",
+  "reviewOther": "Non enregistré",
+  "servedOnThisPhone": "Servi sur ce téléphone à {time}, pas encore synchronisé",
   "acknowledge": "J’ai compris"
 }

@@ -26,7 +26,43 @@ class EncryptedMealQueueStore implements MealQueueStore {
 
   @override
   Future<MealQueueSnapshot> load() async {
-    final json = await _file.read();
+    final main = _snapshot(await _file.read());
+    try {
+      final aside = await _file.readSetAside();
+      if (aside.isEmpty) return main;
+      // Files set aside after a failed read are merged back, so no meal
+      // served offline is lost. The main file wins on a repeated ID.
+      final pending = [...main.pending];
+      final review = [...main.review];
+      final ids = {
+        for (final m in pending) m.clientEventId,
+        for (final r in review) r.clientEventId,
+      };
+      for (final (_, json) in aside) {
+        final snap = _snapshot(json);
+        for (final m in snap.pending) {
+          if (ids.add(m.clientEventId)) pending.add(m);
+        }
+        for (final r in snap.review) {
+          if (ids.add(r.clientEventId)) review.add(r);
+        }
+      }
+      final merged = MealQueueSnapshot(pending: pending, review: review);
+      await save(merged);
+      for (final (file, _) in aside) {
+        try {
+          await file.delete();
+        } on Object {
+          // Merged already; a leftover file only repeats entries.
+        }
+      }
+      return merged;
+    } on Object {
+      return main;
+    }
+  }
+
+  static MealQueueSnapshot _snapshot(Object? json) {
     if (json is! Map<String, dynamic>) return const MealQueueSnapshot();
     return MealQueueSnapshot(
       pending: [

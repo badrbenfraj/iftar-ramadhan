@@ -311,9 +311,11 @@
   "@reviewConflict": {"placeholders": {"time": {"type": "String"}, "name": {"type": "String"}}},
   "reviewConflictNoName": "Also served at {time}",
   "@reviewConflictNoName": {"placeholders": {"time": {"type": "String"}}},
-  "reviewClock": "Check the phone’s date and time",
-  "reviewNotFound": "This person isn’t in this region",
-  "reviewRegion": "Served for another region",
-  "reviewOther": "Couldn’t be saved",
+  "reviewClock": "Not recorded: check the phone’s date and time",
+  "reviewNotFound": "Not recorded: this person isn’t in this region",
+  "reviewRegion": "Not recorded: served for another region",
+  "reviewOther": "Not recorded",
+  "servedOnThisPhone": "Served on this phone at {time}, not synced yet",
+  "@servedOnThisPhone": {"placeholders": {"time": {"type": "String"}}},
   "acknowledge": "Acknowledge"
 }

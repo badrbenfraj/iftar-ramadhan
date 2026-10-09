@@ -964,16 +964,21 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get reviewClock => 'Check the phone’s date and time';
+  String get reviewClock => 'Not recorded: check the phone’s date and time';
 
   @override
-  String get reviewNotFound => 'This person isn’t in this region';
+  String get reviewNotFound => 'Not recorded: this person isn’t in this region';
 
   @override
-  String get reviewRegion => 'Served for another region';
+  String get reviewRegion => 'Not recorded: served for another region';
 
   @override
-  String get reviewOther => 'Couldn’t be saved';
+  String get reviewOther => 'Not recorded';
+
+  @override
+  String servedOnThisPhone(String time) {
+    return 'Served on this phone at $time, not synced yet';
+  }
 
   @override
   String get acknowledge => 'Acknowledge';

@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/network/app_failure.dart';
 import '../../../core/providers.dart';
 import '../../../core/storage/device_id.dart';
+import '../../../core/utils/formatters.dart';
 import '../../../core/utils/uuid.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../offline/domain/offline_meal.dart';
@@ -116,9 +117,13 @@ final class ScanAlreadyTaken extends ScanStatus {
     this.takenAt, {
     this.servedByName,
     this.asOf,
+    this.onPhone = false,
   });
   final FastingPerson person;
   final DateTime? takenAt;
+
+  /// Served offline on this phone, not synced yet.
+  final bool onPhone;
 
   /// Set when the verdict comes from the list saved on the phone (no answer
   /// from the server): "as of" that time.
@@ -367,6 +372,7 @@ class ScanController extends Notifier<ScanState> {
       ref.read(peopleListProvider.notifier).upsert(person);
       // The verdict always comes from the server response.
       final meal = person.todayMealAt(_now());
+      final queued = _queuedToday(personId);
       _set(
         person.isMealTakenToday(_now())
             ? ScanAlreadyTaken(
@@ -374,6 +380,8 @@ class ScanController extends Notifier<ScanState> {
                 meal?.servedAt ?? person.lastTakenMeal,
                 servedByName: meal?.servedByName,
               )
+            : queued != null
+            ? ScanAlreadyTaken(person, queued.servedAt, onPhone: true)
             : ScanReady(person, noCard: noCard),
       );
     } on NotFoundFailure {
@@ -406,7 +414,25 @@ class ScanController extends Notifier<ScanState> {
         asOf: syncedAt,
       );
     }
+    final queued = _queuedToday(personId);
+    if (queued != null) {
+      return ScanAlreadyTaken(cached, queued.servedAt, onPhone: true);
+    }
     return ScanUnverified(cached, syncedAt: syncedAt, noCard: noCard);
+  }
+
+  /// The latest meal queued on this phone today for this person (any user),
+  /// not yet synced.
+  PendingMeal? _queuedToday(int personId) {
+    final now = _now();
+    PendingMeal? latest;
+    for (final m in ref.read(offlineQueueProvider).pending) {
+      if (m.personId != personId || !isSameDay(m.servedAt.toLocal(), now)) {
+        continue;
+      }
+      if (latest == null || m.servedAt.isAfter(latest.servedAt)) latest = m;
+    }
+    return latest;
   }
 
   FastingPerson? _cached(int id) {

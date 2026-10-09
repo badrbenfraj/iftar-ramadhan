@@ -928,8 +928,8 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'زومنت $count وجبات قُدّمت دون اتصال',
-      one: 'زومنت وجبة واحدة قُدّمت دون اتصال',
+      other: 'تمت مزامنة $count من الوجبات المقدّمة دون اتصال',
+      one: 'تمت مزامنة وجبة واحدة قُدّمت دون اتصال',
     );
     return '$_temp0';
   }
@@ -955,25 +955,30 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String reviewConflict(String time, String name) {
-    return 'استلم أيضًا على الساعة $time، قدّمها $name';
+    return 'سبق تقديم وجبة على الساعة $time من طرف $name';
   }
 
   @override
   String reviewConflictNoName(String time) {
-    return 'استلم أيضًا على الساعة $time';
+    return 'سبق تقديم وجبة على الساعة $time';
   }
 
   @override
-  String get reviewClock => 'تحقق من تاريخ الهاتف وساعته';
+  String get reviewClock => 'لم تُسجَّل: تحقق من تاريخ الهاتف وساعته';
 
   @override
-  String get reviewNotFound => 'هذا الشخص ليس في هذه المنطقة';
+  String get reviewNotFound => 'لم تُسجَّل: هذا الشخص ليس في هذه المنطقة';
 
   @override
-  String get reviewRegion => 'قُدّمت لمنطقة أخرى';
+  String get reviewRegion => 'لم تُسجَّل: قُدّمت لمنطقة أخرى';
 
   @override
-  String get reviewOther => 'تعذّر حفظها';
+  String get reviewOther => 'لم تُسجَّل';
+
+  @override
+  String servedOnThisPhone(String time) {
+    return 'قُدّمت على هذا الهاتف على الساعة $time، لم تُزامَن بعد';
+  }
 
   @override
   String get acknowledge => 'فهمت';

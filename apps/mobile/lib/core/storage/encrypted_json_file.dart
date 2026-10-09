@@ -40,32 +40,61 @@ class EncryptedJsonFile {
     return key;
   }
 
+  Future<Object?> _decode(File file) async {
+    final box = SecretBox.fromConcatenation(
+      await file.readAsBytes(),
+      nonceLength: _algorithm.nonceLength,
+      macLength: _algorithm.macAlgorithm.macLength,
+    );
+    final clear = await _algorithm.decrypt(
+      box,
+      secretKey: await _key(create: false),
+    );
+    return jsonDecode(utf8.decode(clear));
+  }
+
   /// The saved document, or null when there is none. A file that can't be
-  /// read is moved aside (`<file>.unreadable`), never deleted: it may hold
-  /// meals that were really served.
+  /// read is moved aside (`<file>.unreadable-<time>`), never deleted: it may
+  /// hold meals that were really served. See [readSetAside].
   Future<Object?> read() async {
     File? file;
     try {
       file = await _file();
       if (!await file.exists()) return null;
-      final box = SecretBox.fromConcatenation(
-        await file.readAsBytes(),
-        nonceLength: _algorithm.nonceLength,
-        macLength: _algorithm.macAlgorithm.macLength,
-      );
-      final clear = await _algorithm.decrypt(
-        box,
-        secretKey: await _key(create: false),
-      );
-      return jsonDecode(utf8.decode(clear));
+      return await _decode(file);
     } on Object {
       try {
-        await file?.rename('${file.path}.unreadable');
+        await file?.rename(
+          '${file.path}.unreadable-${DateTime.now().millisecondsSinceEpoch}',
+        );
       } on Object {
         // Nothing more to do.
       }
       return null;
     }
+  }
+
+  /// The set-aside files that can be read now, with their documents. The
+  /// files stay where they are; the caller deletes them once it has kept
+  /// their content. Never throws.
+  Future<List<(File, Object?)>> readSetAside() async {
+    final found = <(File, Object?)>[];
+    try {
+      final dir = await _directory();
+      await for (final entity in dir.list()) {
+        if (entity is! File) continue;
+        final name = entity.uri.pathSegments.last;
+        if (!name.startsWith('$fileName.unreadable')) continue;
+        try {
+          found.add((entity, await _decode(entity)));
+        } on Object {
+          // Still unreadable: leave it.
+        }
+      }
+    } on Object {
+      // Best effort.
+    }
+    return found;
   }
 
   Future<void> write(Object json) => _enqueue(() async {
