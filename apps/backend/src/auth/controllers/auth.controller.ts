@@ -9,6 +9,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 
 import {
   BaseApiErrorResponse,
@@ -37,6 +38,7 @@ export class AuthController {
     this.logger.setContext(AuthController.name);
   }
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
   @ApiOperation({
     summary: 'User login API',
   })
@@ -63,6 +65,7 @@ export class AuthController {
   }
 
   @Post('register')
+  @Throttle({ default: { limit: 5, ttl: 600_000 } })
   @ApiOperation({
     summary: 'User registration API',
   })
@@ -79,6 +82,7 @@ export class AuthController {
   }
 
   @Post('refresh-token')
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @ApiOperation({
     summary: 'Refresh access token API',
   })

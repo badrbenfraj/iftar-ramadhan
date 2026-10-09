@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-// import { ThrottlerModule, ThrottlerModuleOptions } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
+import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { LoggerModule } from 'nestjs-pino';
 
 import { AppController } from './app.controller';
@@ -40,16 +41,11 @@ import { UserModule } from './user/user.module';
         };
       },
     }),
-    // ThrottlerModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: (config: ConfigService): ThrottlerModuleOptions => ({
-    //     ttl: config.get<number>('RATE_LIMIT_DURATION', 60),
-    //     limit: config.get<number>('RATE_LIMIT_POINTS', 10),
-    //   }),
-    // }),
+    // Volunteers often share one Wi-Fi/carrier IP: a high backstop only;
+    // the strict limits are on the auth routes (security spec §5.1).
+    ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 600 }]),
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}
