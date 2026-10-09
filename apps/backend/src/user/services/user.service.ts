@@ -54,7 +54,10 @@ export class UserService {
     this.logger.log(ctx, `${this.validateUsernamePassword.name} was called`);
 
     this.logger.log(ctx, `calling ${UserRepository.name}.findOne`);
-    const user = await this.repository.findOne({ where: { username } });
+    const user = await this.repository.findOne({
+      where: { username },
+      relations: { region: true },
+    });
     if (!user) throw new UnauthorizedException();
 
     const match = await compare(pass, user.password);

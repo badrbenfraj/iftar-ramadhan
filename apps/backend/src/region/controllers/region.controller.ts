@@ -29,6 +29,7 @@ import { PaginationParamsDto } from '../../shared/dtos/pagination-params.dto';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { ReqContext } from '../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
+import { PublicRegionOutput } from '../dtos/public-region-output.dto';
 import { CreateRegionInput, UpdateRegionInput } from '../dtos/region-input.dto';
 import { RegionOutput } from '../dtos/region-output.dto';
 import { RegionService } from '../services/region.service';
@@ -68,14 +69,14 @@ export class RegionController {
   })
   @ApiResponse({
     status: HttpStatus.OK,
-    type: SwaggerBaseApiResponse([RegionOutput]),
+    type: SwaggerBaseApiResponse([PublicRegionOutput]),
   })
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   async getRegions(
     @ReqContext() ctx: RequestContext,
     @Query() query: PaginationParamsDto,
-  ): Promise<BaseApiResponse<RegionOutput[]>> {
+  ): Promise<BaseApiResponse<PublicRegionOutput[]>> {
     this.logger.log(ctx, `${this.getRegions.name} was called`);
 
     const { regions, count } = await this.regionService.getRegions(

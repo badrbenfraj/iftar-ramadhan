@@ -12,6 +12,7 @@ import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { User } from '../../user/entities/user.entity';
 import { UserService } from '../../user/services/user.service';
+import { PublicRegionOutput } from '../dtos/public-region-output.dto';
 import { CreateRegionInput, UpdateRegionInput } from '../dtos/region-input.dto';
 import { RegionOutput } from '../dtos/region-output.dto';
 import { Region } from '../entities/region.entity';
@@ -59,7 +60,7 @@ export class RegionService {
     ctx: RequestContext,
     limit: number,
     offset: number,
-  ): Promise<{ regions: RegionOutput[]; count: number }> {
+  ): Promise<{ regions: PublicRegionOutput[]; count: number }> {
     this.logger.log(ctx, `${this.getRegions.name} was called`);
 
     this.logger.log(ctx, `calling ${RegionRepository.name}.findAndCount`);
@@ -69,7 +70,9 @@ export class RegionService {
       skip: offset,
     });
 
-    const regionsOutput = plainToClass(RegionOutput, regions);
+    const regionsOutput = plainToClass(PublicRegionOutput, regions, {
+      excludeExtraneousValues: true,
+    });
 
     return { regions: regionsOutput, count };
   }

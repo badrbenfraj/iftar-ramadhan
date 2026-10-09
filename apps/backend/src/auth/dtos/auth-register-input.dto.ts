@@ -1,17 +1,33 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
-  IsDefined,
   IsEmail,
+  IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Length,
   MaxLength,
+  Min,
+  ValidateIf,
+  ValidateNested,
 } from 'class-validator';
 
 import { Region } from '../../region/entities/region.entity';
 import { type UserStatus } from '../../user/constants/user-status.constant';
 import { ROLE } from '../constants/role.constant';
 
+export class RegisterRegionInput {
+  @IsInt()
+  @Min(1)
+  @ApiProperty()
+  id: number;
+}
+
+/**
+ * Security spec §4.1: a join code gives instant access to its region;
+ * without one, `region` is required and the account waits for approval.
+ */
 export class RegisterInput {
   @ApiProperty()
   @IsNotEmpty()
@@ -20,17 +36,26 @@ export class RegisterInput {
   name: string;
 
   @ApiProperty()
+  @IsNotEmpty()
   @MaxLength(200)
   @IsString()
   username: string;
 
-  @ApiProperty()
-  @IsDefined()
-  region: Region;
+  @ApiPropertyOptional({ example: 'NOUR-4821' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(32)
+  joinCode?: string;
+
+  @ApiPropertyOptional({ type: () => RegisterRegionInput })
+  @ValidateIf((o: RegisterInput) => !o.joinCode?.trim())
+  @ValidateNested()
+  @Type(() => RegisterRegionInput)
+  region?: RegisterRegionInput;
 
   @ApiProperty()
   @IsNotEmpty()
-  @Length(6, 100)
+  @Length(8, 100)
   @IsString()
   password: string;
 
@@ -39,9 +64,16 @@ export class RegisterInput {
   @IsEmail()
   @MaxLength(100)
   email: string;
+}
 
-  // These keys can only be set by ADMIN user.
-  roles: ROLE[] = [ROLE.USER];
+/** What the service hands to UserService.createUser. */
+export interface NewAccount {
+  name: string;
+  username: string;
+  password: string;
+  email: string;
+  roles: ROLE[];
   status: UserStatus;
-  joinedWithCode = false;
+  joinedWithCode: boolean;
+  region: Region;
 }
