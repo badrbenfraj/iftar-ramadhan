@@ -77,6 +77,8 @@ themselves.
 Repository → **Settings → Environments → `production`**. The workflow jobs
 that touch the server run in that environment, so its secrets and variables
 are the only ones they read (do not also define them at repository level).
+The environment only accepts runs from the `main` branch and `v*.*.*` tags, so
+a workflow started from any other branch cannot read the production secrets.
 There are two lists. **Variables** are plain settings anyone with access can read.
 **Secrets** are write-only: you can replace them but never see them again.
 
