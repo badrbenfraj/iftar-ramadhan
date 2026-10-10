@@ -2,23 +2,29 @@ class Region {
   const Region({
     required this.id,
     required this.name,
-    this.allowOfflineServing = false,
+    this.allowOfflineServing = true,
   });
 
   factory Region.fromJson(Map<String, dynamic> json) => Region(
     id: (json['id'] as num).toInt(),
     name: (json['name'] as String?) ?? '',
-    allowOfflineServing: json['allowOfflineServing'] == true,
+    allowOfflineServing: json['allowOfflineServing'] != false,
   );
 
   final int id;
   final String name;
 
-  /// Spec 2B: volunteers may serve with no network here. Off by default and
-  /// from an older backend.
+  /// Spec 2B: volunteers may serve with no network here. On unless an admin
+  /// turned it off for the region.
   final bool allowOfflineServing;
 
-  Map<String, dynamic> toJson() => {'id': id, 'name': name};
+  /// Saved with the signed-in user, so the flag still holds when the app
+  /// starts with no network.
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name': name,
+    'allowOfflineServing': allowOfflineServing,
+  };
 
   @override
   bool operator ==(Object other) =>

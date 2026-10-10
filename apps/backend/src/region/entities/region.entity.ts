@@ -25,8 +25,8 @@ export class Region {
   @Column()
   active: boolean;
 
-  /** Spec 2B: volunteers may serve with no network in this region. */
-  @Column({ default: false })
+  /** Spec 2B: volunteers may serve with no network here. On by default. */
+  @Column({ default: true })
   allowOfflineServing: boolean;
 
   /** Shared in the volunteers' group; registering with it skips approval. Null = off. */
