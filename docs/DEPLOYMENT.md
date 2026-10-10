@@ -74,8 +74,10 @@ themselves.
 
 ## 2. GitHub configuration
 
-Repository → **Settings → Secrets and variables → Actions**. There are two
-tabs. **Variables** are plain settings anyone with access can read.
+Repository → **Settings → Environments → `production`**. The workflow jobs
+that touch the server run in that environment, so its secrets and variables
+are the only ones they read (do not also define them at repository level).
+There are two lists. **Variables** are plain settings anyone with access can read.
 **Secrets** are write-only: you can replace them but never see them again.
 
 ### Variables (not sensitive)
