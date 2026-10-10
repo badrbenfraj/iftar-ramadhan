@@ -19,6 +19,21 @@ val dartDefines: Map<String, String> =
         ?.toMap()
         ?: emptyMap()
 
+// `flutter build --target-platform` only limits Flutter's own libraries; plugin
+// native libraries (ML Kit's barcode scanner, ~4-6 MB per ABI) still ship for
+// every ABI. Package only the ABIs the build targets.
+val targetAbis: List<String> =
+    (project.findProperty("target-platform") as String?)
+        ?.split(",")
+        ?.mapNotNull {
+            mapOf(
+                "android-arm" to "armeabi-v7a",
+                "android-arm64" to "arm64-v8a",
+                "android-x64" to "x86_64",
+            )[it.trim()]
+        }
+        ?: emptyList()
+
 // Release signing. CI writes android/key.properties from GitHub secrets
 // (docs/DEPLOYMENT.md). Every release MUST be signed with the same key, or
 // Android refuses to install it over the previous version.
@@ -50,6 +65,16 @@ android {
         // (e.g. --dart-define-from-file=config/local.json). Production is HTTPS-only.
         manifestPlaceholders["usesCleartextTraffic"] =
             (dartDefines["API_URL"]?.startsWith("http://") == true).toString()
+    }
+
+    // Not ndk.abiFilters: the Flutter Gradle plugin resets those to every ABI.
+    if (targetAbis.isNotEmpty()) {
+        packaging {
+            jniLibs {
+                excludes += (listOf("armeabi-v7a", "arm64-v8a", "x86_64", "x86") - targetAbis)
+                    .map { "lib/$it/**" }
+            }
+        }
     }
 
     signingConfigs {

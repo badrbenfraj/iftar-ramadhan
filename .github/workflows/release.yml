@@ -44,9 +44,12 @@ jobs:
         working-directory: apps/mobile
     steps:
       - uses: actions/checkout@v5
+      - name: Read the pinned Flutter version
+        run: echo "FLUTTER_VERSION=$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/apps/mobile/.flutter-version")" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
       - run: flutter pub get
       - run: flutter analyze
@@ -97,9 +100,12 @@ jobs:
         with:
           distribution: temurin
           java-version: 17
+      - name: Read the pinned Flutter version
+        run: echo "FLUTTER_VERSION=$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/apps/mobile/.flutter-version")" >> "$GITHUB_ENV"
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
           cache: true
 
       - name: Install the release signing key
@@ -124,17 +130,50 @@ jobs:
           flutter pub get
           flutter build apk --release \
             --target-platform android-arm,android-arm64 \
+            --split-debug-info=build/symbols \
             --build-name="$VERSION" --build-number="$BUILD_NUMBER" \
             --dart-define-from-file=config/production.json \
             --dart-define=API_URL="$API_URL"
           cp build/app/outputs/flutter-apk/app-release.apk "$RUNNER_TEMP/app-$VERSION.apk"
           sha256sum "$RUNNER_TEMP/app-$VERSION.apk"
 
+      # Fails the release if the APK is not signed with the release key (the
+      # build falls back to the debug key when key.properties is missing), or,
+      # when the ANDROID_CERT_SHA256 variable is set, with another release key.
+      - name: Verify the APK signature
+        working-directory: apps/mobile/android
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          EXPECTED_CERT_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
+        run: |
+          norm() { tr -d ':[:space:]' | tr '[:upper:]' '[:lower:]'; }
+          apksigner="$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)/apksigner"
+          apk="$RUNNER_TEMP/app-$VERSION.apk"
+          "$apksigner" verify --verbose "$apk" | grep -qE '^Verified using v[23] scheme.*: true' ||
+            { echo "::error::APK has no valid v2/v3 signature"; exit 1; }
+          apk_cert=$("$apksigner" verify --print-certs "$apk" | sed -n 's/^Signer #1 certificate SHA-256 digest: //p' | norm)
+          key_cert=$(keytool -list -v -keystore app/release.jks -storepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -alias "$ANDROID_KEY_ALIAS" | sed -n 's/^[[:space:]]*SHA256: //p' | norm)
+          [ -n "$apk_cert" ] && [ "$apk_cert" = "$key_cert" ] ||
+            { echo "::error::APK is signed with $apk_cert, not the release key $key_cert"; exit 1; }
+          if [ -n "$EXPECTED_CERT_SHA256" ] && [ "$apk_cert" != "$(printf '%s' "$EXPECTED_CERT_SHA256" | norm)" ]; then
+            echo "::error::Release key changed: $apk_cert, expected ANDROID_CERT_SHA256"; exit 1
+          fi
+          echo "Signed with the release key (SHA-256 $apk_cert)"
+
       # Kept 90 days for troubleshooting; the server keeps every release.
       - uses: actions/upload-artifact@v4
         with:
           name: app-${{ env.VERSION }}
           path: ${{ runner.temp }}/app-${{ env.VERSION }}.apk
+
+      # Dart debug symbols, split out of the APK: `flutter symbolize` needs
+      # them to read a crash stack trace from this release.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: symbols-${{ env.VERSION }}
+          path: apps/mobile/build/symbols
 
       - name: Install the SSH key
         env:
