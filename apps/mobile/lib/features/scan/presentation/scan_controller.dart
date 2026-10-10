@@ -57,7 +57,11 @@ final class ScanNotFound extends ScanStatus {
 /// phone and was not served as of [syncedAt]. Display only: it can't be
 /// confirmed (spec 2A §5.6; Spec 2B adds "Serve offline").
 final class ScanUnverified extends ScanStatus {
-  const ScanUnverified(this.person, {required this.syncedAt, this.noCard = false});
+  const ScanUnverified(
+    this.person, {
+    required this.syncedAt,
+    this.noCard = false,
+  });
   final FastingPerson person;
   final DateTime syncedAt;
   final bool noCard;
@@ -100,7 +104,11 @@ final class ScanConfirming extends ScanStatus {
 }
 
 final class ScanConfirmed extends ScanStatus {
-  const ScanConfirmed(this.person, {this.undoing = false, this.offline = false});
+  const ScanConfirmed(
+    this.person, {
+    this.undoing = false,
+    this.offline = false,
+  });
   final FastingPerson person;
 
   /// Undo was tapped and hasn't finished yet.
@@ -252,8 +260,13 @@ class ScanController extends Notifier<ScanState> {
   /// same code is ignored while it keeps being seen within this window.
   static const duplicateWindow = Duration(seconds: 4);
 
+  /// After Skip or Undo the camera rests this long, then reads any card again,
+  /// the one just handled included.
+  static const rearmDelay = Duration(milliseconds: 1500);
+
   String? _lastRaw;
   DateTime? _lastSeenAt;
+  DateTime? _pausedUntil;
   Timer? _resumeTimer;
   Timer? _slowTimer;
   Timer? _autoRetryTimer;
@@ -289,6 +302,7 @@ class ScanController extends Notifier<ScanState> {
   Future<void> onDetected(String? raw) async {
     if (!state.acceptsScans || raw == null) return;
     final now = _now();
+    if (_pausedUntil case final until? when now.isBefore(until)) return;
     final isRepeat =
         raw == _lastRaw &&
         _lastSeenAt != null &&
@@ -653,8 +667,7 @@ class ScanController extends Notifier<ScanState> {
       singleMeals: undone ? state.singleMeals - p.singleMeal : null,
       familyMeals: undone ? state.familyMeals - p.familyMeal : null,
     );
-    // The card still in front of the lens is not re-read at once.
-    _lastSeenAt = _now();
+    _rearm();
   }
 
   /// History → "Undo tonight's meal" on an Already-served sheet: undo, then
@@ -669,8 +682,9 @@ class ScanController extends Notifier<ScanState> {
       if (!ref.mounted) return;
       state = state.copyWith(notice: notice);
       if (notice.kind == ScanNoticeKind.undone) {
-        if (state.status case ScanAlreadyTaken(person: final shown)
-            when shown.id == person.id) {
+        if (state.status case ScanAlreadyTaken(
+          person: final shown,
+        ) when shown.id == person.id) {
           await _lookup(person.id);
         }
       }
@@ -703,7 +717,9 @@ class ScanController extends Notifier<ScanState> {
   /// needed. Already synced meanwhile: undone on the server like any meal.
   Future<ScanNotice> _undoOffline(String eventId, FastingPerson person) async {
     final original = _offlineOriginals[eventId];
-    final outcome = await ref.read(offlineQueueProvider.notifier).remove(eventId);
+    final outcome = await ref
+        .read(offlineQueueProvider.notifier)
+        .remove(eventId);
     switch (outcome) {
       case RemoveOutcome.removed:
         _offlineOriginals.remove(eventId);
@@ -735,13 +751,21 @@ class ScanController extends Notifier<ScanState> {
     }
   }
 
-  /// Back to the camera ("Scan next" / "Skip"). The card that is probably
-  /// still in front of the lens is not re-read immediately.
+  /// Back to the camera ("Scan next" / "Skip").
   void scanNext() {
     _resumeTimer?.cancel();
     _autoRetryTimer?.cancel();
-    _lastSeenAt = _now();
+    _rearm();
     _set(const ScanIdle());
+  }
+
+  /// The card probably still in front of the lens is not re-read at once,
+  /// but after [rearmDelay] it is a new scan. A sliding duplicate window
+  /// here would keep ignoring a card that stays in view.
+  void _rearm() {
+    _lastRaw = null;
+    _lastSeenAt = null;
+    _pausedUntil = _now().add(rearmDelay);
   }
 
   void _set(ScanStatus status) => state = state.copyWith(status: status);
