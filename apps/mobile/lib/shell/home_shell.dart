@@ -3,14 +3,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../core/theme/app_colors.dart';
+import '../core/theme/iftar_colors.dart';
 import '../core/widgets/state_views.dart';
 import '../features/offline/presentation/offline_queue_controller.dart';
 import '../features/update/presentation/update_views.dart';
 import '../l10n/app_localizations.dart';
 
-/// Tabs on a sky-colored bar, with the mint scan button in the middle of the
-/// bar. It sits inside the bar, not raised above it, so it never covers the
-/// page or its sheets (user decision, 2026-10-02).
+/// Tabs on a floating sky pill with side margins; a gold rule tops the
+/// active tab. The mint scan button rises through the pill's top edge in a
+/// cream ring (user decision, 2026-10-10: variant 2).
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.navigationShell});
 
@@ -26,7 +27,10 @@ class HomeShell extends ConsumerWidget {
     // "{n} offline meals synced" (spec 2B §5.2), once per sync.
     ref.listen(offlineQueueProvider.select((s) => s.lastSynced), (prev, next) {
       if (next == null || identical(prev, next)) return;
-      showAppSnackBar(context, AppLocalizations.of(context).offlineSynced(next.count));
+      showAppSnackBar(
+        context,
+        AppLocalizations.of(context).offlineSynced(next.count),
+      );
     });
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     return Scaffold(
@@ -59,6 +63,14 @@ class AppBottomNav extends StatelessWidget {
   /// the middle slot empty.
   final VoidCallback? onScan;
 
+  /// The pill itself, without the margins and the room for the scan button.
+  static const pillKey = ValueKey('app-bottom-nav-pill');
+
+  static const _pillHeight = 64.0;
+
+  /// How far the scan button rises above the pill.
+  static const _raise = 16.0;
+
   static const _icons = [
     Icons.format_list_bulleted_rounded,
     Icons.person_add_alt_1_outlined,
@@ -70,38 +82,56 @@ class AppBottomNav extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final labels = [l.navPeople, l.navAdd, l.navStats, l.navProfile];
-    return BottomAppBar(
-      color: AppPalette.sky,
-      height: 72,
-      padding: EdgeInsets.zero,
-      child: Row(
-        children: [
-          for (var i = 0; i < labels.length; i++) ...[
-            if (i == 2)
-              SizedBox(
-                width: 84,
-                child: onScan == null
-                    ? null
-                    // Raised 16 px: enough presence, never over the page.
-                    : OverflowBox(
-                        maxHeight: double.infinity,
-                        alignment: Alignment.center,
-                        child: Transform.translate(
-                          offset: const Offset(0, -16),
-                          child: ScanButton(onPressed: onScan!),
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    // The margins stay transparent to taps, so the page under them still
+    // scrolls and responds; extendBody pads the page by this whole height.
+    return Padding(
+      padding: EdgeInsets.fromLTRB(
+        AppSpacing.lg,
+        0,
+        AppSpacing.lg,
+        AppSpacing.md + bottomInset,
+      ),
+      child: SizedBox(
+        height: _raise + _pillHeight,
+        child: Stack(
+          alignment: Alignment.topCenter,
+          children: [
+            Positioned.fill(
+              top: _raise,
+              child: DecoratedBox(
+                key: pillKey,
+                decoration: BoxDecoration(
+                  color: AppPalette.sky,
+                  borderRadius: BorderRadius.circular(_pillHeight / 2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppPalette.skyTop.withValues(alpha: 0.28),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  children: [
+                    for (var i = 0; i < labels.length; i++) ...[
+                      if (i == 2) const SizedBox(width: 84),
+                      Expanded(
+                        child: _TabButton(
+                          icon: _icons[i],
+                          label: labels[i],
+                          selected: currentIndex == i,
+                          onTap: () => onSelect(i),
                         ),
                       ),
-              ),
-            Expanded(
-              child: _TabButton(
-                icon: _icons[i],
-                label: labels[i],
-                selected: currentIndex == i,
-                onTap: () => onSelect(i),
+                    ],
+                  ],
+                ),
               ),
             ),
+            if (onScan != null) ScanButton(onPressed: onScan!),
           ],
-        ],
+        ),
       ),
     );
   }
@@ -131,22 +161,43 @@ class _TabButton extends StatelessWidget {
       excludeSemantics: true,
       child: InkResponse(
         onTap: onTap,
-        radius: 36,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        radius: 32,
+        child: Stack(
+          alignment: Alignment.center,
           children: [
-            Icon(icon, color: color),
-            const SizedBox(height: 3),
-            Text(
-              label,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: color,
-                fontSize: 10.5,
-                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                letterSpacing: 0,
+            // Gold rule on the pill's top edge, grown in for the active tab.
+            Positioned(
+              top: 0,
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
+                width: selected ? 24 : 0,
+                height: 3,
+                decoration: const BoxDecoration(
+                  color: AppPalette.gold,
+                  borderRadius: BorderRadius.vertical(
+                    bottom: Radius.circular(3),
+                  ),
+                ),
               ),
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(icon, color: color),
+                const SizedBox(height: 3),
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: color,
+                    fontSize: 10.5,
+                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -155,8 +206,8 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-/// 56 px mint circle set in a thin sky ring with a soft mint glow, raised a
-/// little above the bar; no gold ring (spec §4.11).
+/// 56 px mint circle in a gold ring, set in a ring of the page color so it
+/// reads as cut out of the pill it rises through.
 class ScanButton extends StatelessWidget {
   const ScanButton({super.key, required this.onPressed});
 
@@ -167,19 +218,21 @@ class ScanButton extends StatelessWidget {
     final label = AppLocalizations.of(context).navScan;
     return DecoratedBox(
       decoration: BoxDecoration(
-        color: AppPalette.sky,
+        color: context.colors.page,
         shape: BoxShape.circle,
-        boxShadow: [
-          BoxShadow(
-            color: AppPalette.mint.withValues(alpha: 0.35),
-            blurRadius: 18,
-            spreadRadius: 1,
-          ),
-        ],
       ),
       child: Padding(
         padding: const EdgeInsets.all(4),
-        child: _ScanCore(label: label, onPressed: onPressed),
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: AppPalette.gold,
+            shape: BoxShape.circle,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(3),
+            child: _ScanCore(label: label, onPressed: onPressed),
+          ),
+        ),
       ),
     );
   }
@@ -209,7 +262,11 @@ class _ScanCore extends StatelessWidget {
             onTap: onPressed,
             child: const SizedBox.square(
               dimension: 56,
-              child: Icon(Icons.qr_code_scanner_rounded, size: 28, color: AppPalette.sky),
+              child: Icon(
+                Icons.qr_code_scanner_rounded,
+                size: 28,
+                color: AppPalette.sky,
+              ),
             ),
           ),
         ),
