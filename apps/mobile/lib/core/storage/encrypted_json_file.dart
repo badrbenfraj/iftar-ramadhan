@@ -23,9 +23,9 @@ class EncryptedJsonFile {
   final AesGcm _algorithm = AesGcm.with256bits();
   Future<void> _queue = Future.value();
 
-  Future<void> _enqueue(Future<void> Function() op) {
+  Future<bool> _enqueue(Future<bool> Function() op) {
     final next = _queue.then((_) => op());
-    _queue = next.catchError((_) {});
+    _queue = next.then<void>((_) {}).catchError((_) {});
     return next;
   }
 
@@ -64,9 +64,16 @@ class EncryptedJsonFile {
       return await _decode(file);
     } on Object {
       try {
-        await file?.rename(
-          '${file.path}.unreadable-${DateTime.now().millisecondsSinceEpoch}',
-        );
+        if (file != null) {
+          final base =
+              '${file.path}.unreadable-${DateTime.now().millisecondsSinceEpoch}';
+          // Never overwrite an earlier set-aside file from the same millisecond.
+          var target = base;
+          for (var i = 1; await File(target).exists(); i++) {
+            target = '$base-$i';
+          }
+          await file.rename(target);
+        }
       } on Object {
         // Nothing more to do.
       }
@@ -97,7 +104,9 @@ class EncryptedJsonFile {
     return found;
   }
 
-  Future<void> write(Object json) => _enqueue(() async {
+  /// True when the encrypted file was written and renamed into place; false
+  /// on any error. Never throws.
+  Future<bool> write(Object json) => _enqueue(() async {
     try {
       final box = await _algorithm.encrypt(
         utf8.encode(jsonEncode(json)),
@@ -107,8 +116,10 @@ class EncryptedJsonFile {
       final tmp = File('${file.path}.tmp');
       await tmp.writeAsBytes(box.concatenation(), flush: true);
       await tmp.rename(file.path);
+      return true;
     } on Object {
       // Best effort: the in-memory state is unaffected.
+      return false;
     }
   });
 }

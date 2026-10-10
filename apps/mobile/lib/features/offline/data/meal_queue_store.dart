@@ -16,7 +16,8 @@ class MealQueueSnapshot {
 /// (spec 2B §5.2). Not wiped on logout: unsynced meals are real meals.
 abstract interface class MealQueueStore {
   Future<MealQueueSnapshot> load();
-  Future<void> save(MealQueueSnapshot snapshot);
+  /// True when the snapshot reached storage.
+  Future<bool> save(MealQueueSnapshot snapshot);
 }
 
 class EncryptedMealQueueStore implements MealQueueStore {
@@ -48,12 +49,16 @@ class EncryptedMealQueueStore implements MealQueueStore {
         }
       }
       final merged = MealQueueSnapshot(pending: pending, review: review);
-      await save(merged);
-      for (final (file, _) in aside) {
-        try {
-          await file.delete();
-        } on Object {
-          // Merged already; a leftover file only repeats entries.
+      // Delete the set-aside files only once the merge is safely saved. If
+      // the save failed they stay, and the next start merges them again;
+      // dedupe by clientEventId makes that safe.
+      if (await save(merged)) {
+        for (final (file, _) in aside) {
+          try {
+            await file.delete();
+          } on Object {
+            // Merged already; a leftover file only repeats entries.
+          }
         }
       }
       return merged;
@@ -87,7 +92,7 @@ class EncryptedMealQueueStore implements MealQueueStore {
   }
 
   @override
-  Future<void> save(MealQueueSnapshot snapshot) => _file.write({
+  Future<bool> save(MealQueueSnapshot snapshot) => _file.write({
     'v': 1,
     'pending': [for (final m in snapshot.pending) m.toJson()],
     'review': [for (final r in snapshot.review) r.toJson()],
@@ -102,7 +107,10 @@ class MemoryMealQueueStore implements MealQueueStore {
   Future<MealQueueSnapshot> load() async => saved;
 
   @override
-  Future<void> save(MealQueueSnapshot snapshot) async => saved = snapshot;
+  Future<bool> save(MealQueueSnapshot snapshot) async {
+    saved = snapshot;
+    return true;
+  }
 }
 
 final mealQueueStoreProvider = Provider<MealQueueStore>(
