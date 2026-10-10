@@ -208,11 +208,14 @@ number is higher).
 
 1. Change `version:` in `apps/mobile/pubspec.yaml`, e.g. `1.5.0+1` (only
    `1.5.0` matters; the build number is computed from it).
-2. Commit, then tag and push:
+2. Commit it on a branch and merge it into `main` through a pull request
+   (`main` is protected: no direct pushes, one approval from the other
+   maintainer). Then tag the merged commit and push the tag:
 
    ```bash
+   git switch main && git pull
    git tag v1.5.0
-   git push origin main v1.5.0
+   git push origin v1.5.0
    ```
 
    (Or Actions → **Release app** → *Run workflow*, which uses the pubspec
