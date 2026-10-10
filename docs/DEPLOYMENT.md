@@ -20,15 +20,19 @@ themselves.
                           ├── Caddyfile            HTTPS + routing
                           ├── .env                 written by the workflow
                           ├── apps/backend/        API source, built on the server
-                          └── releases/
-                              ├── app-1.4.0.apk
-                              ├── app-1.5.0.apk    every release is kept
-                              ├── latest.apk ──▶ app-1.5.0.apk   (symlink)
-                              ├── latest.json      {"version","sha256",...}
-                              └── minimum-version  "1.4.0"
+                          ├── releases/
+                          │   ├── app-1.4.0.apk
+                          │   ├── app-1.5.0.apk    every release is kept
+                          │   ├── latest.apk ──▶ app-1.5.0.apk   (symlink)
+                          │   ├── latest.json      {"version","sha256",...}
+                          │   └── minimum-version  "1.4.0"
+                          └── web/
+                              ├── 1.5.0-20270212100000/   flutter build web
+                              └── current ──▶ 1.5.0-…     (symlink)
 
  https://<server>/download          HTML page for volunteers   (API)
  https://<server>/releases/latest.apk  the newest APK          (Caddy, from disk)
+ https://<server>/app/                 web app for iPhones     (Caddy, from disk)
  https://<server>/api/v1/app/version   what the app checks     (API)
  https://<server>/api/v1/...           the REST API            (API)
 ```
@@ -249,6 +253,27 @@ browser (or file manager). Allow it, then open the downloaded file again.
 Each release's checksum is in `latest.json`, in `app-<version>.apk.sha256` next
 to the APK, shown at the bottom of `/download`, and in the workflow log. Every
 built APK is also attached to its workflow run for 90 days.
+
+### iPhones: the web version
+
+iPhones can't install an APK, and installing outside the App Store needs an
+Apple developer account. So iPhones use the same Flutter app built for the
+web, at `https://<server>/app/` (linked from `/download`). Open it in Safari,
+then **Share › Add to Home Screen**.
+
+- **Released with the APK**: the `web` job of the Release app workflow builds
+  it (`flutter build web --base-href /app/`) and `deploy/release-web.sh`
+  uploads it to `/opt/iftar/web/<version>-<time>/`, then switches the
+  `current` symlink. The 5 newest builds are kept. Rollback by hand:
+  `cd /opt/iftar/web && ln -sfn <older> current.new && mv -Tf current.new current`.
+- **No update prompt**: the next page load gets the new version (Caddy sends
+  `Cache-Control: no-cache`).
+- **Same origin as the API**, so no CORS. HTTPS is required: Safari only
+  opens the camera on HTTPS pages.
+- **Limits** compared with the APK: the page needs a connection to open.
+  Meals served offline and the people list are kept in the browser
+  (IndexedDB), which Safari may clear after about 7 days without use. The QR
+  decoder is loaded from `cdn.jsdelivr.net` the first time the camera starts.
 
 ---
 

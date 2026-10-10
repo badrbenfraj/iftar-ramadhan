@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -34,7 +35,8 @@ class _IftarAppState extends ConsumerState<IftarApp> {
     _lifecycle = AppLifecycleListener(onResume: _onResume);
     // After the first frame, so the system dialog appears over the app UI.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      requestStartupPermissions();
+      // Browsers ask for the camera when the scanner first opens it.
+      if (!kIsWeb) requestStartupPermissions();
       // In the background: an offline start is never held up by it.
       unawaited(ref.read(updateControllerProvider.notifier).check());
       // Restores meals served offline before a restart and starts syncing.
@@ -78,8 +80,9 @@ class _IftarAppState extends ConsumerState<IftarApp> {
         // Below minimumVersion: the force-update screen replaces every route.
         if (updateRequired) {
           return Navigator(
-            onGenerateRoute: (_) =>
-                MaterialPageRoute<void>(builder: (_) => const ForceUpdatePage()),
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              builder: (_) => const ForceUpdatePage(),
+            ),
           );
         }
         return child!;

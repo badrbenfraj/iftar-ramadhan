@@ -703,6 +703,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Autorisez l’accès à la caméra dans les réglages du téléphone pour scanner les cartes. Vous pouvez toujours trouver une personne sans carte.';
 
   @override
+  String get cameraOffMessageWeb =>
+      'Autorisez l’accès à la caméra pour ce site dans les réglages du navigateur (sur iPhone : Réglages › Apps › Safari › Appareil photo), puis rechargez la page. Vous pouvez toujours trouver une personne sans carte.';
+
+  @override
   String get cameraOpenSettings => 'Ouvrir les paramètres';
 
   @override

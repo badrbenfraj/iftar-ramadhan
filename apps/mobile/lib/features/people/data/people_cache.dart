@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../../core/settings/settings_controller.dart';
 import '../../../core/settings/settings_storage.dart';
+import '../../../core/storage/byte_store.dart';
 import '../domain/fasting_person.dart';
 
 class CachedPeople {
@@ -40,18 +39,16 @@ abstract interface class PeopleCache {
   void open();
 }
 
-/// AES-GCM encrypted file; the 256-bit key lives in the platform keystore.
+/// AES-GCM encrypted [ByteStore] entry (a file on Android); the 256-bit key
+/// lives in the platform keystore.
 class EncryptedFilePeopleCache implements PeopleCache {
-  EncryptedFilePeopleCache({
-    required this._directory,
-    required this._keys,
-  });
+  EncryptedFilePeopleCache({required this._store, required this._keys});
 
   static const fileName = 'people_cache.bin';
   static const keyName = 'people_cache_key';
   static const _version = 1;
 
-  final Future<Directory> Function() _directory;
+  final ByteStore _store;
   final SettingsStorage _keys;
   final AesGcm _algorithm = AesGcm.with256bits();
 
@@ -68,8 +65,6 @@ class EncryptedFilePeopleCache implements PeopleCache {
     return next;
   }
 
-  Future<File> _file() async => File('${(await _directory()).path}/$fileName');
-
   Future<SecretKey> _key({required bool create}) async {
     final stored = await _keys.read(keyName);
     if (stored != null) return SecretKey(base64Decode(stored));
@@ -82,10 +77,10 @@ class EncryptedFilePeopleCache implements PeopleCache {
   @override
   Future<CachedPeople?> read({required int regionId}) async {
     try {
-      final file = await _file();
-      if (!await file.exists()) return null;
+      final bytes = await _store.read(fileName);
+      if (bytes == null) return null;
       final box = SecretBox.fromConcatenation(
-        await file.readAsBytes(),
+        bytes,
         nonceLength: _algorithm.nonceLength,
         macLength: _algorithm.macAlgorithm.macLength,
       );
@@ -98,13 +93,10 @@ class EncryptedFilePeopleCache implements PeopleCache {
         await _delete();
         return null;
       }
-      return CachedPeople(
-        [
-          for (final p in json['people'] as List)
-            FastingPerson.fromJson(p as Map<String, dynamic>),
-        ],
-        DateTime.parse(json['syncedAt'] as String).toLocal(),
-      );
+      return CachedPeople([
+        for (final p in json['people'] as List)
+          FastingPerson.fromJson(p as Map<String, dynamic>),
+      ], DateTime.parse(json['syncedAt'] as String).toLocal());
     } on Object {
       // Undecryptable (key lost in a restore), corrupt, or no storage.
       await _delete();
@@ -132,11 +124,8 @@ class EncryptedFilePeopleCache implements PeopleCache {
         clear,
         secretKey: await _key(create: true),
       );
-      final file = await _file();
-      // Write then rename, so a crash never leaves half a file.
-      final tmp = File('${file.path}.tmp');
-      await tmp.writeAsBytes(box.concatenation(), flush: true);
-      await tmp.rename(file.path);
+      // Lands whole or not at all (see ByteStore.write).
+      await _store.write(fileName, box.concatenation());
     } on Object {
       // Best effort: the list on screen is unaffected.
     }
@@ -154,9 +143,7 @@ class EncryptedFilePeopleCache implements PeopleCache {
   Future<void> _wipe() async {
     await _delete();
     try {
-      final file = await _file();
-      final tmp = File('${file.path}.tmp');
-      if (await tmp.exists()) await tmp.delete();
+      await _store.delete('$fileName.tmp');
     } on Object {
       // No stray temp file, or no storage.
     }
@@ -169,8 +156,7 @@ class EncryptedFilePeopleCache implements PeopleCache {
 
   Future<void> _delete() async {
     try {
-      final file = await _file();
-      if (await file.exists()) await file.delete();
+      await _store.delete(fileName);
     } on Object {
       // Nothing to delete, or no storage.
     }
@@ -217,7 +203,7 @@ class MemoryPeopleCache implements PeopleCache {
 
 final peopleCacheProvider = Provider<PeopleCache>(
   (ref) => EncryptedFilePeopleCache(
-    directory: getApplicationDocumentsDirectory,
+    store: ref.watch(byteStoreProvider),
     keys: ref.watch(settingsStorageProvider),
   ),
 );

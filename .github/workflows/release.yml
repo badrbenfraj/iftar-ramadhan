@@ -189,3 +189,68 @@ jobs:
       - name: Clean up
         if: always()
         run: rm -f ~/.ssh/deploy_key apps/mobile/android/key.properties apps/mobile/android/app/release.jks
+
+  # The web version for iPhones, served at https://<server>/app/.
+  web:
+    needs: [version, check-mobile, backend]
+    if: >-
+      !cancelled() && needs.version.result == 'success' &&
+      needs.check-mobile.result == 'success' &&
+      (needs.backend.result == 'success' || needs.backend.result == 'skipped')
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency: release-web
+    env:
+      VERSION: ${{ needs.version.outputs.version }}
+      BUILD_NUMBER: ${{ needs.version.outputs.build_number }}
+      SERVER_HOST: ${{ vars.SERVER_HOST }}
+      SSH_USER: ${{ secrets.SSH_USER }}
+      API_URL: ${{ vars.API_URL || format('https://{0}', vars.SERVER_HOST) }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check the GitHub settings
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          missing=""
+          for v in SERVER_HOST SSH_USER SSH_PRIVATE_KEY; do
+            [ -n "${!v}" ] || missing="$missing $v"
+          done
+          [ -z "$missing" ] || { echo "::error::Missing GitHub settings:$missing (see docs/DEPLOYMENT.md)"; exit 1; }
+          case "$API_URL" in https://*) ;; *) echo "::error::API_URL must start with https:// (got $API_URL)"; exit 1 ;; esac
+
+      - name: Read the pinned Flutter version
+        run: echo "FLUTTER_VERSION=$(tr -d '[:space:]' < "$GITHUB_WORKSPACE/apps/mobile/.flutter-version")" >> "$GITHUB_ENV"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      # --no-web-resources-cdn: CanvasKit is served by our server, not gstatic.
+      - name: Build the web app
+        working-directory: apps/mobile
+        run: |
+          flutter pub get
+          flutter build web --release \
+            --no-web-resources-cdn \
+            --base-href /app/ \
+            --build-name="$VERSION" --build-number="$BUILD_NUMBER" \
+            --dart-define-from-file=config/production.json \
+            --dart-define=API_URL="$API_URL"
+
+      - name: Install the SSH key
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Upload and publish
+        run: SSH_KEY="$HOME/.ssh/deploy_key" bash deploy/release-web.sh apps/mobile/build/web "$VERSION"
+
+      - name: Clean up
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

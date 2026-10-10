@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
@@ -38,7 +39,9 @@ class UpdateController extends Notifier<UpdateState> {
   UpdateState build() => const UpdateState();
 
   Future<void> check() async {
-    if (_inFlight) return;
+    // Releases are APKs. The web version is updated on the server: the next
+    // page load gets it.
+    if (kIsWeb || _inFlight) return;
     _inFlight = true;
     try {
       final installed = await ref.read(installedVersionProvider.future);

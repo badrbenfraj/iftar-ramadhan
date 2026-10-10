@@ -192,6 +192,7 @@
   "notConfirmedExplanation": "Le repas n’est confirmé que lorsque le serveur répond. Réessayez, et ne servez pas deux fois.",
   "cameraOffTitle": "L’accès à la caméra est désactivé",
   "cameraOffMessage": "Autorisez l’accès à la caméra dans les réglages du téléphone pour scanner les cartes. Vous pouvez toujours trouver une personne sans carte.",
+  "cameraOffMessageWeb": "Autorisez l’accès à la caméra pour ce site dans les réglages du navigateur (sur iPhone : Réglages › Apps › Safari › Appareil photo), puis rechargez la page. Vous pouvez toujours trouver une personne sans carte.",
   "cameraOpenSettings": "Ouvrir les paramètres",
   "cameraUnavailableTitle": "Caméra indisponible",
   "cameraUnavailableMessage": "La caméra n’a pas pu démarrer. Vous pouvez toujours trouver une personne sans carte.",
