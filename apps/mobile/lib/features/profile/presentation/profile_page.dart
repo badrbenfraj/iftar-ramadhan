@@ -165,10 +165,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           children: [
             Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(20, 0, 20, 8),
-              child: Text(
-                title,
-                style: Theme.of(sheet).textTheme.titleMedium,
-              ),
+              child: Text(title, style: Theme.of(sheet).textTheme.titleMedium),
             ),
             for (final option in options)
               _ChoiceRow(
@@ -334,10 +331,26 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       trailing: _exporting
                           ? const SizedBox.square(
                               dimension: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2.5),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
                             )
                           : Icon(Icons.ios_share_rounded, color: c.actInk),
                       onTap: _exporting ? null : _export,
+                    ),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                // Which build a volunteer has, when helping them update.
+                InfoCard(
+                  title: l.aboutSection,
+                  children: [
+                    InfoTile(
+                      icon: Icons.info_outline_rounded,
+                      label: l.versionLabel,
+                      value: installedVersion == null
+                          ? null
+                          : ltr(installedVersion),
                     ),
                   ],
                 ),
@@ -351,15 +364,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   icon: const Icon(Icons.logout_rounded),
                   label: Text(l.logout),
                 ),
-                // Which build a volunteer has, when helping them update.
-                if (installedVersion != null) ...[
-                  const SizedBox(height: AppSpacing.lg),
-                  Text(
-                    l.appVersion(installedVersion),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: c.inkMuted, fontSize: 12),
-                  ),
-                ],
                 if (!env.isProduction) ...[
                   const SizedBox(height: AppSpacing.lg),
                   Text(

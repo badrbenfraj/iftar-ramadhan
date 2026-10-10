@@ -887,9 +887,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get updateOpenFailed => 'Could not open the browser.';
 
   @override
-  String appVersion(String version) {
-    return 'Version $version';
-  }
+  String get aboutSection => 'About';
+
+  @override
+  String get versionLabel => 'Version';
 
   @override
   String offlineUsingList(String time) {

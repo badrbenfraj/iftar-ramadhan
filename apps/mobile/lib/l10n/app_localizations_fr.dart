@@ -904,9 +904,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get updateOpenFailed => 'Impossible d\'ouvrir le navigateur.';
 
   @override
-  String appVersion(String version) {
-    return 'Version $version';
-  }
+  String get aboutSection => 'À propos';
+
+  @override
+  String get versionLabel => 'Version';
 
   @override
   String offlineUsingList(String time) {
