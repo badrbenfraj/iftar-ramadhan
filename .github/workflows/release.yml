@@ -65,6 +65,7 @@ jobs:
       needs.check-mobile.result == 'success' &&
       (needs.backend.result == 'success' || needs.backend.result == 'skipped')
     runs-on: ubuntu-latest
+    environment: production
     concurrency: release-apk
     env:
       VERSION: ${{ needs.version.outputs.version }}

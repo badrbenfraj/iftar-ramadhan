@@ -12,6 +12,7 @@ on:
 jobs:
   set:
     runs-on: ubuntu-latest
+    environment: production
     env:
       SERVER_HOST: ${{ vars.SERVER_HOST }}
       SSH_USER: ${{ secrets.SSH_USER }}

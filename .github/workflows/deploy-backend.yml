@@ -17,8 +17,20 @@ on:
   workflow_call:
 
 jobs:
+  # Settings live in the "production" environment. Its variables are not
+  # visible in a job-level `if`, so a job inside the environment reads them.
+  gate:
+    runs-on: ubuntu-latest
+    environment: production
+    outputs:
+      enabled: ${{ steps.g.outputs.enabled }}
+    steps:
+      - id: g
+        run: echo "enabled=${{ vars.SERVER_HOST != '' }}" >> "$GITHUB_OUTPUT"
+
   check:
-    if: vars.SERVER_HOST != ''
+    needs: gate
+    if: needs.gate.outputs.enabled == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -37,6 +49,7 @@ jobs:
   deploy:
     needs: check
     runs-on: ubuntu-latest
+    environment: production
     concurrency: deploy-backend
     env:
       SERVER_HOST: ${{ vars.SERVER_HOST }}
