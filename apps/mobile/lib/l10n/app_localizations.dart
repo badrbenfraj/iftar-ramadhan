@@ -1612,11 +1612,17 @@ abstract class AppLocalizations {
   /// **'Could not open the browser.'**
   String get updateOpenFailed;
 
-  /// No description provided for @appVersion.
+  /// No description provided for @aboutSection.
   ///
   /// In en, this message translates to:
-  /// **'Version {version}'**
-  String appVersion(String version);
+  /// **'About'**
+  String get aboutSection;
+
+  /// No description provided for @versionLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get versionLabel;
 
   /// No description provided for @offlineUsingList.
   ///

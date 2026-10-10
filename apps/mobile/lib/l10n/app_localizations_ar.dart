@@ -886,9 +886,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get updateOpenFailed => 'تعذّر فتح المتصفّح.';
 
   @override
-  String appVersion(String version) {
-    return 'الإصدار $version';
-  }
+  String get aboutSection => 'حول التطبيق';
+
+  @override
+  String get versionLabel => 'الإصدار';
 
   @override
   String offlineUsingList(String time) {
