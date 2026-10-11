@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "description": "Iftar Saim REST API (NestJS)",
-  "license": "MIT",
+  "license": "SEE LICENSE IN ../../LICENSE",
   "contributors": [
     "Yash Murty <yashmurty@gmail.com> (https://github.com/yashmurty)",
     "S M Asad Rahman<asad.rahman@monstar-lab.com> (https://github.com/asad-mlbd)",
