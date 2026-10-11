@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -9,8 +11,8 @@ import '../features/offline/presentation/offline_queue_controller.dart';
 import '../features/update/presentation/update_views.dart';
 import '../l10n/app_localizations.dart';
 
-/// Tabs on a floating sky pill with side margins; a gold rule tops the
-/// active tab. The mint scan button rises through the pill's top edge in a
+/// Tabs on a floating sky pill with side margins; the active tab is gold.
+/// The mint scan button rises through the pill's top edge in a
 /// cream ring (user decision, 2026-10-10: variant 2).
 class HomeShell extends ConsumerWidget {
   const HomeShell({super.key, required this.navigationShell});
@@ -83,8 +85,46 @@ class AppBottomNav extends StatelessWidget {
     final l = AppLocalizations.of(context);
     final labels = [l.navPeople, l.navAdd, l.navStats, l.navProfile];
     final bottomInset = MediaQuery.paddingOf(context).bottom;
+    final page = context.colors.page;
     // The margins stay transparent to taps, so the page under them still
     // scrolls and responds; extendBody pads the page by this whole height.
+    return Stack(
+      // Keep the Scaffold's full-width constraint for the bar.
+      fit: StackFit.passthrough,
+      children: [
+        // Frosted strip from the pill's middle to the screen edge, so list
+        // rows don't show sharply under and around the floating bar.
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          height: AppSpacing.md + bottomInset + _pillHeight / 2,
+          child: IgnorePointer(
+            child: ClipRect(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        page.withValues(alpha: 0.35),
+                        page.withValues(alpha: 0.75),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+        _bar(labels, bottomInset),
+      ],
+    );
+  }
+
+  Widget _bar(List<String> labels, double bottomInset) {
     return Padding(
       padding: EdgeInsets.fromLTRB(
         AppSpacing.lg,
@@ -162,42 +202,21 @@ class _TabButton extends StatelessWidget {
       child: InkResponse(
         onTap: onTap,
         radius: 32,
-        child: Stack(
-          alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // Gold rule on the pill's top edge, grown in for the active tab.
-            Positioned(
-              top: 0,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOutCubic,
-                width: selected ? 24 : 0,
-                height: 3,
-                decoration: const BoxDecoration(
-                  color: AppPalette.gold,
-                  borderRadius: BorderRadius.vertical(
-                    bottom: Radius.circular(3),
-                  ),
-                ),
+            Icon(icon, color: color),
+            const SizedBox(height: 3),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: color,
+                fontSize: 10.5,
+                fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
+                letterSpacing: 0,
               ),
-            ),
-            Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(icon, color: color),
-                const SizedBox(height: 3),
-                Text(
-                  label,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 10.5,
-                    fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ],
             ),
           ],
         ),
