@@ -58,6 +58,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chooseRegion => 'Choose your region';
 
   @override
+  String get searchRegions => 'Search regions';
+
+  @override
+  String get noRegionFound => 'No region found';
+
+  @override
   String get loadingRegions => 'Loading regions…';
 
   @override
@@ -275,6 +281,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notServedTooltip => 'Not served yet today';
+
+  @override
+  String get mealTaken => 'Served';
+
+  @override
+  String get mealNotTaken => 'Not served';
 
   @override
   String portions(int count) {

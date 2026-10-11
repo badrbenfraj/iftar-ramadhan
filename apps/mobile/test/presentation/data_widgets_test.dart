@@ -20,9 +20,9 @@ void main() {
         StatusChip(person: person(2, takenToday: true), now: testNow),
       ]),
     )));
-    expect(find.text(isolate(MealStatusWords.notTaken)), findsOneWidget);
+    expect(find.text(isolate('Not served')), findsOneWidget);
     // person(takenToday) was served 20 minutes before 18:30.
-    expect(find.text('${isolate(MealStatusWords.taken)} ${ltr('18:10')}'), findsOneWidget);
+    expect(find.text('${isolate('Served')} ${ltr('18:10')}'), findsOneWidget);
     expect(find.byIcon(Icons.radio_button_unchecked_rounded), findsOneWidget);
     expect(find.byIcon(Icons.check_rounded), findsOneWidget);
   });

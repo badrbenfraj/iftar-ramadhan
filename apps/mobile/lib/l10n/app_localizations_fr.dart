@@ -59,6 +59,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get chooseRegion => 'Choisissez votre région';
 
   @override
+  String get searchRegions => 'Rechercher une région';
+
+  @override
+  String get noRegionFound => 'Aucune région trouvée';
+
+  @override
   String get loadingRegions => 'Chargement des régions…';
 
   @override
@@ -289,6 +295,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get notServedTooltip => 'Pas encore servi aujourd’hui';
+
+  @override
+  String get mealTaken => 'Servi';
+
+  @override
+  String get mealNotTaken => 'Pas servi';
 
   @override
   String portions(int count) {
