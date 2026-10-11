@@ -5,6 +5,27 @@ QR card, see how many meals to hand over, and confirm the pickup. The server
 guarantees **one meal per person per day**, even when several phones scan the
 same card at the same time.
 
+## Quick start (new computer)
+
+You need only **Docker Desktop** and **Git** (on Windows, run the commands in
+Git Bash). Full guide: **[docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md)**.
+
+```bash
+git clone https://github.com/badrbenfraj/iftar-ramadhan.git
+cd iftar-ramadhan
+deploy/local/up.sh        # Postgres + API + seed data + web app (first run ~10 min)
+```
+
+Then open the address it prints, `https://<your-LAN-IP>:8443/app/`, on this
+computer or a phone on the same Wi-Fi (accept the certificate warning once),
+and sign in as `admin` / `admin-test-pass` or `vol1` / `test-pass`.
+
+| Next | Command |
+|---|---|
+| Rebuild the web app after Flutter changes | `deploy/local/up.sh --build-web` |
+| Android APK for this stack | `API_URL=http://<LAN-IP>:3300 apps/mobile/tool/build-apk.sh local` |
+| Stop (data is kept) | `deploy/local/up.sh down` |
+
 ## Monorepo layout
 
 ```
@@ -15,32 +36,45 @@ same card at the same time.
 │   └── legacy-ionic/    Previous Ionic 7 / Angular 16 app (kept until the Flutter app is validated in the field)
 ├── packages/            Shared Dart packages (none yet, see packages/README.md)
 ├── docs/
+│   ├── LOCAL_DEVELOPMENT.md    New-computer setup, local stack, test data, phones
 │   ├── DEPLOYMENT.md           Server, releases, in-app updates, yearly redeployment
 │   ├── MIGRATION_ANALYSIS.md   Pre-migration analysis of the Ionic app and the API
 │   └── MIGRATION_REPORT.md     What changed, why, what's left
 ├── deploy/              SSH scripts used by GitHub Actions (or by hand)
+├── deploy/local/        Local dev stack (dev only, never deployed): up.sh, compose.yml, seed.sql
 ├── docker-compose.yml   Production stack: Caddy (TLS + APK files) + API + Postgres + Adminer
 └── Caddyfile
 ```
 
 ## Requirements
 
+With the Docker setup above, Docker Desktop and Git are enough. To work
+natively instead:
+
 | Tool | Version |
 |---|---|
-| Flutter | 3.44+ (Dart 3.12+) |
+| Flutter | The version in `apps/mobile/.flutter-version` (CI uses the same) |
 | Node.js | 24 LTS |
 | PostgreSQL | 16 (or Docker) |
 | Android | SDK 36 via Android Studio; JDK 17 |
 | iOS | Xcode 16+ on macOS |
 
-No local Flutter/Android SDK? Every Flutter command below also runs in Docker:
+No local Flutter/Android SDK? Every Flutter command below also runs in Docker,
+in the image pinned by `.flutter-version` (built once by `tool/flutter-image.sh`):
 
 ```bash
-docker run --rm -v "$PWD:/repo" -w /repo/apps/mobile ghcr.io/cirruslabs/flutter:stable \
-  sh -c "flutter pub get && flutter test"
+cd apps/mobile
+MSYS_NO_PATHCONV=1 docker run --rm \
+  -v "$(pwd -W 2>/dev/null || pwd):/app" -v iftar_pub_cache:/root/.pub-cache -w /app \
+  "$(tool/flutter-image.sh)" sh -c "flutter pub get && flutter analyze"
 ```
 
+APKs build faster with `apps/mobile/tool/build-apk.sh` (see
+[docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md#on-an-android-phone)).
+
 ## Backend (`apps/backend`)
+
+Natively, without the Docker stack:
 
 ```bash
 # 1. Database

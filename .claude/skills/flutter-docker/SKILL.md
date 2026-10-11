@@ -46,6 +46,12 @@ Hand-built APKs are debug-signed unless `apps/mobile/android/key.properties`
 exists. Never publish them: official releases come from the **Release app**
 workflow (see the `release-app` skill).
 
+## Web app
+
+To build and serve the web version locally, use the `run-local` skill
+(`deploy/local/up.sh --build-web`); it builds with the right base href and
+API address and serves it over HTTPS, which the app needs on web.
+
 ## Verification policy
 
 The maintainer does not want tests or e2e written or run by default. Verify

@@ -12,6 +12,8 @@ on:
       - docker-compose.yml
       - Caddyfile
       - deploy/**
+      # Local dev stack only (seed data, test certificates): never deployed.
+      - '!deploy/local/**'
       - .github/workflows/deploy-backend.yml
   workflow_dispatch:
   workflow_call:

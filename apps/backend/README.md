@@ -1,3 +1,8 @@
+> **Iftar Saim:** to run this API with its database and the app, see
+> [docs/LOCAL_DEVELOPMENT.md](../../docs/LOCAL_DEVELOPMENT.md) (Docker) or the
+> [root README](../../README.md#backend-appsbackend) (native). The rest of this
+> file is the original NestJS starter kit README.
+
 ## NestJS Starter Kit [v2]
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
