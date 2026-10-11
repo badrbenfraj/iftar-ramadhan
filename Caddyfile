@@ -24,6 +24,25 @@
     }
   }
 
+  # The web version of the app, for iPhones (Android uses the APK).
+  # web/current is a symlink to the newest build (deploy/release-web.sh).
+  # Same origin as the API, so the app needs no CORS.
+  redir /app /app/ 308
+  handle_path /app/* {
+    root * /srv/web/current
+    try_files {path} /index.html
+    file_server
+    header {
+      # File names don't change between releases: always revalidate, so
+      # the next page load gets the new version.
+      Cache-Control "no-cache"
+      Permissions-Policy "camera=(self)"
+      # cdn.jsdelivr.net: the QR decoder Safari loads (mobile_scanner's
+      # zxing-wasm). fonts.gstatic.com: Flutter's fallback fonts.
+      Content-Security-Policy "default-src 'self'; script-src 'self' 'wasm-unsafe-eval' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://cdn.jsdelivr.net https://fonts.gstatic.com; media-src 'self' blob:; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+    }
+  }
+
   # API (/api/v1/...) and the /download page.
   handle {
     reverse_proxy app:3000

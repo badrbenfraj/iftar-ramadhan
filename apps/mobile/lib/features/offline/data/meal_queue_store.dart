@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:path_provider/path_provider.dart';
 
 import '../../../core/settings/settings_controller.dart';
+import '../../../core/storage/byte_store.dart';
 import '../../../core/storage/encrypted_json_file.dart';
 import '../domain/offline_meal.dart';
 
@@ -16,6 +16,7 @@ class MealQueueSnapshot {
 /// (spec 2B §5.2). Not wiped on logout: unsynced meals are real meals.
 abstract interface class MealQueueStore {
   Future<MealQueueSnapshot> load();
+
   /// True when the snapshot reached storage.
   Future<bool> save(MealQueueSnapshot snapshot);
 }
@@ -53,9 +54,9 @@ class EncryptedMealQueueStore implements MealQueueStore {
       // the save failed they stay, and the next start merges them again;
       // dedupe by clientEventId makes that safe.
       if (await save(merged)) {
-        for (final (file, _) in aside) {
+        for (final (name, _) in aside) {
           try {
-            await file.delete();
+            await _file.deleteSetAside(name);
           } on Object {
             // Merged already; a leftover file only repeats entries.
           }
@@ -116,7 +117,7 @@ class MemoryMealQueueStore implements MealQueueStore {
 final mealQueueStoreProvider = Provider<MealQueueStore>(
   (ref) => EncryptedMealQueueStore(
     EncryptedJsonFile(
-      directory: getApplicationDocumentsDirectory,
+      store: ref.watch(byteStoreProvider),
       keys: ref.watch(settingsStorageProvider),
       fileName: 'meal_queue.bin',
       keyName: 'meal_queue_key',

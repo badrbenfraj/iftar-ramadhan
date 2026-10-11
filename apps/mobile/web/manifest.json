@@ -1,0 +1,35 @@
+{
+    "name": "إفطار صائم · Iftar Saim",
+    "short_name": "Iftar Saim",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#121A3A",
+    "theme_color": "#121A3A",
+    "description": "Ramadan volunteer app: scan cards and serve iftar meals.",
+    "orientation": "portrait-primary",
+    "prefer_related_applications": false,
+    "icons": [
+        {
+            "src": "icons/Icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        },
+        {
+            "src": "icons/Icon-maskable-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
+        },
+        {
+            "src": "icons/Icon-maskable-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "maskable"
+        }
+    ]
+}

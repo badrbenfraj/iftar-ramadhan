@@ -223,6 +223,7 @@
   "notConfirmedExplanation": "The meal isn’t confirmed until the server answers. Retry, and don’t serve twice.",
   "cameraOffTitle": "Camera access is off",
   "cameraOffMessage": "Allow camera access for this app in your phone settings to scan cards. You can still find people without a card.",
+  "cameraOffMessageWeb": "Allow camera access for this site in your browser settings (on iPhone: Settings › Apps › Safari › Camera), then reload the page. You can still find people without a card.",
   "cameraOpenSettings": "Open settings",
   "cameraUnavailableTitle": "Camera unavailable",
   "cameraUnavailableMessage": "The camera could not be started. You can still find people without a card.",

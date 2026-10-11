@@ -687,6 +687,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'اسمح لهذا التطبيق باستعمال الكاميرا من إعدادات الهاتف لمسح البطاقات. يمكنك دائماً البحث عن شخص بلا بطاقة.';
 
   @override
+  String get cameraOffMessageWeb =>
+      'اسمح لهذا الموقع باستعمال الكاميرا من إعدادات المتصفح (على iPhone: الإعدادات › التطبيقات › Safari › الكاميرا)، ثم أعد تحميل الصفحة. يمكنك دائماً البحث عن شخص بلا بطاقة.';
+
+  @override
   String get cameraOpenSettings => 'فتح الإعدادات';
 
   @override

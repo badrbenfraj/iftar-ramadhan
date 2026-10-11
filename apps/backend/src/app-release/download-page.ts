@@ -37,6 +37,18 @@ export function renderDownloadPage(info: AppVersionOutput): string {
     <span dir="rtl" lang="ar">لم يُنشر أي إصدار بعد.</span><br>
     <span lang="fr">Aucune version publiée pour l'instant.</span></p>`;
 
+  // No APK on iPhones: they use the web version, served by Caddy at /app/.
+  const iphone = `
+    <a class="button secondary" href="/app/">
+      Open on iPhone<br><span>فتح على iPhone · Ouvrir sur iPhone</span>
+    </a>
+    <section class="note">
+      <h2>iPhone</h2>
+      <p>Open the link in Safari, then tap Share › Add to Home Screen.</p>
+      <p dir="rtl" lang="ar">افتح الرابط في Safari، ثم اضغط مشاركة › إضافة إلى الشاشة الرئيسية.</p>
+      <p lang="fr">Ouvrez le lien dans Safari, puis touchez Partager › Sur l'écran d'accueil.</p>
+    </section>`;
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -63,6 +75,10 @@ export function renderDownloadPage(info: AppVersionOutput): string {
     font-size: 18px; font-weight: 600;
   }
   .button span { font-size: 14px; font-weight: 500; }
+  .button.secondary {
+    margin-top: 28px; background: transparent; color: #43CEBB;
+    border: 2px solid #43CEBB;
+  }
   .note {
     margin-top: 28px; padding: 16px; border-radius: 16px; text-align: start;
     background: rgba(243, 235, 221, 0.08); font-size: 14px;
@@ -77,6 +93,7 @@ export function renderDownloadPage(info: AppVersionOutput): string {
   <h1>إفطار صائم</h1>
   <p class="sub">Iftar Saim · Ramadan volunteer app</p>
   ${body}
+  ${iphone}
 </main>
 </body>
 </html>

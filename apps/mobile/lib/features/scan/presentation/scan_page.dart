@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -428,7 +429,12 @@ class _CameraUnavailable extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                denied ? l.cameraOffMessage : l.cameraUnavailableMessage,
+                !denied
+                    ? l.cameraUnavailableMessage
+                    // A browser can't open its own settings for the site.
+                    : kIsWeb
+                        ? l.cameraOffMessageWeb
+                        : l.cameraOffMessage,
                 textAlign: TextAlign.center,
                 style: TextStyle(color: AppPalette.onSky.withValues(alpha: 0.8)),
               ),
@@ -442,7 +448,7 @@ class _CameraUnavailable extends StatelessWidget {
                 icon: const Icon(Icons.search_rounded),
                 label: Text(l.findNoCard),
               ),
-              if (denied) ...[
+              if (denied && !kIsWeb) ...[
                 const SizedBox(height: AppSpacing.sm),
                 TextButton.icon(
                   onPressed: openAppSettings,

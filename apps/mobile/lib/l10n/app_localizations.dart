@@ -1252,6 +1252,12 @@ abstract class AppLocalizations {
   /// **'Allow camera access for this app in your phone settings to scan cards. You can still find people without a card.'**
   String get cameraOffMessage;
 
+  /// No description provided for @cameraOffMessageWeb.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow camera access for this site in your browser settings (on iPhone: Settings › Apps › Safari › Camera), then reload the page. You can still find people without a card.'**
+  String get cameraOffMessageWeb;
+
   /// No description provided for @cameraOpenSettings.
   ///
   /// In en, this message translates to:

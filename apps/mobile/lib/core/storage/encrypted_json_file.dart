@@ -1,22 +1,23 @@
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 
 import '../settings/settings_storage.dart';
+import 'byte_store.dart';
 
-/// One JSON document kept AES-GCM encrypted in a file, with its 256-bit key
-/// in the platform keystore. Writes run one after another. Best effort: a
+/// One JSON document kept AES-GCM encrypted in a [ByteStore] entry (a file
+/// on Android), with its 256-bit key in the platform keystore. Writes run one after another. Best effort: a
 /// storage error never throws.
 class EncryptedJsonFile {
   EncryptedJsonFile({
-    required this._directory,
+    required this._store,
     required this._keys,
     required this.fileName,
     required this.keyName,
   });
 
-  final Future<Directory> Function() _directory;
+  final ByteStore _store;
   final SettingsStorage _keys;
   final String fileName;
   final String keyName;
@@ -29,8 +30,6 @@ class EncryptedJsonFile {
     return next;
   }
 
-  Future<File> _file() async => File('${(await _directory()).path}/$fileName');
-
   Future<SecretKey> _key({required bool create}) async {
     final stored = await _keys.read(keyName);
     if (stored != null) return SecretKey(base64Decode(stored));
@@ -40,9 +39,9 @@ class EncryptedJsonFile {
     return key;
   }
 
-  Future<Object?> _decode(File file) async {
+  Future<Object?> _decode(Uint8List bytes) async {
     final box = SecretBox.fromConcatenation(
-      await file.readAsBytes(),
+      bytes,
       nonceLength: _algorithm.nonceLength,
       macLength: _algorithm.macAlgorithm.macLength,
     );
@@ -57,23 +56,21 @@ class EncryptedJsonFile {
   /// read is moved aside (`<file>.unreadable-<time>`), never deleted: it may
   /// hold meals that were really served. See [readSetAside].
   Future<Object?> read() async {
-    File? file;
     try {
-      file = await _file();
-      if (!await file.exists()) return null;
-      return await _decode(file);
+      final bytes = await _store.read(fileName);
+      if (bytes == null) return null;
+      return await _decode(bytes);
     } on Object {
       try {
-        if (file != null) {
-          final base =
-              '${file.path}.unreadable-${DateTime.now().millisecondsSinceEpoch}';
-          // Never overwrite an earlier set-aside file from the same millisecond.
-          var target = base;
-          for (var i = 1; await File(target).exists(); i++) {
-            target = '$base-$i';
-          }
-          await file.rename(target);
+        final base =
+            '$fileName.unreadable-${DateTime.now().millisecondsSinceEpoch}';
+        // Never overwrite an earlier set-aside file from the same millisecond.
+        final taken = (await _store.names()).toSet();
+        var target = base;
+        for (var i = 1; taken.contains(target); i++) {
+          target = '$base-$i';
         }
+        await _store.rename(fileName, target);
       } on Object {
         // Nothing more to do.
       }
@@ -81,19 +78,17 @@ class EncryptedJsonFile {
     }
   }
 
-  /// The set-aside files that can be read now, with their documents. The
-  /// files stay where they are; the caller deletes them once it has kept
-  /// their content. Never throws.
-  Future<List<(File, Object?)>> readSetAside() async {
-    final found = <(File, Object?)>[];
+  /// The set-aside files that can be read now, by name, with their
+  /// documents. The files stay where they are; the caller deletes them (see
+  /// [deleteSetAside]) once it has kept their content. Never throws.
+  Future<List<(String, Object?)>> readSetAside() async {
+    final found = <(String, Object?)>[];
     try {
-      final dir = await _directory();
-      await for (final entity in dir.list()) {
-        if (entity is! File) continue;
-        final name = entity.uri.pathSegments.last;
+      for (final name in await _store.names()) {
         if (!name.startsWith('$fileName.unreadable')) continue;
         try {
-          found.add((entity, await _decode(entity)));
+          final bytes = await _store.read(name);
+          if (bytes != null) found.add((name, await _decode(bytes)));
         } on Object {
           // Still unreadable: leave it.
         }
@@ -112,14 +107,14 @@ class EncryptedJsonFile {
         utf8.encode(jsonEncode(json)),
         secretKey: await _key(create: true),
       );
-      final file = await _file();
-      final tmp = File('${file.path}.tmp');
-      await tmp.writeAsBytes(box.concatenation(), flush: true);
-      await tmp.rename(file.path);
+      await _store.write(fileName, box.concatenation());
       return true;
     } on Object {
       // Best effort: the in-memory state is unaffected.
       return false;
     }
   });
+
+  /// Deletes a set-aside file returned by [readSetAside].
+  Future<void> deleteSetAside(String name) => _store.delete(name);
 }

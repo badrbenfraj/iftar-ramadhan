@@ -21,7 +21,7 @@ if [ ! -d "$APP_DIR" ]; then
   $SUDO mkdir -p "$APP_DIR"
   $SUDO chown "$(id -u):$(id -g)" "$APP_DIR"
 fi
-mkdir -p "$APP_DIR/releases"
+mkdir -p "$APP_DIR/releases" "$APP_DIR/web"
 # No forced update until someone raises it (docs/DEPLOYMENT.md).
 [ -f "$APP_DIR/releases/minimum-version" ] || echo "0.0.0" > "$APP_DIR/releases/minimum-version"
 

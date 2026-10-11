@@ -687,6 +687,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Allow camera access for this app in your phone settings to scan cards. You can still find people without a card.';
 
   @override
+  String get cameraOffMessageWeb =>
+      'Allow camera access for this site in your browser settings (on iPhone: Settings › Apps › Safari › Camera), then reload the page. You can still find people without a card.';
+
+  @override
   String get cameraOpenSettings => 'Open settings';
 
   @override
