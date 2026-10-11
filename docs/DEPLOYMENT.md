@@ -334,8 +334,10 @@ workflow refuses an `API_URL` that is not `https://`.
 
 ## 11. Local development
 
-**Backend** (details in the root `README.md`): Postgres in Docker, then
-`npm run start:dev` in `apps/backend` → `http://localhost:3000`.
+Full guide: [LOCAL_DEVELOPMENT.md](LOCAL_DEVELOPMENT.md) (`deploy/local/up.sh`
+starts Postgres, the API on `http://localhost:3300`, test data and the web
+app, all in Docker). Natively: Postgres in Docker, then `npm run start:dev` in
+`apps/backend` → `http://localhost:3000` (root `README.md`).
 
 To try the update flow locally, put files in `apps/backend/releases/`
 (git-ignored; the directory is `RELEASES_DIR`, default `releases`):

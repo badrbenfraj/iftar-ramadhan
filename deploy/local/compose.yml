@@ -1,0 +1,94 @@
+# Local dev stack: Postgres + API (watch mode) + the web app behind Caddy,
+# laid out like production (web at /app/, API on the same HTTPS origin).
+# Start it with deploy/local/up.sh, which creates .env and builds the web app.
+#
+#   https://<LAN_IP>:8443/app/   web app (phones on the same Wi-Fi too)
+#   http://localhost:3300        API directly (APK builds from config/local.json)
+#   http://localhost:8081        Adminer
+name: iftar-local
+
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: iftar
+      POSTGRES_PASSWORD: iftar
+      POSTGRES_DB: iftar_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U iftar -d iftar_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  api:
+    image: node:24-alpine
+    working_dir: /app
+    # Source is bind-mounted: edits under apps/backend reload automatically.
+    command: sh -c "npm ci && npm run migration:run && npm run cli:dev && npm run start:dev"
+    volumes:
+      - ../../apps/backend:/app
+      - api_node_modules:/app/node_modules
+    env_file: .env
+    environment:
+      APP_ENV: development
+      APP_PORT: 3000
+      APP_TIMEZONE: Africa/Tunis
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: iftar_db
+      DB_USER: iftar
+      DB_PASS: iftar
+    ports:
+      - "3300:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    # Healthy once migrations and the CLI setup are done and Nest listens.
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:3000/api/v1/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+
+  # Test accounts and fasting people (seed.sql); runs once per `up`, then exits.
+  seed:
+    image: postgres:16-alpine
+    command: psql -v ON_ERROR_STOP=1 -h db -U iftar -d iftar_db -f /seed.sql
+    environment:
+      PGPASSWORD: iftar
+    volumes:
+      - ./seed.sql:/seed.sql:ro
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    image: caddy:2
+    environment:
+      LAN_IP: ${LAN_IP:?run deploy/local/up.sh}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../../apps/mobile/build/web:/srv/web:ro
+      - caddy_data:/data
+    ports:
+      - "8443:8443"
+    depends_on:
+      - api
+
+  adminer:
+    image: adminer
+    environment:
+      ADMINER_DEFAULT_SERVER: db
+    ports:
+      - "8081:8080"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
+  api_node_modules:
+  caddy_data:

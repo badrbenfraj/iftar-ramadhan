@@ -1,0 +1,22 @@
+# Local preview of the web app, same layout as production (/app/ + API on
+# one origin) but with Caddy's own HTTPS certificate, so the app runs in a
+# secure context on the LAN IP too (flutter_secure_storage needs it).
+{
+  local_certs
+  # Clients send no SNI for a bare IP; use the LAN certificate for them.
+  default_sni {$LAN_IP}
+}
+
+https://localhost:8443, https://{$LAN_IP}:8443 {
+  tls internal
+  redir /app /app/ 308
+  handle_path /app/* {
+    root * /srv/web
+    try_files {path} /index.html
+    file_server
+    header Cache-Control "no-cache"
+  }
+  handle {
+    reverse_proxy api:3000
+  }
+}

@@ -1,6 +1,7 @@
 # Iftar Saim — mobile app (Flutter)
 
-Setup, run, test and build commands: see the [root README](../../README.md#mobile-app-appsmobile).
+New computer (Docker only): [docs/LOCAL_DEVELOPMENT.md](../../docs/LOCAL_DEVELOPMENT.md).
+Native setup, run, test and build commands: see the [root README](../../README.md#mobile-app-appsmobile).
 Architecture and migration notes: [docs/MIGRATION_REPORT.md](../../docs/MIGRATION_REPORT.md).
 
 ```bash
