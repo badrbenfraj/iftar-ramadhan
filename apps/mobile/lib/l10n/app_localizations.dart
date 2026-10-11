@@ -196,6 +196,18 @@ abstract class AppLocalizations {
   /// **'Choose your region'**
   String get chooseRegion;
 
+  /// No description provided for @searchRegions.
+  ///
+  /// In en, this message translates to:
+  /// **'Search regions'**
+  String get searchRegions;
+
+  /// No description provided for @noRegionFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No region found'**
+  String get noRegionFound;
+
   /// No description provided for @loadingRegions.
   ///
   /// In en, this message translates to:
@@ -597,6 +609,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not served yet today'**
   String get notServedTooltip;
+
+  /// No description provided for @mealTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Served'**
+  String get mealTaken;
+
+  /// No description provided for @mealNotTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'Not served'**
+  String get mealNotTaken;
 
   /// No description provided for @portions.
   ///

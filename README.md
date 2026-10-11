@@ -1,11 +1,103 @@
+<div align="center">
+
 # إفطار صائم — Iftar Saim
 
-Volunteer app for Ramadan iftar distribution. Volunteers scan a beneficiary's
-QR card, see how many meals to hand over, and confirm the pickup. The server
-guarantees **one meal per person per day**, even when several phones scan the
-same card at the same time.
+**Free app for running a Ramadan iftar distribution.**
+Volunteers scan a person's QR card, see how many meals to hand over, and confirm.
+The server makes sure nobody is served twice in one night, even when several phones scan the same card.
 
-## Quick start (new computer)
+![Flutter](https://img.shields.io/badge/Flutter-Android%20%C2%B7%20iOS%20%C2%B7%20Web-02569B?logo=flutter&logoColor=white)
+![NestJS](https://img.shields.io/badge/NestJS-API-E0234E?logo=nestjs&logoColor=white)
+![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?logo=postgresql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-one%20command-2496ED?logo=docker&logoColor=white)
+![Languages](https://img.shields.io/badge/UI-English%20%C2%B7%20Fran%C3%A7ais%20%C2%B7%20%D8%A7%D9%84%D8%B9%D8%B1%D8%A8%D9%8A%D8%A9-C9A227)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-555)](LICENSE)
+
+<img src="docs/images/welcome.webp" width="200" alt="Welcome screen">&nbsp;
+<img src="docs/images/people.webp" width="200" alt="List of fasting people with served / not served status">&nbsp;
+<img src="docs/images/person.webp" width="200" alt="Person details with meal counts and the confirm button">&nbsp;
+<img src="docs/images/stats.webp" width="200" alt="Statistics for tonight">
+
+</div>
+
+## Why
+
+Charities that hand out iftar meals during Ramadan usually track who has been
+served on paper or in a shared spreadsheet. On a busy evening, with several
+volunteers at several tables, that breaks down: people get served twice,
+others are missed, and nobody knows the totals until the end. Iftar Saim
+replaces the list with a phone app that every volunteer uses at the same
+time.
+
+## Features
+
+- **Scan and serve.** Each registered person gets a card with a QR code. A
+  scan shows their name, ID number, and how many single and family meals to
+  hand over. One tap confirms.
+- **One meal per person per night, guaranteed by the server.** Simultaneous
+  scans of the same card on two phones cannot both succeed. A volunteer can
+  undo their own confirmation for a few minutes.
+- **Works with a bad connection.** Retries never record a second meal. If the
+  coordinator allows it, volunteers can keep serving offline and the phone
+  syncs later.
+- **Regions and roles.** Each region (a distribution point) has its own list,
+  volunteers and coordinator. Volunteers join with a region code or wait for
+  approval. Three roles: volunteer, region coordinator, administrator.
+- **Live statistics.** Portions served tonight, this week or for any dates,
+  per region, plus each person's meal history.
+- **Three languages, right-to-left included.** English, French and Arabic.
+- **Android, iPhone and web from one Flutter codebase.** Android gets an APK
+  with in-app updates; iPhones use the same app as a web app.
+- **Excel export** of the list of people.
+- **Cheap to host.** One small VPS with Docker Compose, HTTPS included. Easy
+  to set up again each Ramadan.
+
+<div align="center">
+
+<img src="docs/images/people-ar.webp" width="200" alt="The people list in Arabic, right-to-left">&nbsp;
+<img src="docs/images/volunteers.webp" width="200" alt="Coordinator view: join code and volunteers waiting for approval">&nbsp;
+<img src="docs/images/region-search.webp" width="200" alt="Sign-up with a searchable region picker">
+
+</div>
+
+## How it works
+
+```mermaid
+flowchart LR
+  subgraph Phones
+    A[Android app<br/>APK]
+    W[iPhone / browser<br/>web app]
+  end
+  subgraph Server["One VPS · Docker Compose"]
+    C[Caddy<br/>HTTPS · /app/ · APK downloads]
+    API[NestJS API<br/>/api/v1]
+    DB[(PostgreSQL)]
+  end
+  A -- HTTPS --> C
+  W -- HTTPS --> C
+  C --> API --> DB
+  GH[GitHub Actions] -- SSH deploy --> Server
+```
+
+The API is the only source of truth for "served tonight": it records each
+meal as an event, and a unique constraint per person per day rejects
+duplicates with `409 MEAL_ALREADY_TAKEN`. "Tonight" follows the
+`APP_TIMEZONE` setting. Deployment, releases and updates are described in
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+
+## Use it for your organization
+
+1. **Try it locally** with the quick start below. It comes with test regions,
+   volunteers and 55 fictional people.
+2. **Rename the regions** and set the timezone (`APP_TIMEZONE`) for your
+   city.
+3. **Deploy** to a small VPS by following
+   [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): set a few GitHub settings, run
+   one workflow, and send volunteers the `/download` link.
+
+Questions, bugs or ideas: [open an issue](https://github.com/badrbenfraj/iftar-ramadhan/issues).
+
+## Quick start
 
 You need only **Docker Desktop** and **Git** (on Windows, run the commands in
 Git Bash). Full guide: **[docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md)**.
@@ -210,3 +302,29 @@ cd apps/legacy-ionic && npm install && npm start
 ```
 
 Remove it once the Flutter app has been validated during a real distribution.
+
+## Contributing
+
+Contributions are welcome, especially translations, accessibility fixes and
+reports from real distributions.
+
+1. Start the local stack (`deploy/local/up.sh`) and sign in with a seeded
+   account (see [docs/LOCAL_DEVELOPMENT.md](docs/LOCAL_DEVELOPMENT.md#3-test-data)).
+2. Keep changes small and focused, one topic per pull request.
+3. Run `flutter analyze` for the app and `npm run lint` for the API before
+   opening the pull request.
+4. All user-facing text goes in the three `apps/mobile/lib/l10n/app_*.arb`
+   files (English, French, Arabic).
+
+## License
+
+[PolyForm Noncommercial 1.0.0](LICENSE). You may use, copy, change and share
+the code for any **noncommercial** purpose. Charities, mosques, associations,
+schools, public research and government bodies may use it, whatever their
+funding. Selling it, or using it in a commercial product or service, is not
+allowed. For commercial use, [open an issue](https://github.com/badrbenfraj/iftar-ramadhan/issues)
+to ask.
+
+The backend was started from Monstarlab's NestJS starter, whose MIT notice is
+kept in [apps/backend/LICENSE.md](apps/backend/LICENSE.md) as that license
+requires.

@@ -69,7 +69,7 @@ void main() {
 
     testWidgets('eligible: teal seal, Tunisian word, quantities, one tap', (tester) async {
       await pumpPanel(tester, ScanReady(person(101)));
-      expect(find.text(MealStatusWords.notTaken), findsOneWidget);
+      expect(find.text('Not served'), findsOneWidget);
       expect(find.text(en.notServedTonight), findsOneWidget);
       expect(find.text('Najwa Chalbi'), findsOneWidget);
       expect(find.text(en.portions(4)), findsOneWidget); // 1 family meal
@@ -79,7 +79,7 @@ void main() {
 
     testWidgets('already served: clay stop, time, and no serve action', (tester) async {
       await pumpPanel(tester, ScanAlreadyTaken(person(102, takenToday: true), DateTime(2025, 3, 5, 18, 10)));
-      expect(find.text(MealStatusWords.taken), findsOneWidget);
+      expect(find.text('Served'), findsOneWidget);
       expect(find.text(en.alreadyServedTonight), findsOneWidget);
       expect(find.text(ltr('18:10')), findsOneWidget);
       expect(find.text(en.alreadyServedNote(ltr('18:10'))), findsOneWidget);
@@ -158,13 +158,13 @@ void main() {
       await tester.pump(const Duration(milliseconds: 400));
       await pumpPanel(tester, ScanReady(b));
       for (var ms = 0; ms <= 300; ms += 20) {
-        final both = find.text(MealStatusWords.taken).evaluate().isNotEmpty &&
-            find.text(MealStatusWords.notTaken).evaluate().isNotEmpty;
+        final both = find.text('Served').evaluate().isNotEmpty &&
+            find.text('Not served').evaluate().isNotEmpty;
         expect(both, isFalse, reason: 'both verdicts visible at +${ms}ms');
         expect(find.text('Aziza Ouerghi').evaluate().isNotEmpty && find.text('Najwa Chalbi').evaluate().isNotEmpty, isFalse);
         await tester.pump(const Duration(milliseconds: 20));
       }
-      expect(find.text(MealStatusWords.notTaken), findsOneWidget);
+      expect(find.text('Not served'), findsOneWidget);
     });
 
     testWidgets('a card scan shows no CIN check', (tester) async {
@@ -228,10 +228,10 @@ void main() {
           final l = lookupAppLocalizations(locale);
           final long = person(9, first: 'Mohamed Ali Ben Abdelkader', last: 'Trabelsi');
           final cases = <(ScanStatus, List<String>)>[
-            (ScanReady(long, noCard: true), [MealStatusWords.notTaken, l.confirmHandOver]),
+            (ScanReady(long, noCard: true), ['Not served', l.confirmHandOver]),
             (
               ScanAlreadyTaken(long, DateTime(2025, 3, 5, 18, 10)),
-              [MealStatusWords.taken, l.scanNextCard],
+              ['Served', l.scanNextCard],
             ),
             (ScanConfirmed(long), [blessingText]),
             (

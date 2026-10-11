@@ -5,13 +5,7 @@ import '../../l10n/app_localizations.dart';
 import '../theme/iftar_colors.dart';
 import '../utils/formatters.dart';
 
-/// Tunisian pickup words, kept in every language (spec §5).
-abstract final class MealStatusWords {
-  static const taken = 'خذا';
-  static const notTaken = 'ما خذاش';
-}
-
-/// "○ ما خذاش" or "✓ خذا 18:12": an icon and a word, never color alone.
+/// "○ Not served" or "✓ Served 18:12": an icon and a word, never color alone.
 class StatusChip extends StatelessWidget {
   const StatusChip({super.key, required this.person, this.now});
 
@@ -25,9 +19,9 @@ class StatusChip extends StatelessWidget {
     final taken = person.isMealTakenToday(now);
     final at = person.lastTakenMeal;
     final text = taken
-        ? '${isolate(MealStatusWords.taken)}'
+        ? '${isolate(l.mealTaken)}'
               '${at == null ? '' : ' ${ltr(formatTime(at))}'}'
-        : isolate(MealStatusWords.notTaken);
+        : isolate(l.mealNotTaken);
     final fg = taken ? c.clayInk : c.actInk;
     return Semantics(
       label: taken ? l.servedTooltip : l.notServedTooltip,

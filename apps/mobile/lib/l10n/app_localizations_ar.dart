@@ -57,6 +57,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get chooseRegion => 'اختر منطقتك';
 
   @override
+  String get searchRegions => 'ابحث عن منطقة';
+
+  @override
+  String get noRegionFound => 'لا توجد منطقة بهذا الاسم';
+
+  @override
   String get loadingRegions => 'جارٍ تحميل المناطق…';
 
   @override
@@ -268,6 +274,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notServedTooltip => 'لم يستلم بعد اليوم';
+
+  @override
+  String get mealTaken => 'استلم';
+
+  @override
+  String get mealNotTaken => 'لم يستلم';
 
   @override
   String portions(int count) {

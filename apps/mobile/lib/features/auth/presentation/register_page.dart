@@ -7,6 +7,7 @@ import '../../../core/network/failure_text.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/iftar_colors.dart';
 import '../../../core/widgets/pill_text_field.dart';
+import '../../../core/widgets/region_picker.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../data/auth_repository.dart';
@@ -219,22 +220,15 @@ class _RegionPicker extends StatelessWidget {
     final items = regions.value ?? const <Region>[];
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-      child: DropdownButtonFormField<int>(
-        initialValue: value,
-        isExpanded: true,
-        borderRadius: BorderRadius.circular(AppRadii.field),
-        hint: Text(
-          regions.isLoading
-              ? l.loadingRegions
-              : regions.hasError
-              ? l.regionsFailed
-              : l.chooseRegion,
-        ),
-        items: [
-          for (final r in items)
-            DropdownMenuItem(value: r.id, child: Text(r.name)),
-        ],
-        onChanged: items.isEmpty ? null : onChanged,
+      child: RegionPickerField(
+        regions: items,
+        value: value,
+        hint: regions.isLoading
+            ? l.loadingRegions
+            : regions.hasError
+            ? l.regionsFailed
+            : l.chooseRegion,
+        onChanged: onChanged,
         validator: (v) => v == null ? l.regionRequired : null,
         decoration: InputDecoration(
           prefixIcon: Icon(Icons.location_on_outlined, color: context.colors.inkMuted, size: 20),

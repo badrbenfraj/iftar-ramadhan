@@ -14,7 +14,6 @@ import '../../../core/utils/masking.dart';
 import '../../../core/widgets/brand.dart';
 import '../../../core/widgets/hand_over_tiles.dart';
 import '../../../core/widgets/seal.dart';
-import '../../../core/widgets/status_chip.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../people/domain/fasting_person.dart';
@@ -149,7 +148,7 @@ class ScanResultPanel extends ConsumerWidget {
           band: _Band(
             color: AppPalette.pausedBand,
             seal: Seal(SealKind.served, semanticLabel: l.sealServed),
-            title: MealStatusWords.taken,
+            title: l.mealTaken,
             subtitle: onPhone && time != null
                 ? l.servedOnThisPhone(time)
                 : asOf == null
@@ -380,7 +379,7 @@ class ScanResultPanel extends ConsumerWidget {
           : _Band(
               color: c.serveBand,
               seal: Seal(SealKind.serve, semanticLabel: l.sealServe),
-              title: MealStatusWords.notTaken,
+              title: l.mealNotTaken,
               subtitle: l.notServedTonight,
             ),
       // Pinned: who and the CIN check. Scrolling: quantities and contact.

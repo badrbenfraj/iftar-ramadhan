@@ -5,6 +5,7 @@ import '../../../core/network/app_failure.dart';
 import '../../../core/network/failure_text.dart';
 import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
+import '../../../core/widgets/region_picker.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/domain/user.dart';
@@ -55,23 +56,12 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
   }
 
   Future<void> _moveTo(Volunteer v, List<Region> regions) async {
-    final regionId = await showModalBottomSheet<int>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheet) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          children: [
-            for (final r in regions)
-              ListTile(
-                title: Text(r.name),
-                selected: r.id == v.region?.id,
-                onTap: () => Navigator.pop(sheet, r.id),
-              ),
-          ],
-        ),
-      ),
+    final picked = await showRegionSearchSheet(
+      context,
+      regions: regions,
+      selectedId: v.region?.id,
     );
+    final regionId = picked?.id;
     if (regionId == null || !mounted) return;
     await _act(
       () => ref.read(volunteersRepositoryProvider).changeRole(
@@ -110,14 +100,11 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
           padding: const EdgeInsets.all(16),
           children: [
             if (isGlobal)
-              DropdownButtonFormField<int?>(
-                initialValue: regionId,
+              RegionPickerField(
+                regions: regions,
+                value: regionId,
+                allLabel: l.allRegions,
                 decoration: InputDecoration(labelText: l.region),
-                items: [
-                  DropdownMenuItem(value: null, child: Text(l.allRegions)),
-                  for (final r in regions)
-                    DropdownMenuItem(value: r.id, child: Text(r.name)),
-                ],
                 onChanged: (id) => ref.read(selectedRegionProvider.notifier).select(id),
               ),
             if (regionId != null) ...[

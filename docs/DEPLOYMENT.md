@@ -37,6 +37,24 @@ themselves.
  https://<server>/api/v1/...           the REST API            (API)
 ```
 
+Releasing a version, from tag to the volunteers' phones:
+
+```mermaid
+sequenceDiagram
+  autonumber
+  actor Dev as Maintainer
+  participant GH as GitHub Actions<br/>(Release app)
+  participant S as Server /opt/iftar
+  participant P as Volunteer's phone
+  Dev->>GH: push tag v1.5.0
+  GH->>GH: build + sign APK, build web app
+  GH->>S: upload over SSH: releases/app-1.5.0.apk,<br/>latest.json, web/1.5.0-…
+  S->>S: switch latest.apk and web/current symlinks
+  P->>S: GET /api/v1/app/version (at startup)
+  S-->>P: latestVersion 1.5.0, minimumVersion
+  P->>S: Update → /download → latest.apk
+```
+
 - **No server address in the code.** The APK learns its server from the
   build-time variable `API_URL` (`--dart-define=API_URL=https://<server>`),
   which GitHub Actions takes from the repository variable of the same name.
