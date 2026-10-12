@@ -1057,6 +1057,23 @@ class AppLocalizationsFr extends AppLocalizations {
   String get volunteers => 'Bénévoles';
 
   @override
+  String get newRegion => 'Nouvelle région';
+
+  @override
+  String get regionName => 'Nom de la région';
+
+  @override
+  String get addRegion => 'Ajouter';
+
+  @override
+  String regionAdded(String name) {
+    return '$name a été ajoutée.';
+  }
+
+  @override
+  String get errRegionNameTaken => 'Une région porte déjà ce nom.';
+
+  @override
   String get joinCodeTitle => 'Code d’accès';
 
   @override

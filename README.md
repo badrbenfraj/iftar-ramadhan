@@ -43,6 +43,7 @@ time.
 - **Regions and roles.** Each region (a distribution point) has its own list,
   volunteers and coordinator. Volunteers join with a region code or wait for
   approval. Three roles: volunteer, region coordinator, administrator.
+  Administrators add new regions from the app (Profile → Team → New region).
 - **Live statistics.** Portions served tonight, this week or for any dates,
   per region, plus each person's meal history.
 - **Three languages, right-to-left included.** English, French and Arabic.
@@ -89,8 +90,9 @@ duplicates with `409 MEAL_ALREADY_TAKEN`. "Tonight" follows the
 
 1. **Try it locally** with the quick start below. It comes with test regions,
    volunteers and 55 fictional people.
-2. **Rename the regions** and set the timezone (`APP_TIMEZONE`) for your
-   city.
+2. **Set up your regions** (an administrator adds them from the app under
+   Profile → Team → New region) and set the timezone (`APP_TIMEZONE`) for
+   your city.
 3. **Deploy** to a small VPS by following
    [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): set a few GitHub settings, run
    one workflow, and send volunteers the `/download` link.

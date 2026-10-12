@@ -1034,6 +1034,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get volunteers => 'المتطوّعون';
 
   @override
+  String get newRegion => 'منطقة جديدة';
+
+  @override
+  String get regionName => 'اسم المنطقة';
+
+  @override
+  String get addRegion => 'إضافة';
+
+  @override
+  String regionAdded(String name) {
+    return 'تمّت إضافة $name.';
+  }
+
+  @override
+  String get errRegionNameTaken => 'توجد منطقة بهذا الاسم من قبل.';
+
+  @override
   String get joinCodeTitle => 'رمز الانضمام';
 
   @override

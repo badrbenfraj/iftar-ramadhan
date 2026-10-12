@@ -23,6 +23,7 @@ class AuthInterceptor extends QueuedInterceptor {
   /// A bare client (no interceptors) used for the refresh call and retries.
   final Dio refreshClient;
   final void Function(AppFailure reason) onSessionExpired;
+
   /// Called on a 403 REGION_FORBIDDEN (the account may have been moved).
   final void Function()? onRegionForbidden;
   AppFailure? _refreshFailure;

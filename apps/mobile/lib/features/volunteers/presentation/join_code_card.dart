@@ -14,7 +14,11 @@ import 'volunteers_controller.dart';
 
 /// The region's code in large letters, with Share / New code / Turn off.
 class JoinCodeCard extends ConsumerWidget {
-  const JoinCodeCard({super.key, required this.regionId, required this.regionName});
+  const JoinCodeCard({
+    super.key,
+    required this.regionId,
+    required this.regionName,
+  });
 
   final int regionId;
   final String regionName;
@@ -46,14 +50,22 @@ class JoinCodeCard extends ConsumerWidget {
     return ok == true;
   }
 
-  Future<void> _run(BuildContext context, WidgetRef ref, Future<void> Function() action) async {
+  Future<void> _run(
+    BuildContext context,
+    WidgetRef ref,
+    Future<void> Function() action,
+  ) async {
     try {
       await action();
       if (!context.mounted) return;
       ref.invalidate(joinCodeProvider(regionId));
     } on AppFailure catch (e) {
       if (context.mounted) {
-        showAppSnackBar(context, failureText(AppLocalizations.of(context), e), isError: true);
+        showAppSnackBar(
+          context,
+          failureText(AppLocalizations.of(context), e),
+          isError: true,
+        );
       }
     }
   }
@@ -101,29 +113,51 @@ class JoinCodeCard extends ConsumerWidget {
                         icon: const Icon(Icons.ios_share_rounded),
                         label: Text(l.joinCodeShare),
                         onPressed: () => SharePlus.instance.share(
-                          ShareParams(text: l.joinCodeShareMessage(regionName, value)),
+                          ShareParams(
+                            text: l.joinCodeShareMessage(regionName, value),
+                          ),
                         ),
                       ),
                     OutlinedButton(
                       onPressed: () async {
                         if (value != null &&
-                            !await _confirm(context, l.joinCodeNewTitle, l.joinCodeNewBody, l.joinCodeNew)) {
+                            !await _confirm(
+                              context,
+                              l.joinCodeNewTitle,
+                              l.joinCodeNewBody,
+                              l.joinCodeNew,
+                            )) {
                           return;
                         }
                         if (!context.mounted) return;
-                        await _run(context, ref, () => repo.newJoinCode(regionId));
+                        await _run(
+                          context,
+                          ref,
+                          () => repo.newJoinCode(regionId),
+                        );
                       },
-                      child: Text(value == null ? l.joinCodeTurnOn : l.joinCodeNew),
+                      child: Text(
+                        value == null ? l.joinCodeTurnOn : l.joinCodeNew,
+                      ),
                     ),
                     if (value != null)
                       TextButton(
                         style: TextButton.styleFrom(foregroundColor: c.clayInk),
                         onPressed: () async {
-                          if (!await _confirm(context, l.joinCodeOffTitle, l.joinCodeOffBody, l.joinCodeTurnOff)) {
+                          if (!await _confirm(
+                            context,
+                            l.joinCodeOffTitle,
+                            l.joinCodeOffBody,
+                            l.joinCodeTurnOff,
+                          )) {
                             return;
                           }
                           if (!context.mounted) return;
-                          await _run(context, ref, () => repo.turnOffJoinCode(regionId));
+                          await _run(
+                            context,
+                            ref,
+                            () => repo.turnOffJoinCode(regionId),
+                          );
                         },
                         child: Text(l.joinCodeTurnOff),
                       ),

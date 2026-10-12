@@ -92,6 +92,7 @@ final class ConflictFailure extends AppFailure {
   const ConflictFailure(super.message, {this.code});
 
   static const usernameTaken = 'USERNAME_TAKEN';
+  static const regionNameTaken = 'REGION_NAME_TAKEN';
 
   final String? code;
 }

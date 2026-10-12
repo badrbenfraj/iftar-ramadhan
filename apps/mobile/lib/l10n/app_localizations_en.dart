@@ -1037,6 +1037,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get volunteers => 'Volunteers';
 
   @override
+  String get newRegion => 'New region';
+
+  @override
+  String get regionName => 'Region name';
+
+  @override
+  String get addRegion => 'Add';
+
+  @override
+  String regionAdded(String name) {
+    return '$name was added.';
+  }
+
+  @override
+  String get errRegionNameTaken => 'A region with this name already exists.';
+
+  @override
   String get joinCodeTitle => 'Join code';
 
   @override

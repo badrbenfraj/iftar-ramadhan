@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/network/api_client.dart';
 import '../../../core/providers.dart';
+import '../../auth/domain/user.dart';
 import '../domain/volunteer.dart';
 
 /// Security spec §4.3–4.4: account and join-code endpoints for admins.
@@ -24,8 +25,20 @@ class VolunteersRepository {
   Future<void> disable(int id) => _api.post('/users/$id/disable');
   Future<void> enable(int id) => _api.post('/users/$id/enable');
 
-  Future<void> changeRole(int id, {required String role, required int regionId}) =>
+  Future<void> changeRole(
+    int id, {
+    required String role,
+    required int regionId,
+  }) =>
       _api.patch('/users/$id/role', body: {'role': role, 'regionId': regionId});
+
+  /// Global admins only; 409 REGION_NAME_TAKEN when the name is in use.
+  Future<Region> createRegion(String name) async => Region.fromJson(
+    (await _api.post(
+      '/regions',
+      body: {'name': name.trim(), 'active': true},
+    )).object,
+  );
 
   Future<String?> joinCode(int regionId) async =>
       (await _api.get('/regions/$regionId/join-code')).object['joinCode']

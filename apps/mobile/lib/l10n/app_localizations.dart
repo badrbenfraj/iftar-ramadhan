@@ -1828,6 +1828,36 @@ abstract class AppLocalizations {
   /// **'Volunteers'**
   String get volunteers;
 
+  /// No description provided for @newRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'New region'**
+  String get newRegion;
+
+  /// No description provided for @regionName.
+  ///
+  /// In en, this message translates to:
+  /// **'Region name'**
+  String get regionName;
+
+  /// No description provided for @addRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addRegion;
+
+  /// No description provided for @regionAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was added.'**
+  String regionAdded(String name);
+
+  /// No description provided for @errRegionNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'A region with this name already exists.'**
+  String get errRegionNameTaken;
+
   /// No description provided for @joinCodeTitle.
   ///
   /// In en, this message translates to:

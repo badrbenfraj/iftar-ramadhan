@@ -14,6 +14,8 @@ String failureText(AppLocalizations l, AppFailure failure) => switch (failure) {
   NotFoundFailure() => l.errNotFound,
   MealAlreadyTakenFailure() => l.alreadyCollected,
   ConflictFailure(code: ConflictFailure.usernameTaken) => l.errUsernameTaken,
+  ConflictFailure(code: ConflictFailure.regionNameTaken) =>
+    l.errRegionNameTaken,
   ConflictFailure(:final message) => message,
   InvalidJoinCodeFailure() => l.errInvalidJoinCode,
   ValidationFailure(:final message) => message,
@@ -25,11 +27,12 @@ String failureText(AppLocalizations l, AppFailure failure) => switch (failure) {
 };
 
 /// Short title for full-screen error views.
-String failureTitle(AppLocalizations l, AppFailure failure) => switch (failure) {
-  NetworkFailure() => l.titleOffline,
-  TimeoutFailure() => l.titleSlow,
-  ServerFailure() => l.titleServerError,
-  UnauthorizedFailure() => l.titleSignedOut,
-  NotFoundFailure() => l.titleNotFound,
-  _ => l.titleGenericError,
-};
+String failureTitle(AppLocalizations l, AppFailure failure) =>
+    switch (failure) {
+      NetworkFailure() => l.titleOffline,
+      TimeoutFailure() => l.titleSlow,
+      ServerFailure() => l.titleServerError,
+      UnauthorizedFailure() => l.titleSignedOut,
+      NotFoundFailure() => l.titleNotFound,
+      _ => l.titleGenericError,
+    };

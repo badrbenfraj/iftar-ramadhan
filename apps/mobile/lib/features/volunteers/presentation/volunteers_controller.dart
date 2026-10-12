@@ -19,9 +19,8 @@ class SelectedRegion extends Notifier<int?> {
   void select(int? regionId) => state = regionId;
 }
 
-final selectedRegionProvider = NotifierProvider.autoDispose<SelectedRegion, int?>(
-  SelectedRegion.new,
-);
+final selectedRegionProvider =
+    NotifierProvider.autoDispose<SelectedRegion, int?>(SelectedRegion.new);
 
 final volunteersProvider = FutureProvider.autoDispose<List<Volunteer>>((ref) {
   final user = ref.watch(authControllerProvider).value;

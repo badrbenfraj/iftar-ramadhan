@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
+import { ILike } from 'typeorm';
 
 import {
   canAccessRegion,
@@ -27,6 +28,9 @@ import { Region } from '../entities/region.entity';
 import { RegionRepository } from '../repositories/region.repository';
 import { generateJoinCode } from './join-code';
 import { RegionAclService } from './region-acl.service';
+
+/** 409 code when a new region reuses an existing name (any case). */
+export const REGION_NAME_TAKEN = 'REGION_NAME_TAKEN';
 
 @Injectable()
 export class RegionService {
@@ -55,6 +59,17 @@ export class RegionService {
       .canDoAction(Action.Create, region);
     if (!isAllowed) {
       throw new UnauthorizedException();
+    }
+
+    region.name = region.name.trim();
+    const taken = await this.repository.findOne({
+      where: { name: ILike(region.name.replace(/[\\%_]/g, '\\$&')) },
+    });
+    if (taken) {
+      throw new ConflictException({
+        message: 'A region with this name already exists',
+        code: REGION_NAME_TAKEN,
+      });
     }
 
     region.createdBy = plainToClass(User, user);
