@@ -165,13 +165,7 @@ class JoinCodeCard extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  title: Text(l.approveNewVolunteers),
-                  subtitle: Text(
-                    l.approveNewVolunteersHelp,
-                    style: TextStyle(color: c.inkMuted),
-                  ),
+                _ApprovalSwitch(
                   value: info.approveNewVolunteers,
                   onChanged: (on) =>
                       _run(context, ref, () => repo.setApproval(regionId, on)),
@@ -181,6 +175,47 @@ class JoinCodeCard extends ConsumerWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// "Approve new volunteers": shows the new value at once and ignores taps
+/// until the server has answered, so two quick taps can't race.
+class _ApprovalSwitch extends StatefulWidget {
+  const _ApprovalSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final Future<void> Function(bool) onChanged;
+
+  @override
+  State<_ApprovalSwitch> createState() => _ApprovalSwitchState();
+}
+
+class _ApprovalSwitchState extends State<_ApprovalSwitch> {
+  /// The value being saved; null when idle.
+  bool? _saving;
+
+  Future<void> _change(bool on) async {
+    setState(() => _saving = on);
+    try {
+      await widget.onChanged(on);
+    } finally {
+      if (mounted) setState(() => _saving = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(l.approveNewVolunteers),
+      subtitle: Text(
+        l.approveNewVolunteersHelp,
+        style: TextStyle(color: context.colors.inkMuted),
+      ),
+      value: _saving ?? widget.value,
+      onChanged: _saving == null ? _change : null,
     );
   }
 }

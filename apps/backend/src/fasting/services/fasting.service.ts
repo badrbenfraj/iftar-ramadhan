@@ -11,7 +11,6 @@ import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity
 import { regionForbidden } from '../../auth/access/access-policy';
 import { AUTH_ERROR_CODES } from '../../auth/access/auth-error-codes';
 import { Region } from '../../region/entities/region.entity';
-import { RegionRepository } from '../../region/repositories/region.repository';
 import { Action } from '../../shared/acl/action.constant';
 import { Actor } from '../../shared/acl/actor.constant';
 import { AppLogger } from '../../shared/logger/logger.service';
@@ -64,7 +63,6 @@ export interface DailyStatistics {
 export class FastingService {
   constructor(
     private repository: FastingRepository,
-    private regionRepository: RegionRepository,
     private userService: UserService,
     private aclService: FastingAclService,
     private meals: MealEventService,

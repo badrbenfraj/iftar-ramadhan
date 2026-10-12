@@ -123,7 +123,11 @@
     e.preventDefault();
     current();
   });
-  document.getElementById('print').addEventListener('click', function () { window.print(); });
+  // Render the range as typed, even if Show wasn't pressed after editing it.
+  document.getElementById('print').addEventListener('click', function () {
+    current();
+    if (!document.getElementById('summary').classList.contains('error')) window.print();
+  });
   current();
 </script>
 </body>

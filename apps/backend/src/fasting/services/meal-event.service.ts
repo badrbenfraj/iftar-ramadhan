@@ -35,11 +35,11 @@ import { Fasting } from '../entities/fasting.entity';
 import { FastingAclService } from './fasting-acl.service';
 import { decideRevoke } from './revoke-rules';
 
-/** A meal event row joined with the serving volunteer's name. */
 /** A person's key in maps: card numbers repeat across regions. */
 export const personKey = (regionId: number, id: number): string =>
   `${regionId}:${id}`;
 
+/** A meal event row joined with the serving volunteer's name. */
 export interface MealEventRow {
   eventId: string;
   fastingId: number;
