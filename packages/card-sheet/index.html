@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Iftar Saim cards</title>
+<!--
+  Maintainer tool: renders numbered QR cards, 25 per A4 page, to print as a
+  PDF (see packages/README.md). Every region uses the same numbers, so the
+  cards carry only the number. Open this file directly; no build, no server.
+  ?from=1&to=2000 pre-fills the range (used for the headless PDF export).
+-->
+<script src="qrcode.js"></script>
+<style>
+  @page { size: A4; margin: 0; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, "Segoe UI", Roboto, sans-serif; background: #e9e6df; color: #1f1d1a; }
+  form, .help { max-width: 760px; margin: 16px auto; padding: 0 16px; }
+  form { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+  label { display: flex; flex-direction: column; font-size: 14px; gap: 4px; }
+  input { font: inherit; padding: 6px 8px; width: 120px; }
+  button { font: inherit; padding: 8px 16px; cursor: pointer; }
+  .summary { font-size: 14px; }
+  .error { color: #9c4a32; }
+  .help { font-size: 13px; color: #5a554d; }
+  .sheet {
+    width: 210mm; height: 297mm; padding: 5mm; margin: 0 auto 16px;
+    background: #fff; display: grid;
+    grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(5, 1fr);
+    page-break-after: always; break-after: page;
+  }
+  .sheet:last-child { page-break-after: auto; break-after: auto; }
+  .card {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1mm;
+  }
+  .card svg { width: 38mm; height: 38mm; }
+  .card .number { font-family: Arial, Helvetica, sans-serif; font-size: 26pt; font-weight: 700; line-height: 1; }
+  @media print {
+    body { background: #fff; }
+    form, .help { display: none; }
+    .sheet { margin: 0; }
+  }
+</style>
+</head>
+<body>
+<form id="range">
+  <label>From <input id="from" type="number" min="1" step="1" required></label>
+  <label>To <input id="to" type="number" min="1" step="1" required></label>
+  <button type="submit">Show</button>
+  <button type="button" id="print">Print / Save as PDF</button>
+  <span class="summary" id="summary"></span>
+</form>
+<p class="help">
+  In the print dialog choose <b>Save as PDF</b>, paper <b>A4</b>, scale <b>100%</b>.
+  25 cards per page, at most 2000 cards per run.
+</p>
+<main id="sheets"></main>
+<script>
+  var MAX_ID = 2147483647;
+  var MAX_CARDS = 2000;
+  var PER_PAGE = 25;
+
+  // One QR as SVG: a single path of 1×1 squares, with a 1-module margin
+  // (the card's white space completes the quiet zone).
+  function qrSvg(text) {
+    var qr = qrcode(0, 'H');
+    qr.addData(text);
+    qr.make();
+    var n = qr.getModuleCount();
+    var d = '';
+    for (var r = 0; r < n; r++) {
+      for (var c = 0; c < n; c++) {
+        if (qr.isDark(r, c)) d += 'M' + c + ',' + r + 'h1v1h-1z';
+      }
+    }
+    var size = n + 2;
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 ' + size + ' ' + size +
+      '" shape-rendering="crispEdges"><path d="' + d + '" fill="#000"/></svg>';
+  }
+
+  function render(from, to) {
+    var summary = document.getElementById('summary');
+    var sheets = document.getElementById('sheets');
+    sheets.innerHTML = '';
+    summary.className = 'summary';
+    if (!Number.isInteger(from) || !Number.isInteger(to) || from < 1 || to < from || to > MAX_ID) {
+      summary.textContent = 'From must be at least 1 and To at least From.';
+      summary.className = 'summary error';
+      return;
+    }
+    var count = to - from + 1;
+    if (count > MAX_CARDS) {
+      summary.textContent = 'At most ' + MAX_CARDS + ' cards per run: split the range.';
+      summary.className = 'summary error';
+      return;
+    }
+    var pages = Math.ceil(count / PER_PAGE);
+    summary.textContent = count + ' cards · ' + pages + ' pages';
+    var html = '';
+    for (var p = 0; p < pages; p++) {
+      html += '<section class="sheet">';
+      for (var i = 0; i < PER_PAGE; i++) {
+        var id = from + p * PER_PAGE + i;
+        html += id > to
+          ? '<div class="card"></div>'
+          : '<div class="card">' + qrSvg(String(id)) + '<div class="number">' + id + '</div></div>';
+      }
+      html += '</section>';
+    }
+    sheets.innerHTML = html;
+  }
+
+  var params = new URLSearchParams(location.search);
+  var fromInput = document.getElementById('from');
+  var toInput = document.getElementById('to');
+  fromInput.value = params.get('from') || '1';
+  toInput.value = params.get('to') || '100';
+
+  function current() { render(Number(fromInput.value), Number(toInput.value)); }
+
+  document.getElementById('range').addEventListener('submit', function (e) {
+    e.preventDefault();
+    current();
+  });
+  document.getElementById('print').addEventListener('click', function () { window.print(); });
+  current();
+</script>
+</body>
+</html>
