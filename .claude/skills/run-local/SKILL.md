@@ -40,7 +40,8 @@ healthy. It is idempotent (existing rows are kept). Password for all: `test-pass
 | `vol2` | USER | Dar Sousse |
 
 Join codes: `NOUR-111111` (Dar Sokra), `RAHMA-222222` (Dar Sousse). Fasting
-people: IDs 1-40 (Dar Sokra) and 101-115 (Dar Sousse), none served yet; serve
+people: cards 1-40 (Dar Sokra) and 1-15 (Dar Sousse), overlapping on
+purpose like real cards, none served yet; serve
 meals through the app so `meal_events` stays consistent. Re-run by hand with
 `docker compose -f deploy/local/compose.yml run --rm seed`.
 

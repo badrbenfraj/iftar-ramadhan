@@ -28,8 +28,9 @@ FROM (VALUES
 JOIN regions r ON r.name = u.region
 ON CONFLICT (username) DO NOTHING;
 
--- Fasting people: IDs 1-40 in Dar Sokra, 101-115 in Dar Sousse (IDs are
--- printed on the QR cards; scan tests can type them).
+-- Fasting people: cards 1-40 in Dar Sokra and 1-15 in Dar Sousse. Every
+-- region prints the same card numbers, so the two lists overlap on purpose.
+-- k only varies the fake details between the two regions.
 WITH first_names(v, n) AS (
   SELECT * FROM unnest(ARRAY['محمد','فاطمة','أحمد','عائشة','علي','مريم','يوسف','خديجة','عمر','سارة',
                              'Mohamed','Fatma','Ahmed','Amira','Karim','Nour','Hichem','Salma'])
@@ -39,20 +40,21 @@ WITH first_names(v, n) AS (
                              'Ben Salah','Trabelsi','Gharbi','Jaziri','Mejri','Bouazizi'])
                 WITH ORDINALITY AS t(v, n)
 ), people AS (
-  SELECT id, CASE WHEN id < 100 THEN 'Dar Sokra' ELSE 'Dar Sousse' END AS region
-  FROM (SELECT generate_series(1, 40) UNION ALL SELECT generate_series(101, 115)) AS s(id)
+  SELECT id, id AS k, 'Dar Sokra' AS region FROM generate_series(1, 40) AS s(id)
+  UNION ALL
+  SELECT id, id + 100 AS k, 'Dar Sousse' FROM generate_series(1, 15) AS s(id)
 )
 INSERT INTO fastings (id, "firstName", "lastName", phone, comment, "familyMeal", "singleMeal",
                       cin, "regionId", "regionName", "createdById")
 SELECT p.id,
-       (SELECT v FROM first_names WHERE n = 1 + p.id % 18),
-       (SELECT v FROM last_names  WHERE n = 1 + (p.id * 7) % 12),
-       CASE WHEN p.id % 3 = 0 THEN NULL ELSE '2' || lpad((p.id * 7919 % 10000000)::text, 7, '0') END,
-       CASE WHEN p.id % 9 = 0 THEN 'يسكن قرب الجامع' WHEN p.id % 11 = 0 THEN 'Needs a vegetarian meal' END,
-       CASE WHEN p.id % 4 = 0 THEN 0 ELSE 1 + p.id % 3 END,
-       CASE WHEN p.id % 4 = 0 THEN 1 ELSE p.id % 2 END,
-       CASE WHEN p.id % 5 = 0 THEN NULL ELSE lpad((p.id * 104729 % 100000000)::text, 8, '0') END,
+       (SELECT v FROM first_names WHERE n = 1 + p.k % 18),
+       (SELECT v FROM last_names  WHERE n = 1 + (p.k * 7) % 12),
+       CASE WHEN p.k % 3 = 0 THEN NULL ELSE '2' || lpad((p.k * 7919 % 10000000)::text, 7, '0') END,
+       CASE WHEN p.k % 9 = 0 THEN 'يسكن قرب الجامع' WHEN p.k % 11 = 0 THEN 'Needs a vegetarian meal' END,
+       CASE WHEN p.k % 4 = 0 THEN 0 ELSE 1 + p.k % 3 END,
+       CASE WHEN p.k % 4 = 0 THEN 1 ELSE p.k % 2 END,
+       CASE WHEN p.k % 5 = 0 THEN NULL ELSE lpad((p.k * 104729 % 100000000)::text, 8, '0') END,
        r.id, r.name, (SELECT id FROM users WHERE username = 'admin')
 FROM people p
 JOIN regions r ON r.name = p.region
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT ("regionId", id) DO NOTHING;

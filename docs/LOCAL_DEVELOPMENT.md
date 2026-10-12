@@ -74,7 +74,7 @@ deployed and changes to it don't trigger the deploy workflow.
 | `off` | `test-pass` | Disabled volunteer (login refused) | Dar Sokra |
 
 - Join codes for registration: `NOUR-111111` (Dar Sokra), `RAHMA-222222` (Dar Sousse).
-- Fasting people: IDs **1–40** in Dar Sokra, **101–115** in Dar Sousse, none
+- Fasting people: card numbers **1–40** in Dar Sokra and **1–15** in Dar Sousse (the same numbers in both regions, as with real cards), none
   served yet. Serve meals through the app.
 
 Start over with an empty database (deletes all local data):

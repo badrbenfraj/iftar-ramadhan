@@ -1,5 +1,4 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
@@ -13,16 +12,7 @@ import {
   Max,
   MaxLength,
   Min,
-  ValidateNested,
 } from 'class-validator';
-
-/** `{ id }` of a region; other fields the app sends are stripped. */
-export class RegionRefInput {
-  @IsInt()
-  @Min(1)
-  @ApiProperty()
-  id: number;
-}
 
 export class CreateFastingInput {
   @IsInt()
@@ -102,13 +92,6 @@ export class UpdateFastingInput {
   @IsOptional()
   @ApiProperty({ required: false })
   cin: string;
-
-  /** Only a global admin may move a person; others must send the URL region. */
-  @IsOptional()
-  @ValidateNested()
-  @Type(() => RegionRefInput)
-  @ApiProperty({ required: false, type: () => RegionRefInput })
-  region?: RegionRefInput;
 
   @IsString()
   @IsOptional()

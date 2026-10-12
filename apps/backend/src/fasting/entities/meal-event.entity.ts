@@ -21,12 +21,12 @@ export type MealEventSource = 'online' | 'offline' | 'backfill';
  * older clients and statistics (dual-write, spec 2A §3.3).
  */
 @Entity('meal_events')
-@Index('UQ_meal_events_active_day', ['fastingId', 'serviceDay'], {
+@Index('UQ_meal_events_active_day', ['regionId', 'fastingId', 'serviceDay'], {
   unique: true,
   where: '"revokedAt" IS NULL AND "conflict" = false',
 })
 @Index('IDX_meal_events_region_day', ['regionId', 'serviceDay'])
-@Index('IDX_meal_events_fasting_served', ['fastingId', 'servedAt'])
+@Index('IDX_meal_events_fasting_served', ['regionId', 'fastingId', 'servedAt'])
 export class MealEvent {
   /** The app's `clientEventId` when it sent one. */
   @PrimaryColumn({ type: 'uuid', default: () => 'gen_random_uuid()' })
@@ -36,12 +36,16 @@ export class MealEvent {
   fastingId: number;
 
   @ManyToOne(() => Fasting, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'fastingId' })
+  @JoinColumn([
+    { name: 'regionId', referencedColumnName: 'regionId' },
+    { name: 'fastingId', referencedColumnName: 'id' },
+  ])
   fasting?: Fasting;
 
   /**
-   * Denormalized for region-scoped queries. No foreign key: `regions` has a
-   * composite primary key (id, name).
+   * The person's region: with `fastingId` it is the person's key (card
+   * numbers repeat across regions). No foreign key to `regions`, whose
+   * primary key is (id, name).
    */
   @Column()
   regionId: number;

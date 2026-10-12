@@ -20,9 +20,9 @@ export class FastingRepository extends Repository<Fasting> {
     offset: number,
   ): Promise<[Fasting[], number]> {
     const fasting = await this.findAndCount({
-      where: regionId === null ? {} : { region: { id: regionId } },
+      where: regionId === null ? {} : { regionId },
       relations: { region: true },
-      order: { id: 'ASC' },
+      order: { regionId: 'ASC', id: 'ASC' },
       take: limit,
       skip: offset,
     });
@@ -45,7 +45,7 @@ export class FastingRepository extends Repository<Fasting> {
     }
 
     const fasting = await this.findOne({
-      where: { id, region: { id: regionId } },
+      where: { id, regionId },
       relations: { region: true },
     });
     if (!fasting) {
