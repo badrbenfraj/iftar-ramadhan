@@ -14,6 +14,21 @@ export class PersonKeyPerRegion1791700000000 implements MigrationInterface {
     );
     await queryRunner.query(`DROP INDEX "UQ_meal_events_active_day"`);
     await queryRunner.query(`DROP INDEX "IDX_meal_events_fasting_served"`);
+    // A person used to be movable to another region without their meals
+    // following; re-point them while "id" alone is still unique.
+    await queryRunner.query(
+      `UPDATE "meal_events" e SET "regionId" = f."regionId"
+         FROM "fastings" f
+        WHERE f."id" = e."fastingId" AND e."regionId" IS DISTINCT FROM f."regionId"`,
+    );
+    const [{ count }]: Array<{ count: string }> = await queryRunner.query(
+      `SELECT count(*) AS "count" FROM "fastings" WHERE "regionId" IS NULL`,
+    );
+    if (Number(count) > 0) {
+      throw new Error(
+        `${count} fasting people have no region: give them one before migrating`,
+      );
+    }
     await queryRunner.query(
       `ALTER TABLE "fastings" DROP CONSTRAINT "PK_33563b1cc12321877ca97148150"`,
     );
