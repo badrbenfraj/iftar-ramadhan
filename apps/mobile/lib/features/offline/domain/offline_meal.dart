@@ -73,8 +73,9 @@ class MealSyncResult {
       code: json['code'] as String?,
       flag: json['flag'] as String?,
       otherServedAt: at is String ? DateTime.tryParse(at)?.toLocal() : null,
-      otherServedByName:
-          name is String && name.trim().isNotEmpty ? name.trim() : null,
+      otherServedByName: name is String && name.trim().isNotEmpty
+          ? name.trim()
+          : null,
     );
   }
 
@@ -124,7 +125,9 @@ class ReviewItem {
       userId: (json['userId'] as num).toInt(),
       conflict: json['conflict'] == true,
       code: json['code'] as String?,
-      otherServedAt: other is String ? DateTime.tryParse(other)?.toLocal() : null,
+      otherServedAt: other is String
+          ? DateTime.tryParse(other)?.toLocal()
+          : null,
       otherServedByName: json['otherServedByName'] as String?,
     );
   }
@@ -132,6 +135,7 @@ class ReviewItem {
   static const clockCode = 'CLOCK_OUT_OF_RANGE';
   static const notFoundCode = 'PERSON_NOT_FOUND';
   static const regionCode = 'REGION_NOT_ALLOWED';
+  static const regionClosedCode = 'REGION_CLOSED';
 
   final String clientEventId;
   final int personId;

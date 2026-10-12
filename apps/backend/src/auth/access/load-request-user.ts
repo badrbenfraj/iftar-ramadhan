@@ -2,6 +2,7 @@ import { UnauthorizedException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
 
 import { USER_STATUS } from '../../user/constants/user-status.constant';
+import { ROLE } from '../constants/role.constant';
 import { UserAccessTokenClaims } from '../dtos/auth-token-output.dto';
 import { AUTH_ERROR_CODES } from './auth-error-codes';
 
@@ -20,8 +21,13 @@ export async function loadRequestUser(
     roles: string;
     status: string;
     regionId: number | null;
+    previousRegionId: number | null;
+    regionActive: boolean | null;
   }> = await dataSource.query(
-    `SELECT "id", "username", "roles", "status", "regionId" FROM "users" WHERE "id" = $1`,
+    `SELECT u."id", u."username", u."roles", u."status", u."regionId",
+            u."previousRegionId", r."active" AS "regionActive"
+       FROM "users" u LEFT JOIN "regions" r ON r."id" = u."regionId"
+      WHERE u."id" = $1`,
     [userId],
   );
   if (!row) {
@@ -39,11 +45,17 @@ export async function loadRequestUser(
       code: AUTH_ERROR_CODES.ACCOUNT_DISABLED,
     });
   }
+  // simple-array is stored comma-separated.
+  const roles = row.roles
+    .split(',')
+    .filter(Boolean) as UserAccessTokenClaims['roles'];
   return {
     id: row.id,
     username: row.username,
-    // simple-array is stored comma-separated.
-    roles: row.roles.split(',').filter(Boolean) as UserAccessTokenClaims['roles'],
+    roles,
     regionId: row.regionId,
+    // Global admins work everywhere, closed regions included.
+    regionClosed: row.regionActive === false && !roles.includes(ROLE.ADMIN),
+    previousRegionId: row.previousRegionId,
   };
 }

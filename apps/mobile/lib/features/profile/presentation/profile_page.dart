@@ -297,6 +297,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         trailing: chevron,
                         onTap: () => context.push('/volunteers'),
                       ),
+                      if (user.isAdmin)
+                        InfoTile(
+                          icon: Icons.map_outlined,
+                          label: l.regions,
+                          showPlaceholder: false,
+                          trailing: chevron,
+                          onTap: () => context.push('/regions'),
+                        ),
                     ],
                   ),
                   const SizedBox(height: AppSpacing.lg),

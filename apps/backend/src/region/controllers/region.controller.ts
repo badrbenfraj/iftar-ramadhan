@@ -34,10 +34,16 @@ import { PaginationParamsDto } from '../../shared/dtos/pagination-params.dto';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { ReqContext } from '../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
+import { AdminRegionOutput } from '../dtos/admin-region-output.dto';
 import { JoinCodeOutput } from '../dtos/join-code-output.dto';
 import { PublicRegionOutput } from '../dtos/public-region-output.dto';
-import { CreateRegionInput, UpdateRegionInput } from '../dtos/region-input.dto';
+import {
+  CloseRegionInput,
+  CreateRegionInput,
+  UpdateRegionInput,
+} from '../dtos/region-input.dto';
 import { RegionOutput } from '../dtos/region-output.dto';
+import { RegionUsageOutput } from '../dtos/region-usage-output.dto';
 import { RegionService } from '../services/region.service';
 
 @ApiTags('regions')
@@ -95,6 +101,78 @@ export class RegionController {
     return { data: regions, meta: { count } };
   }
 
+  @Get('all')
+  @ApiOperation({ summary: 'Admin: every region, closed ones included' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([AdminRegionOutput]),
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLE.ADMIN)
+  async getAllRegions(
+    @ReqContext() ctx: RequestContext,
+  ): Promise<BaseApiResponse<AdminRegionOutput[]>> {
+    const regions = await this.regionService.getAllRegions(ctx);
+    return { data: regions, meta: { count: regions.length } };
+  }
+
+  @Get(':id/usage')
+  @ApiOperation({ summary: 'Admin: what still points to a region' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse(RegionUsageOutput),
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLE.ADMIN)
+  async getRegionUsage(
+    @ReqContext() ctx: RequestContext,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<BaseApiResponse<RegionUsageOutput>> {
+    return { data: await this.regionService.getUsage(ctx, id), meta: {} };
+  }
+
+  @Post(':id/close')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Admin: close a region (read-only, its users are blocked)',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse(AdminRegionOutput),
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLE.ADMIN)
+  async closeRegion(
+    @ReqContext() ctx: RequestContext,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() input: CloseRegionInput,
+  ): Promise<BaseApiResponse<AdminRegionOutput>> {
+    return {
+      data: await this.regionService.closeRegion(ctx, id, input),
+      meta: {},
+    };
+  }
+
+  @Post(':id/reopen')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Admin: reopen a closed region' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse(AdminRegionOutput),
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(ROLE.ADMIN)
+  async reopenRegion(
+    @ReqContext() ctx: RequestContext,
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<BaseApiResponse<AdminRegionOutput>> {
+    return { data: await this.regionService.reopenRegion(ctx, id), meta: {} };
+  }
+
   @Get(':id')
   @ApiOperation({
     summary: 'Get region by id API',
@@ -142,11 +220,13 @@ export class RegionController {
 
   @Delete(':id')
   @ApiOperation({
-    summary: 'Delete region by id API',
+    summary: 'Admin: delete an empty region (409 REGION_IN_USE otherwise)',
   })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
   })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
   @UseInterceptors(ClassSerializerInterceptor)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(ROLE.ADMIN)

@@ -1037,6 +1037,130 @@ class AppLocalizationsEn extends AppLocalizations {
   String get volunteers => 'Volunteers';
 
   @override
+  String get newRegion => 'New region';
+
+  @override
+  String get regionName => 'Region name';
+
+  @override
+  String get addRegion => 'Add';
+
+  @override
+  String regionAdded(String name) {
+    return '$name was added.';
+  }
+
+  @override
+  String get errRegionNameTaken => 'A region with this name already exists.';
+
+  @override
+  String get regions => 'Regions';
+
+  @override
+  String get renameRegion => 'Rename';
+
+  @override
+  String regionRenamed(String name) {
+    return 'Renamed to $name.';
+  }
+
+  @override
+  String get offlineServing => 'Offline serving';
+
+  @override
+  String get offlineServingHint =>
+      'Volunteers can keep serving with no network';
+
+  @override
+  String get closeRegion => 'Close region';
+
+  @override
+  String closeRegionTitle(String name) {
+    return 'Close $name?';
+  }
+
+  @override
+  String get closeRegionBody =>
+      'Serving stops here. Its people and meal history are kept, read-only. Its volunteers and coordinators are blocked until they are moved to another region.';
+
+  @override
+  String regionUsage(int users, int people, int meals) {
+    return 'Volunteers: $users · People: $people · Meals: $meals';
+  }
+
+  @override
+  String get moveUsersTo => 'Move its volunteers to';
+
+  @override
+  String get dontMoveUsers => 'Don’t move them';
+
+  @override
+  String regionClosedDone(String name) {
+    return '$name is closed.';
+  }
+
+  @override
+  String get reopenRegion => 'Reopen';
+
+  @override
+  String reopenRegionTitle(String name) {
+    return 'Reopen $name?';
+  }
+
+  @override
+  String get reopenRegionBody =>
+      'Volunteers who were not moved can use the app again.';
+
+  @override
+  String regionReopened(String name) {
+    return '$name is open again.';
+  }
+
+  @override
+  String deleteRegionTitle(String name) {
+    return 'Delete $name?';
+  }
+
+  @override
+  String get deleteRegionBody =>
+      'It has no people, volunteers or meals. This cannot be undone.';
+
+  @override
+  String regionDeleted(String name) {
+    return '$name was deleted.';
+  }
+
+  @override
+  String regionInUseTitle(String name) {
+    return '$name is in use';
+  }
+
+  @override
+  String get errRegionInUse =>
+      'This region still has people, volunteers or meals. Close it instead.';
+
+  @override
+  String get regionClosedTag => 'Closed';
+
+  @override
+  String get errRegionClosed => 'This region is closed.';
+
+  @override
+  String get reviewRegionClosed =>
+      'Not recorded: served after the region was closed';
+
+  @override
+  String get regionClosedTitle => 'Your region is closed';
+
+  @override
+  String regionClosedBody(String region) {
+    return 'An administrator closed $region. Meals you served before that are kept. Ask your coordinator to move you to another region.';
+  }
+
+  @override
+  String get checkAgain => 'Check again';
+
+  @override
   String get joinCodeTitle => 'Join code';
 
   @override

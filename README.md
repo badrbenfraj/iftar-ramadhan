@@ -43,6 +43,12 @@ time.
 - **Regions and roles.** Each region (a distribution point) has its own list,
   volunteers and coordinator. Volunteers join with a region code or wait for
   approval. Three roles: volunteer, region coordinator, administrator.
+  Administrators manage regions from the app (Profile → Team → Regions):
+  add, rename, turn offline serving on or off, and close a region at the end
+  of its season. A closed region keeps its people and meal history
+  (read-only), its volunteers are blocked until moved, and meals served
+  offline before the closure still sync. Only an unused region can be
+  deleted.
 - **Live statistics.** Portions served tonight, this week or for any dates,
   per region, plus each person's meal history.
 - **Three languages, right-to-left included.** English, French and Arabic.
@@ -89,8 +95,9 @@ duplicates with `409 MEAL_ALREADY_TAKEN`. "Tonight" follows the
 
 1. **Try it locally** with the quick start below. It comes with test regions,
    volunteers and 55 fictional people.
-2. **Rename the regions** and set the timezone (`APP_TIMEZONE`) for your
-   city.
+2. **Set up your regions** (an administrator adds and renames them from the
+   app under Profile → Team → Regions) and set the timezone
+   (`APP_TIMEZONE`) for your city.
 3. **Deploy** to a small VPS by following
    [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): set a few GitHub settings, run
    one workflow, and send volunteers the `/download` link.

@@ -162,6 +162,14 @@ class _RegionSearchSheetState extends State<_RegionSearchSheet> {
                         for (final r in matches)
                           ListTile(
                             title: Text(r.name),
+                            trailing: r.active
+                                ? null
+                                : Text(
+                                    l.regionClosedTag,
+                                    style: TextStyle(
+                                      color: context.colors.inkMuted,
+                                    ),
+                                  ),
                             selected: r.id == widget.selectedId,
                             onTap: () => Navigator.pop(context, (id: r.id)),
                           ),

@@ -32,7 +32,11 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
       await action();
     } on AppFailure catch (e) {
       if (mounted) {
-        showAppSnackBar(context, failureText(AppLocalizations.of(context), e), isError: true);
+        showAppSnackBar(
+          context,
+          failureText(AppLocalizations.of(context), e),
+          isError: true,
+        );
       }
     }
     if (!mounted) return;
@@ -47,8 +51,14 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
         title: Text(title),
         content: Text(body),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialog, false), child: Text(l.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(dialog, true), child: Text(action)),
+          TextButton(
+            onPressed: () => Navigator.pop(dialog, false),
+            child: Text(l.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialog, true),
+            child: Text(action),
+          ),
         ],
       ),
     );
@@ -58,17 +68,19 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
   Future<void> _moveTo(Volunteer v, List<Region> regions) async {
     final picked = await showRegionSearchSheet(
       context,
-      regions: regions,
+      regions: regions.where((r) => r.active).toList(),
       selectedId: v.region?.id,
     );
     final regionId = picked?.id;
     if (regionId == null || !mounted) return;
     await _act(
-      () => ref.read(volunteersRepositoryProvider).changeRole(
-        v.id,
-        role: v.isCoordinator ? 'REGION_ADMIN' : 'USER',
-        regionId: regionId,
-      ),
+      () => ref
+          .read(volunteersRepositoryProvider)
+          .changeRole(
+            v.id,
+            role: v.isCoordinator ? 'REGION_ADMIN' : 'USER',
+            regionId: regionId,
+          ),
     );
   }
 
@@ -105,7 +117,8 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
                 value: regionId,
                 allLabel: l.allRegions,
                 decoration: InputDecoration(labelText: l.region),
-                onChanged: (id) => ref.read(selectedRegionProvider.notifier).select(id),
+                onChanged: (id) =>
+                    ref.read(selectedRegionProvider.notifier).select(id),
               ),
             if (regionId != null) ...[
               const SizedBox(height: 16),
@@ -161,47 +174,70 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
                       _VolunteerRow(
                         volunteer: v,
                         showRegion: isGlobal && regionId == null,
-                        actions: !isGlobal && (v.isCoordinator || v.isGlobalAdmin)
+                        actions:
+                            !isGlobal && (v.isCoordinator || v.isGlobalAdmin)
                             ? const []
                             : [
-                          if (v.status == 'pending') ...[
-                            (l.approve, () => _act(() => repo.approve(v.id))),
-                            (
-                              l.refuse,
-                              () async {
-                                if (await _confirm(l.refuseTitle(v.name), l.refuseBody, l.refuse) &&
-                                    mounted) {
-                                  await _act(() => repo.refuse(v.id));
-                                }
-                              },
-                            ),
-                          ],
-                          if (v.status == 'active' && v.id != me?.id && !v.isGlobalAdmin)
-                            (
-                              l.disable,
-                              () async {
-                                if (await _confirm(l.disableTitle(v.name), l.disableBody, l.disable) &&
-                                    mounted) {
-                                  await _act(() => repo.disable(v.id));
-                                }
-                              },
-                            ),
-                          if (v.status == 'disabled')
-                            (l.enable, () => _act(() => repo.enable(v.id))),
-                          if (isGlobal && !v.isGlobalAdmin && v.region != null) ...[
-                            (
-                              v.isCoordinator ? l.makeVolunteer : l.makeCoordinator,
-                              () => _act(
-                                () => repo.changeRole(
-                                  v.id,
-                                  role: v.isCoordinator ? 'USER' : 'REGION_ADMIN',
-                                  regionId: v.region!.id,
-                                ),
-                              ),
-                            ),
-                            (l.moveToRegion, () => _moveTo(v, regions)),
-                          ],
-                        ],
+                                if (v.status == 'pending') ...[
+                                  (
+                                    l.approve,
+                                    () => _act(() => repo.approve(v.id)),
+                                  ),
+                                  (
+                                    l.refuse,
+                                    () async {
+                                      if (await _confirm(
+                                            l.refuseTitle(v.name),
+                                            l.refuseBody,
+                                            l.refuse,
+                                          ) &&
+                                          mounted) {
+                                        await _act(() => repo.refuse(v.id));
+                                      }
+                                    },
+                                  ),
+                                ],
+                                if (v.status == 'active' &&
+                                    v.id != me?.id &&
+                                    !v.isGlobalAdmin)
+                                  (
+                                    l.disable,
+                                    () async {
+                                      if (await _confirm(
+                                            l.disableTitle(v.name),
+                                            l.disableBody,
+                                            l.disable,
+                                          ) &&
+                                          mounted) {
+                                        await _act(() => repo.disable(v.id));
+                                      }
+                                    },
+                                  ),
+                                if (v.status == 'disabled')
+                                  (
+                                    l.enable,
+                                    () => _act(() => repo.enable(v.id)),
+                                  ),
+                                if (isGlobal &&
+                                    !v.isGlobalAdmin &&
+                                    v.region != null) ...[
+                                  (
+                                    v.isCoordinator
+                                        ? l.makeVolunteer
+                                        : l.makeCoordinator,
+                                    () => _act(
+                                      () => repo.changeRole(
+                                        v.id,
+                                        role: v.isCoordinator
+                                            ? 'USER'
+                                            : 'REGION_ADMIN',
+                                        regionId: v.region!.id,
+                                      ),
+                                    ),
+                                  ),
+                                  (l.moveToRegion, () => _moveTo(v, regions)),
+                                ],
+                              ],
                       ),
                       const Divider(height: 1),
                     ],

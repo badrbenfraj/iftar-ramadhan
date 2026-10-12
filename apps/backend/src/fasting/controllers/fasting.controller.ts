@@ -23,6 +23,7 @@ import {
 } from '@nestjs/swagger';
 
 import { ROLE } from '../../auth/constants/role.constant';
+import { AllowClosedRegion } from '../../auth/decorators/allow-closed-region.decorator';
 import { Roles } from '../../auth/decorators/role.decorator';
 import { SkipRegionCheck } from '../../auth/decorators/skip-region-check.decorator';
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
@@ -274,6 +275,7 @@ export class FastingController {
   @UseInterceptors(ClassSerializerInterceptor)
   @ApiBearerAuth()
   @SkipRegionCheck()
+  @AllowClosedRegion()
   async syncOfflineMeals(
     @ReqContext() ctx: RequestContext,
     @Body() input: SyncMealsInput,

@@ -214,8 +214,8 @@ secrets.
      SHA-256 on the server, publish it as `latest.apk`, then download it back
      over HTTPS and check the checksum again.
 6. **Open `https://<new hostname>/download`** on a phone and install the app.
-   Sign in as `admin` with `DEFAULT_ADMIN_USER_PASSWORD`, create the regions /
-   volunteer accounts as usual.
+   Sign in as `admin` with `DEFAULT_ADMIN_USER_PASSWORD`, set up the regions
+   in the app (Profile → Team → Regions), then the volunteer accounts as usual.
 7. **Send volunteers the one link:** `https://<new hostname>/download`.
 
 Last year's APKs point at last year's server, which no longer exists. They

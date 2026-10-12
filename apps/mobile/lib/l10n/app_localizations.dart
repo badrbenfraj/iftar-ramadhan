@@ -1828,6 +1828,198 @@ abstract class AppLocalizations {
   /// **'Volunteers'**
   String get volunteers;
 
+  /// No description provided for @newRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'New region'**
+  String get newRegion;
+
+  /// No description provided for @regionName.
+  ///
+  /// In en, this message translates to:
+  /// **'Region name'**
+  String get regionName;
+
+  /// No description provided for @addRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get addRegion;
+
+  /// No description provided for @regionAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was added.'**
+  String regionAdded(String name);
+
+  /// No description provided for @errRegionNameTaken.
+  ///
+  /// In en, this message translates to:
+  /// **'A region with this name already exists.'**
+  String get errRegionNameTaken;
+
+  /// No description provided for @regions.
+  ///
+  /// In en, this message translates to:
+  /// **'Regions'**
+  String get regions;
+
+  /// No description provided for @renameRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get renameRegion;
+
+  /// No description provided for @regionRenamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Renamed to {name}.'**
+  String regionRenamed(String name);
+
+  /// No description provided for @offlineServing.
+  ///
+  /// In en, this message translates to:
+  /// **'Offline serving'**
+  String get offlineServing;
+
+  /// No description provided for @offlineServingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Volunteers can keep serving with no network'**
+  String get offlineServingHint;
+
+  /// No description provided for @closeRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Close region'**
+  String get closeRegion;
+
+  /// No description provided for @closeRegionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Close {name}?'**
+  String closeRegionTitle(String name);
+
+  /// No description provided for @closeRegionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Serving stops here. Its people and meal history are kept, read-only. Its volunteers and coordinators are blocked until they are moved to another region.'**
+  String get closeRegionBody;
+
+  /// No description provided for @regionUsage.
+  ///
+  /// In en, this message translates to:
+  /// **'Volunteers: {users} · People: {people} · Meals: {meals}'**
+  String regionUsage(int users, int people, int meals);
+
+  /// No description provided for @moveUsersTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Move its volunteers to'**
+  String get moveUsersTo;
+
+  /// No description provided for @dontMoveUsers.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t move them'**
+  String get dontMoveUsers;
+
+  /// No description provided for @regionClosedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is closed.'**
+  String regionClosedDone(String name);
+
+  /// No description provided for @reopenRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen'**
+  String get reopenRegion;
+
+  /// No description provided for @reopenRegionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reopen {name}?'**
+  String reopenRegionTitle(String name);
+
+  /// No description provided for @reopenRegionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Volunteers who were not moved can use the app again.'**
+  String get reopenRegionBody;
+
+  /// No description provided for @regionReopened.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is open again.'**
+  String regionReopened(String name);
+
+  /// No description provided for @deleteRegionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}?'**
+  String deleteRegionTitle(String name);
+
+  /// No description provided for @deleteRegionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'It has no people, volunteers or meals. This cannot be undone.'**
+  String get deleteRegionBody;
+
+  /// No description provided for @regionDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} was deleted.'**
+  String regionDeleted(String name);
+
+  /// No description provided for @regionInUseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is in use'**
+  String regionInUseTitle(String name);
+
+  /// No description provided for @errRegionInUse.
+  ///
+  /// In en, this message translates to:
+  /// **'This region still has people, volunteers or meals. Close it instead.'**
+  String get errRegionInUse;
+
+  /// No description provided for @regionClosedTag.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get regionClosedTag;
+
+  /// No description provided for @errRegionClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'This region is closed.'**
+  String get errRegionClosed;
+
+  /// No description provided for @reviewRegionClosed.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded: served after the region was closed'**
+  String get reviewRegionClosed;
+
+  /// No description provided for @regionClosedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your region is closed'**
+  String get regionClosedTitle;
+
+  /// No description provided for @regionClosedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'An administrator closed {region}. Meals you served before that are kept. Ask your coordinator to move you to another region.'**
+  String regionClosedBody(String region);
+
+  /// No description provided for @checkAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Check again'**
+  String get checkAgain;
+
   /// No description provided for @joinCodeTitle.
   ///
   /// In en, this message translates to:

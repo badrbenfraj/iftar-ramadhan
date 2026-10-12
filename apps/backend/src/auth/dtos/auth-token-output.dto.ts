@@ -30,6 +30,16 @@ export class UserAccessTokenClaims {
   @Expose()
   @ApiProperty({ type: () => Number, nullable: true })
   regionId: number | null;
+
+  /** Their region is closed: only routes marked @AllowClosedRegion() work. */
+  @Expose()
+  @ApiProperty({ type: () => Boolean, required: false })
+  regionClosed?: boolean;
+
+  /** Region they were moved out of when it closed (offline sync only). */
+  @Expose()
+  @ApiProperty({ type: () => Number, nullable: true, required: false })
+  previousRegionId?: number | null;
 }
 
 export class UserRefreshTokenClaims {

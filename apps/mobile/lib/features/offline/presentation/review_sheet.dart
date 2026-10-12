@@ -15,11 +15,12 @@ import 'offline_queue_controller.dart';
 /// "Servings to review" (spec 2B §5.3): double serves and meals the server
 /// could not record. Acknowledging only clears them from this phone; the
 /// server keeps them for admins.
-Future<void> showReviewSheet(BuildContext context) => showModalBottomSheet<void>(
-  context: context,
-  isScrollControlled: true,
-  builder: (_) => const _ReviewSheet(),
-);
+Future<void> showReviewSheet(BuildContext context) =>
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => const _ReviewSheet(),
+    );
 
 class _ReviewSheet extends ConsumerWidget {
   const _ReviewSheet();
@@ -33,7 +34,8 @@ class _ReviewSheet extends ConsumerWidget {
       offlineQueueProvider.select((s) => s.reviewFor(userId)),
     );
     final people = {
-      for (final p in ref.watch(peopleListProvider).value ?? const <FastingPerson>[])
+      for (final p
+          in ref.watch(peopleListProvider).value ?? const <FastingPerson>[])
         p.id: p,
     };
     final now = ref.watch(clockProvider)();
@@ -67,12 +69,10 @@ class _ReviewSheet extends ConsumerWidget {
                 item.conflict ? Icons.people_alt_outlined : Icons.error_outline,
                 color: c.clayInk,
               ),
-              title: Text(
-                switch (people[item.personId]) {
-                  final p? => isolate(p.fullName),
-                  null => ltr('#${item.personId}'),
-                },
-              ),
+              title: Text(switch (people[item.personId]) {
+                final p? => isolate(p.fullName),
+                null => ltr('#${item.personId}'),
+              }),
               subtitle: Text(
                 [
                   l.reviewServedAt(ltr(formatSavedAt(item.servedAt, now))),
@@ -110,6 +110,7 @@ class _ReviewSheet extends ConsumerWidget {
       ReviewItem.clockCode => l.reviewClock,
       ReviewItem.notFoundCode => l.reviewNotFound,
       ReviewItem.regionCode => l.reviewRegion,
+      ReviewItem.regionClosedCode => l.reviewRegionClosed,
       _ => l.reviewOther,
     };
   }

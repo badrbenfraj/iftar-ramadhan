@@ -7,4 +7,6 @@ export interface Actor {
   roles: string[];
 
   regionId?: number | null;
+
+  previousRegionId?: number | null;
 }

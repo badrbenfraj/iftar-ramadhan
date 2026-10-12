@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   ForbiddenException,
   Injectable,
@@ -6,9 +7,11 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
+import { ILike, Not } from 'typeorm';
 
 import {
   canAccessRegion,
+  isGlobalAdmin,
   isRegionAdmin,
   regionForbidden,
 } from '../../auth/access/access-policy';
@@ -19,14 +22,26 @@ import { AppLogger } from '../../shared/logger/logger.service';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { User } from '../../user/entities/user.entity';
 import { UserService } from '../../user/services/user.service';
+import { AdminRegionOutput } from '../dtos/admin-region-output.dto';
 import { JoinCodeOutput } from '../dtos/join-code-output.dto';
 import { PublicRegionOutput } from '../dtos/public-region-output.dto';
-import { CreateRegionInput, UpdateRegionInput } from '../dtos/region-input.dto';
+import {
+  CloseRegionInput,
+  CreateRegionInput,
+  UpdateRegionInput,
+} from '../dtos/region-input.dto';
 import { RegionOutput } from '../dtos/region-output.dto';
+import { RegionUsageOutput } from '../dtos/region-usage-output.dto';
 import { Region } from '../entities/region.entity';
 import { RegionRepository } from '../repositories/region.repository';
 import { generateJoinCode } from './join-code';
 import { RegionAclService } from './region-acl.service';
+
+/** 409 code when a region would reuse an existing name (any case). */
+export const REGION_NAME_TAKEN = 'REGION_NAME_TAKEN';
+
+/** 409 code when deleting a region that people, users or meals point to. */
+export const REGION_IN_USE = 'REGION_IN_USE';
 
 @Injectable()
 export class RegionService {
@@ -56,6 +71,9 @@ export class RegionService {
     if (!isAllowed) {
       throw new UnauthorizedException();
     }
+
+    region.name = region.name.trim();
+    await this.assertNameFree(region.name);
 
     region.createdBy = plainToClass(User, user);
 
@@ -129,19 +147,102 @@ export class RegionService {
       throw new ForbiddenException('Only admins can change offline serving');
     }
 
-    const updatedRegion: Region = {
-      ...region,
-      ...plainToClass(Region, input),
-    };
+    const changes: Partial<Region> = {};
+    const name = input.name?.trim();
+    if (name && name !== region.name) {
+      await this.assertNameFree(name, id);
+      changes.name = name;
+    }
+    if (input.allowOfflineServing !== undefined) {
+      changes.allowOfflineServing = input.allowOfflineServing;
+    }
 
-    this.logger.log(ctx, `calling ${RegionRepository.name}.save`);
-    const savedRegion = await this.repository.save(updatedRegion);
+    // update(), not save(): the name is part of the primary key, so save()
+    // would insert a copy. Users and fastings follow (ON UPDATE CASCADE).
+    if (Object.keys(changes).length > 0) {
+      this.logger.log(ctx, `calling ${RegionRepository.name}.update`);
+      await this.repository.update({ id }, changes);
+    }
 
-    return plainToClass(RegionOutput, savedRegion, {
+    return plainToClass(
+      RegionOutput,
+      await this.repository.getRegionById(id),
+      { excludeExtraneousValues: true },
+    );
+  }
+
+  /** Global admins: every region, closed ones included, by name. */
+  async getAllRegions(ctx: RequestContext): Promise<AdminRegionOutput[]> {
+    this.logger.log(ctx, `${this.getAllRegions.name} was called`);
+    if (!isGlobalAdmin(ctx.user)) throw regionForbidden();
+    const regions = await this.repository.find({ order: { name: 'ASC' } });
+    return plainToClass(AdminRegionOutput, regions, {
       excludeExtraneousValues: true,
     });
   }
 
+  async getUsage(ctx: RequestContext, id: number): Promise<RegionUsageOutput> {
+    if (!isGlobalAdmin(ctx.user)) throw regionForbidden();
+    await this.repository.getRegionById(id);
+    return this.usage(id);
+  }
+
+  /**
+   * Stops serving in the region; its people and meals stay, read-only. Its
+   * volunteers and coordinators are blocked until moved, optionally all at
+   * once to `input.moveUsersTo`.
+   */
+  async closeRegion(
+    ctx: RequestContext,
+    id: number,
+    input: CloseRegionInput,
+  ): Promise<AdminRegionOutput> {
+    this.logger.log(ctx, `${this.closeRegion.name} was called`);
+    if (!isGlobalAdmin(ctx.user)) throw regionForbidden();
+    const region = await this.repository.getRegionById(id);
+    if (!region.active) return this.adminOutput(region);
+
+    const target =
+      input.moveUsersTo == null
+        ? null
+        : await this.repository.findOne({ where: { id: input.moveUsersTo } });
+    if (input.moveUsersTo != null && (!target || !target.active)) {
+      throw new BadRequestException('Pick an open region to move users to');
+    }
+    if (target?.id === id) {
+      throw new BadRequestException('Pick another region to move users to');
+    }
+
+    await this.repository.manager.transaction(async (manager) => {
+      await manager.update(
+        Region,
+        { id },
+        { active: false, closedAt: new Date() },
+      );
+      if (target) {
+        await manager.query(
+          `UPDATE "users"
+              SET "regionId" = $2, "regionName" = $3, "previousRegionId" = $1
+            WHERE "regionId" = $1`,
+          [id, target.id, target.name],
+        );
+      }
+    });
+    return this.adminOutput(await this.repository.getRegionById(id));
+  }
+
+  async reopenRegion(
+    ctx: RequestContext,
+    id: number,
+  ): Promise<AdminRegionOutput> {
+    this.logger.log(ctx, `${this.reopenRegion.name} was called`);
+    if (!isGlobalAdmin(ctx.user)) throw regionForbidden();
+    await this.repository.getRegionById(id);
+    await this.repository.update({ id }, { active: true, closedAt: null });
+    return this.adminOutput(await this.repository.getRegionById(id));
+  }
+
+  /** Only an empty region (e.g. created by mistake); otherwise close it. */
   async deleteRegion(ctx: RequestContext, id: number): Promise<void> {
     this.logger.log(ctx, `${this.deleteRegion.name} was called`);
 
@@ -157,8 +258,54 @@ export class RegionService {
       throw new UnauthorizedException();
     }
 
-    this.logger.log(ctx, `calling ${RegionRepository.name}.remove`);
-    await this.repository.remove(region);
+    const usage = await this.usage(id);
+    if (usage.users + usage.people + usage.meals > 0) {
+      throw new ConflictException({
+        message: 'This region is in use; close it instead',
+        code: REGION_IN_USE,
+        ...usage,
+      });
+    }
+
+    this.logger.log(ctx, `calling ${RegionRepository.name}.delete`);
+    await this.repository.delete({ id });
+  }
+
+  private async assertNameFree(name: string, exceptId?: number): Promise<void> {
+    const taken = await this.repository.findOne({
+      where: {
+        name: ILike(name.replace(/[\\%_]/g, '\\$&')),
+        ...(exceptId == null ? {} : { id: Not(exceptId) }),
+      },
+    });
+    if (taken) {
+      throw new ConflictException({
+        message: 'A region with this name already exists',
+        code: REGION_NAME_TAKEN,
+      });
+    }
+  }
+
+  private async usage(id: number): Promise<RegionUsageOutput> {
+    const [row]: Array<{ users: string; people: string; meals: string }> =
+      await this.repository.query(
+        `SELECT
+           (SELECT count(*) FROM "users" WHERE "regionId" = $1) AS "users",
+           (SELECT count(*) FROM "fastings" WHERE "regionId" = $1) AS "people",
+           (SELECT count(*) FROM "meal_events" WHERE "regionId" = $1) AS "meals"`,
+        [id],
+      );
+    return {
+      users: Number(row.users),
+      people: Number(row.people),
+      meals: Number(row.meals),
+    };
+  }
+
+  private adminOutput(region: Region): AdminRegionOutput {
+    return plainToClass(AdminRegionOutput, region, {
+      excludeExtraneousValues: true,
+    });
   }
 
   private async regionForAdmin(
