@@ -1051,6 +1051,111 @@ class AppLocalizationsAr extends AppLocalizations {
   String get errRegionNameTaken => 'توجد منطقة بهذا الاسم من قبل.';
 
   @override
+  String get regions => 'المناطق';
+
+  @override
+  String get renameRegion => 'إعادة التسمية';
+
+  @override
+  String regionRenamed(String name) {
+    return 'تمّت إعادة التسمية إلى $name.';
+  }
+
+  @override
+  String get offlineServing => 'التوزيع دون اتصال';
+
+  @override
+  String get offlineServingHint => 'يمكن للمتطوّعين مواصلة التوزيع دون شبكة';
+
+  @override
+  String get closeRegion => 'إغلاق المنطقة';
+
+  @override
+  String closeRegionTitle(String name) {
+    return 'إغلاق $name؟';
+  }
+
+  @override
+  String get closeRegionBody =>
+      'يتوقّف التوزيع هنا. يُحتفظ بالأشخاص وبسجلّ الوجبات للاطّلاع فقط. ويُمنع متطوّعوها ومنسّقوها من استعمال التطبيق إلى أن يُنقلوا إلى منطقة أخرى.';
+
+  @override
+  String regionUsage(int users, int people, int meals) {
+    return 'المتطوّعون: $users · الأشخاص: $people · الوجبات: $meals';
+  }
+
+  @override
+  String get moveUsersTo => 'نقل متطوّعيها إلى';
+
+  @override
+  String get dontMoveUsers => 'عدم نقلهم';
+
+  @override
+  String regionClosedDone(String name) {
+    return 'تمّ إغلاق $name.';
+  }
+
+  @override
+  String get reopenRegion => 'إعادة الفتح';
+
+  @override
+  String reopenRegionTitle(String name) {
+    return 'إعادة فتح $name؟';
+  }
+
+  @override
+  String get reopenRegionBody =>
+      'يمكن للمتطوّعين الذين لم يُنقلوا استعمال التطبيق من جديد.';
+
+  @override
+  String regionReopened(String name) {
+    return '$name مفتوحة من جديد.';
+  }
+
+  @override
+  String deleteRegionTitle(String name) {
+    return 'حذف $name؟';
+  }
+
+  @override
+  String get deleteRegionBody =>
+      'لا تضمّ أيّ أشخاص أو متطوّعين أو وجبات. لا يمكن التراجع عن الحذف.';
+
+  @override
+  String regionDeleted(String name) {
+    return 'تمّ حذف $name.';
+  }
+
+  @override
+  String regionInUseTitle(String name) {
+    return '$name قيد الاستعمال';
+  }
+
+  @override
+  String get errRegionInUse =>
+      'ما زالت هذه المنطقة تضمّ أشخاصًا أو متطوّعين أو وجبات. أغلقها بدلًا من ذلك.';
+
+  @override
+  String get regionClosedTag => 'مغلقة';
+
+  @override
+  String get errRegionClosed => 'هذه المنطقة مغلقة.';
+
+  @override
+  String get reviewRegionClosed => 'لم يُسجَّل: قُدِّم بعد إغلاق المنطقة';
+
+  @override
+  String get regionClosedTitle => 'منطقتك مغلقة';
+
+  @override
+  String regionClosedBody(String region) {
+    return 'أغلق أحد المشرفين $region. الوجبات التي قدّمتها قبل ذلك محفوظة. اطلب من منسّقك نقلك إلى منطقة أخرى.';
+  }
+
+  @override
+  String get checkAgain => 'إعادة التحقّق';
+
+  @override
   String get joinCodeTitle => 'رمز الانضمام';
 
   @override

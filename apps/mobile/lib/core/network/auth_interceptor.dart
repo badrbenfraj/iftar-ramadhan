@@ -24,7 +24,8 @@ class AuthInterceptor extends QueuedInterceptor {
   final Dio refreshClient;
   final void Function(AppFailure reason) onSessionExpired;
 
-  /// Called on a 403 REGION_FORBIDDEN (the account may have been moved).
+  /// Called on a 403 REGION_FORBIDDEN or REGION_CLOSED (the account may
+  /// have been moved, or its region closed).
   final void Function()? onRegionForbidden;
   AppFailure? _refreshFailure;
 
@@ -87,7 +88,8 @@ class AuthInterceptor extends QueuedInterceptor {
     final error = data is Map ? data['error'] : null;
     final details = error is Map ? error['details'] : null;
     return details is Map &&
-        details['code'] == ForbiddenFailure.regionForbidden;
+        (details['code'] == ForbiddenFailure.regionForbidden ||
+            details['code'] == RegionClosedFailure.code);
   }
 
   /// Disabled or pending accounts get their own message on the login page.

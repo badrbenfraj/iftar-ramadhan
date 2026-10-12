@@ -68,7 +68,7 @@ class _VolunteersPageState extends ConsumerState<VolunteersPage> {
   Future<void> _moveTo(Volunteer v, List<Region> regions) async {
     final picked = await showRegionSearchSheet(
       context,
-      regions: regions,
+      regions: regions.where((r) => r.active).toList(),
       selectedId: v.region?.id,
     );
     final regionId = picked?.id;

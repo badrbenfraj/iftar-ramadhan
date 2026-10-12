@@ -6,6 +6,7 @@ import '../../features/auth/domain/user.dart';
 import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_page.dart';
 import '../../features/auth/presentation/pending_page.dart';
+import '../../features/auth/presentation/region_closed_page.dart';
 import '../../features/auth/presentation/register_page.dart';
 import '../../features/auth/presentation/welcome_page.dart';
 import '../../features/people/presentation/people_list_page.dart';
@@ -16,6 +17,7 @@ import '../../features/scan/presentation/find_person_page.dart';
 import '../../features/scan/presentation/scan_page.dart';
 import '../../features/scan/presentation/session_summary_page.dart';
 import '../../features/statistics/presentation/statistics_page.dart';
+import '../../features/volunteers/presentation/regions_page.dart';
 import '../../features/volunteers/presentation/volunteers_page.dart';
 import '../../shell/home_shell.dart';
 import '../settings/settings_controller.dart';
@@ -23,6 +25,9 @@ import '../settings/settings_controller.dart';
 final _rootKey = GlobalKey<NavigatorState>(debugLabel: 'root');
 
 const _publicRoutes = {'/welcome', '/login', '/register', '/pending'};
+
+/// Signed in, but an admin closed the account's region.
+const _regionClosed = '/region-closed';
 
 /// Pure redirect rule, unit-tested: where should [location] go given [auth]?
 ///
@@ -36,10 +41,15 @@ String? authRedirect(
   if (!settingsReady || (auth.isLoading && !auth.hasValue)) {
     return location == '/splash' ? null : '/splash';
   }
-  final signedIn = auth.value != null;
+  final user = auth.value;
   final isPublic = _publicRoutes.contains(location);
-  if (!signedIn) return isPublic ? null : '/welcome';
-  if (isPublic || location == '/splash') return '/people';
+  if (user == null) return isPublic ? null : '/welcome';
+  if (user.isRegionClosed) {
+    return location == _regionClosed ? null : _regionClosed;
+  }
+  if (isPublic || location == '/splash' || location == _regionClosed) {
+    return '/people';
+  }
   return null;
 }
 
@@ -72,10 +82,13 @@ final routerProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(path: '/splash', builder: (_, _) => const SplashPage()),
       GoRoute(path: '/welcome', builder: (_, _) => const WelcomePage()),
-      GoRoute(path: '/login', builder: (_, state) => LoginPage(username: state.extra as String?),
+      GoRoute(
+        path: '/login',
+        builder: (_, state) => LoginPage(username: state.extra as String?),
       ),
       GoRoute(path: '/register', builder: (_, _) => const RegisterPage()),
       GoRoute(path: '/pending', builder: (_, _) => const PendingPage()),
+      GoRoute(path: _regionClosed, builder: (_, _) => const RegionClosedPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(navigationShell: shell),
         branches: [
@@ -120,6 +133,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, _) => const VolunteersPage(),
       ),
       GoRoute(
+        path: '/regions',
+        parentNavigatorKey: _rootKey,
+        builder: (_, _) => const RegionsPage(),
+      ),
+      GoRoute(
         path: '/scan',
         parentNavigatorKey: _rootKey,
         builder: (_, _) => const ScanPage(),
@@ -143,8 +161,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/summary',
         parentNavigatorKey: _rootKey,
-        redirect: (_, state) => state.extra is SessionSummary ? null : '/people',
-        builder: (_, state) => SessionSummaryPage(summary: state.extra! as SessionSummary),
+        redirect: (_, state) =>
+            state.extra is SessionSummary ? null : '/people',
+        builder: (_, state) =>
+            SessionSummaryPage(summary: state.extra! as SessionSummary),
       ),
       GoRoute(
         path: '/people/:id',

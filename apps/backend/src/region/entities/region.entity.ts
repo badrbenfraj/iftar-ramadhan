@@ -29,6 +29,11 @@ export class Region {
   @Column({ default: true })
   allowOfflineServing: boolean;
 
+  /** When an admin closed the region (null = open). Offline meals served
+   * before it still sync; its volunteers are blocked after it. */
+  @Column({ type: 'timestamptz', nullable: true })
+  closedAt: Date | null;
+
   /** Shared in the volunteers' group; registering with it skips approval. Null = off. */
   @Exclude()
   @Column({ type: 'varchar', length: 32, nullable: true })

@@ -70,6 +70,13 @@ class ForbiddenFailure extends AppFailure {
   static const regionForbidden = 'REGION_FORBIDDEN';
 }
 
+/// 403 REGION_CLOSED: the caller's region, or the one acted on, is closed.
+final class RegionClosedFailure extends ForbiddenFailure {
+  const RegionClosedFailure() : super('This region is closed.');
+
+  static const code = 'REGION_CLOSED';
+}
+
 /// 403 on undo: someone else's meal, or too late (spec 2A §4.2).
 final class UndoRefusedFailure extends ForbiddenFailure {
   const UndoRefusedFailure(this.code)
@@ -93,6 +100,9 @@ final class ConflictFailure extends AppFailure {
 
   static const usernameTaken = 'USERNAME_TAKEN';
   static const regionNameTaken = 'REGION_NAME_TAKEN';
+
+  /// Deleting a region that people, volunteers or meals still point to.
+  static const regionInUse = 'REGION_IN_USE';
 
   final String? code;
 }
@@ -219,6 +229,7 @@ AppFailure failureFromResponse(int? status, Object? body) {
           code == UndoRefusedFailure.notAllowed) {
         return UndoRefusedFailure(code!);
       }
+      if (code == RegionClosedFailure.code) return const RegionClosedFailure();
       return const ForbiddenFailure();
     case 404:
       return NotFoundFailure(message ?? 'Not found.');

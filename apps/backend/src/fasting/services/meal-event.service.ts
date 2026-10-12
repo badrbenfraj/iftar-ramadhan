@@ -349,11 +349,34 @@ export class MealEventService {
         code: FASTING_ERROR_CODES.CLOCK_OUT_OF_RANGE,
       };
     }
-    if (!isAdmin && actorRegionId !== event.regionId) {
+    // A volunteer moved out of a closed region still syncs what they
+    // served there before it closed (checked just below).
+    const fromClosedRegion =
+      actor.previousRegionId != null &&
+      Number(actor.previousRegionId) === event.regionId;
+    if (!isAdmin && actorRegionId !== event.regionId && !fromClosedRegion) {
       return {
         ...base,
         status: 'rejected',
         code: FASTING_ERROR_CODES.REGION_NOT_ALLOWED,
+      };
+    }
+    const [region]: Array<{ active: boolean; closedAt: Date | null }> =
+      await this.dataSource.query(
+        `SELECT "active", "closedAt" FROM "regions" WHERE "id" = $1`,
+        [event.regionId],
+      );
+    const closedAt = region?.closedAt ? new Date(region.closedAt) : null;
+    const servedWhileOpen = region?.active
+      ? !fromClosedRegion || actorRegionId === event.regionId
+      : closedAt !== null && servedAt.getTime() < closedAt.getTime();
+    if (region && !servedWhileOpen) {
+      return {
+        ...base,
+        status: 'rejected',
+        code: region.active
+          ? FASTING_ERROR_CODES.REGION_NOT_ALLOWED
+          : FASTING_ERROR_CODES.REGION_CLOSED,
       };
     }
 

@@ -18,7 +18,6 @@ import '../../auth/presentation/auth_controller.dart';
 import '../../offline/presentation/offline_queue_controller.dart';
 import '../../people/presentation/people_controller.dart';
 import '../../update/data/version_repository.dart';
-import '../../volunteers/presentation/new_region_dialog.dart';
 import '../data/export_service.dart';
 
 /// The shell's bottom bar is 72 px tall and the body extends behind it.
@@ -111,15 +110,6 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     if (confirmed == true) {
       await ref.read(authControllerProvider.notifier).logout();
     }
-  }
-
-  Future<void> _addRegion() async {
-    final region = await showNewRegionDialog(context);
-    if (region == null || !mounted) return;
-    showAppSnackBar(
-      context,
-      AppLocalizations.of(context).regionAdded(isolate(region.name)),
-    );
   }
 
   /// The choice is already in effect; only a failure to save it is reported.
@@ -309,11 +299,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                       if (user.isAdmin)
                         InfoTile(
-                          icon: Icons.add_location_alt_outlined,
-                          label: l.newRegion,
+                          icon: Icons.map_outlined,
+                          label: l.regions,
                           showPlaceholder: false,
                           trailing: chevron,
-                          onTap: _addRegion,
+                          onTap: () => context.push('/regions'),
                         ),
                     ],
                   ),

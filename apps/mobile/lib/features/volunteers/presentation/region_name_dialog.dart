@@ -5,26 +5,31 @@ import '../../../core/network/app_failure.dart';
 import '../../../core/network/failure_text.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/domain/user.dart';
+import '../../auth/presentation/auth_controller.dart';
 import '../../auth/presentation/register_page.dart';
 import '../data/volunteers_repository.dart';
 import 'volunteers_controller.dart';
 
-/// Global admins add a region by name. Returns the new region, or null when
-/// cancelled. Region lists are refreshed so pickers show it at once.
-Future<Region?> showNewRegionDialog(BuildContext context) => showDialog<Region>(
-  context: context,
-  builder: (_) => const _NewRegionDialog(),
-);
+/// Global admins name a new region, or rename [region]. Returns the saved
+/// name, or null when cancelled. Region lists are refreshed so pickers show
+/// the change at once.
+Future<String?> showRegionNameDialog(BuildContext context, {Region? region}) =>
+    showDialog<String>(
+      context: context,
+      builder: (_) => _RegionNameDialog(region: region),
+    );
 
-class _NewRegionDialog extends ConsumerStatefulWidget {
-  const _NewRegionDialog();
+class _RegionNameDialog extends ConsumerStatefulWidget {
+  const _RegionNameDialog({this.region});
+
+  final Region? region;
 
   @override
-  ConsumerState<_NewRegionDialog> createState() => _NewRegionDialogState();
+  ConsumerState<_RegionNameDialog> createState() => _RegionNameDialogState();
 }
 
-class _NewRegionDialogState extends ConsumerState<_NewRegionDialog> {
-  final _name = TextEditingController();
+class _RegionNameDialogState extends ConsumerState<_RegionNameDialog> {
+  late final _name = TextEditingController(text: widget.region?.name);
   bool _saving = false;
   String? _error;
 
@@ -41,18 +46,28 @@ class _NewRegionDialogState extends ConsumerState<_NewRegionDialog> {
       setState(() => _error = l.nameRequired);
       return;
     }
+    final region = widget.region;
+    if (name == region?.name) {
+      Navigator.pop(context);
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
     });
     try {
-      final region = await ref
-          .read(volunteersRepositoryProvider)
-          .createRegion(name);
+      final repo = ref.read(volunteersRepositoryProvider);
+      if (region == null) {
+        await repo.createRegion(name);
+      } else {
+        await repo.renameRegion(region.id, name);
+        // The admin's own region may be the one renamed.
+        await ref.read(authControllerProvider.notifier).refreshProfile();
+      }
       ref
         ..invalidate(adminRegionsProvider)
         ..invalidate(regionsProvider);
-      if (mounted) Navigator.pop(context, region);
+      if (mounted) Navigator.pop(context, name);
     } on AppFailure catch (e) {
       if (mounted) {
         setState(() {
@@ -66,8 +81,9 @@ class _NewRegionDialogState extends ConsumerState<_NewRegionDialog> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    final renaming = widget.region != null;
     return AlertDialog(
-      title: Text(l.newRegion),
+      title: Text(renaming ? l.renameRegion : l.newRegion),
       content: TextField(
         controller: _name,
         autofocus: true,
@@ -92,7 +108,7 @@ class _NewRegionDialogState extends ConsumerState<_NewRegionDialog> {
                   dimension: 18,
                   child: CircularProgressIndicator(strokeWidth: 2.5),
                 )
-              : Text(l.addRegion),
+              : Text(renaming ? l.save : l.addRegion),
         ),
       ],
     );

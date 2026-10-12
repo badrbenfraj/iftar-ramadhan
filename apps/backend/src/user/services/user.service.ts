@@ -203,6 +203,9 @@ export class UserService {
       where: { id: input.regionId },
     });
     if (!region) throw new NotFoundException('Region not found');
+    if (!region.active && region.id !== target.region?.id) {
+      throw new BadRequestException('This region is closed');
+    }
     target.roles = [input.role];
     target.region = region;
     const saved = await this.repository.save(target);

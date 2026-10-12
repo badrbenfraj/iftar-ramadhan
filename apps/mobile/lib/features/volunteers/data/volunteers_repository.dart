@@ -40,6 +40,29 @@ class VolunteersRepository {
     )).object,
   );
 
+  /// Global admins: every region, closed ones included.
+  Future<List<Region>> listAllRegions() async =>
+      (await _api.get('/regions/all')).list.map(Region.fromJson).toList();
+
+  /// 409 REGION_NAME_TAKEN when another region has the name.
+  Future<void> renameRegion(int id, String name) =>
+      _api.patch('/regions/$id', body: {'name': name.trim()});
+
+  Future<void> setOfflineServing(int id, {required bool allowed}) =>
+      _api.patch('/regions/$id', body: {'allowOfflineServing': allowed});
+
+  Future<RegionUsage> regionUsage(int id) async =>
+      RegionUsage.fromJson((await _api.get('/regions/$id/usage')).object);
+
+  /// Its volunteers are blocked, or all moved to [moveUsersTo].
+  Future<void> closeRegion(int id, {int? moveUsersTo}) =>
+      _api.post('/regions/$id/close', body: {'moveUsersTo': ?moveUsersTo});
+
+  Future<void> reopenRegion(int id) => _api.post('/regions/$id/reopen');
+
+  /// Empty regions only: 409 REGION_IN_USE otherwise.
+  Future<void> deleteRegion(int id) => _api.delete('/regions/$id');
+
   Future<String?> joinCode(int regionId) async =>
       (await _api.get('/regions/$regionId/join-code')).object['joinCode']
           as String?;
@@ -50,6 +73,27 @@ class VolunteersRepository {
 
   Future<void> turnOffJoinCode(int regionId) =>
       _api.delete('/regions/$regionId/join-code');
+}
+
+/// What still points to a region, shown before closing or deleting it.
+class RegionUsage {
+  const RegionUsage({
+    required this.users,
+    required this.people,
+    required this.meals,
+  });
+
+  factory RegionUsage.fromJson(Map<String, dynamic> json) => RegionUsage(
+    users: (json['users'] as num?)?.toInt() ?? 0,
+    people: (json['people'] as num?)?.toInt() ?? 0,
+    meals: (json['meals'] as num?)?.toInt() ?? 0,
+  );
+
+  final int users;
+  final int people;
+  final int meals;
+
+  bool get isEmpty => users + people + meals == 0;
 }
 
 final volunteersRepositoryProvider = Provider<VolunteersRepository>(

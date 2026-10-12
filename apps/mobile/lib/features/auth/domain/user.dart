@@ -3,12 +3,14 @@ class Region {
     required this.id,
     required this.name,
     this.allowOfflineServing = true,
+    this.active = true,
   });
 
   factory Region.fromJson(Map<String, dynamic> json) => Region(
     id: (json['id'] as num).toInt(),
     name: (json['name'] as String?) ?? '',
     allowOfflineServing: json['allowOfflineServing'] != false,
+    active: json['active'] != false,
   );
 
   final int id;
@@ -18,20 +20,27 @@ class Region {
   /// turned it off for the region.
   final bool allowOfflineServing;
 
+  /// False once an admin closed it: read-only, its volunteers are blocked.
+  final bool active;
+
   /// Saved with the signed-in user, so the flag still holds when the app
   /// starts with no network.
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
     'allowOfflineServing': allowOfflineServing,
+    'active': active,
   };
 
   @override
   bool operator ==(Object other) =>
-      other is Region && other.id == id && other.name == name;
+      other is Region &&
+      other.id == id &&
+      other.name == name &&
+      other.active == active;
 
   @override
-  int get hashCode => Object.hash(id, name);
+  int get hashCode => Object.hash(id, name, active);
 }
 
 class User {
@@ -76,6 +85,10 @@ class User {
 
   /// Coordinator of [region] (security spec §2).
   bool get isRegionAdmin => roles.contains('REGION_ADMIN');
+
+  /// An admin closed their region: the app shows only "region closed".
+  /// Global admins keep working everywhere.
+  bool get isRegionClosed => !isAdmin && region != null && !region!.active;
 
   /// Sees Profile → Volunteers.
   bool get canManageVolunteers => isAdmin || isRegionAdmin;

@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../auth/data/auth_repository.dart';
 import '../../auth/domain/user.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/volunteers_repository.dart';
@@ -34,7 +33,7 @@ final joinCodeProvider = FutureProvider.autoDispose.family<String?, int>(
   (ref, regionId) => ref.watch(volunteersRepositoryProvider).joinCode(regionId),
 );
 
-/// Regions a global admin can pick from (the public list).
+/// Every region for a global admin, closed ones included (marked).
 final adminRegionsProvider = FutureProvider.autoDispose<List<Region>>(
-  (ref) => ref.watch(regionRepositoryProvider).listRegions(),
+  (ref) => ref.watch(volunteersRepositoryProvider).listAllRegions(),
 );

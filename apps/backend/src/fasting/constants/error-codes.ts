@@ -9,6 +9,8 @@ export const FASTING_ERROR_CODES = {
   UNDO_WINDOW_EXPIRED: 'UNDO_WINDOW_EXPIRED',
   CLOCK_OUT_OF_RANGE: 'CLOCK_OUT_OF_RANGE',
   REGION_NOT_ALLOWED: 'REGION_NOT_ALLOWED',
+  /** Served after an admin closed the region. */
+  REGION_CLOSED: 'REGION_CLOSED',
 } as const;
 
 /** Admin-review markers on meal events; they don't change validity. */

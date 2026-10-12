@@ -5,4 +5,6 @@ export const AUTH_ERROR_CODES = {
   REGION_FORBIDDEN: 'REGION_FORBIDDEN',
   INVALID_JOIN_CODE: 'INVALID_JOIN_CODE',
   NO_REGION: 'NO_REGION',
+  /** The user's region was closed by an admin. */
+  REGION_CLOSED: 'REGION_CLOSED',
 } as const;
