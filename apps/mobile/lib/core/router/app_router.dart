@@ -169,14 +169,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/people/:id',
         parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            PersonDetailsPage(personId: int.parse(state.pathParameters['id']!)),
+        builder: (_, state) => PersonDetailsPage(
+          personId: int.parse(state.pathParameters['id']!),
+          regionId: _regionParam(state),
+        ),
         routes: [
           GoRoute(
             path: 'edit',
             parentNavigatorKey: _rootKey,
             builder: (_, state) => EditPersonPage(
               personId: int.parse(state.pathParameters['id']!),
+              regionId: _regionParam(state),
             ),
           ),
         ],
@@ -186,3 +189,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   return router;
 });
+
+/// `?region=` on a person route: a global admin viewing another region.
+int? _regionParam(GoRouterState state) =>
+    int.tryParse(state.uri.queryParameters['region'] ?? '');

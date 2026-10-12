@@ -22,15 +22,20 @@ import 'people_controller.dart';
 import 'person_widgets.dart';
 
 class PersonDetailsPage extends ConsumerStatefulWidget {
-  const PersonDetailsPage({super.key, required this.personId});
+  const PersonDetailsPage({super.key, required this.personId, this.regionId});
 
   final int personId;
+
+  /// Set when a global admin opens a person of another region.
+  final int? regionId;
 
   @override
   ConsumerState<PersonDetailsPage> createState() => _PersonDetailsPageState();
 }
 
 class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
+  PersonKey get _key => personKeyFor(ref, widget.personId, widget.regionId);
+
   // Phone/comment edits made before confirming (sent with the confirmation).
   String? _phone;
   String? _comment;
@@ -61,7 +66,7 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
     setState(() => _confirming = true);
     try {
       final updated = await ref
-          .read(personDetailsProvider(widget.personId).notifier)
+          .read(personDetailsProvider(_key).notifier)
           .confirmMeal(
             phone: _phone,
             comment: _comment,
@@ -103,7 +108,7 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
     final l = AppLocalizations.of(context);
     try {
       final p = await ref
-          .read(personDetailsProvider(widget.personId).notifier)
+          .read(personDetailsProvider(_key).notifier)
           .undoMeal(meal);
       // A reused ID would be answered with the revoked meal (200), so the
       // next confirm must start fresh.
@@ -128,7 +133,7 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final provider = personDetailsProvider(widget.personId);
+    final provider = personDetailsProvider(_key);
     final person = ref.watch(provider);
     final l = AppLocalizations.of(context);
 
@@ -138,7 +143,13 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
         actions: [
           if (person.hasValue)
             TextButton.icon(
-              onPressed: () => context.push('/people/${widget.personId}/edit'),
+              onPressed: () => context.push(
+                personPath(
+                  widget.personId,
+                  regionId: widget.regionId,
+                  edit: true,
+                ),
+              ),
               icon: const Icon(Icons.edit_outlined),
               label: Text(l.edit),
             ),
@@ -167,8 +178,7 @@ class _PersonDetailsPageState extends ConsumerState<PersonDetailsPage> {
     final phone = _phone ?? person.phone;
     final comment = _comment ?? person.comment;
     return RefreshIndicator(
-      onRefresh: () =>
-          ref.read(personDetailsProvider(widget.personId).notifier).refresh(),
+      onRefresh: () => ref.read(personDetailsProvider(_key).notifier).refresh(),
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
