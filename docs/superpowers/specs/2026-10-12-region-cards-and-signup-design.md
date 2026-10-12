@@ -54,7 +54,7 @@ Non-goals: see "Parked".
 - New column `regions."approveNewVolunteers" boolean NOT NULL DEFAULT true`.
   - On: sign-up creates a `PENDING` account, and the existing approve and refuse flow applies.
   - Off: sign-up creates an `ACTIVE` account.
-  - It can be read and changed by the region's coordinator and global admins, through the same check as the join code (`regionForAdmin`). `GET /regions/:id/join-code` returns `{ joinCode, approveNewVolunteers }`. A new endpoint, `PUT /regions/:id/approval` with the body `{ approveNewVolunteers: boolean }`, changes it.
+  - It can be read and changed by the region's coordinator and global admins, through the same check as the join code (`regionForAdmin`). `GET /regions/:id/join-code` returns `{ joinCode, approveNewVolunteers }`. A new endpoint, `POST /regions/:id/approval` (a POST like the other region actions; the app's API client has no PUT) with the body `{ approveNewVolunteers: boolean }`, changes it.
 - Remove the `users."joinedWithCode"` column, its DTO fields and the "Joined with code" tag. Everyone joins with a code now. `approvedByUserId` already records who approved someone.
 - Existing accounts, including those waiting, are untouched.
 - A region whose code is turned off accepts no sign-ups.

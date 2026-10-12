@@ -39,6 +39,10 @@ export class Region {
   @Column({ type: 'varchar', length: 32, nullable: true })
   joinCode: string | null;
 
+  /** New volunteers who sign up with the code wait for approval. */
+  @Column({ default: true })
+  approveNewVolunteers: boolean;
+
   @OneToMany(() => Fasting, (fastingPerson) => fastingPerson.region)
   fastingPeople: Fasting[];
 

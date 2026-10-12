@@ -10,7 +10,6 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Query,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
@@ -30,13 +29,12 @@ import {
   BaseApiResponse,
   SwaggerBaseApiResponse,
 } from '../../shared/dtos/base-api-response.dto';
-import { PaginationParamsDto } from '../../shared/dtos/pagination-params.dto';
 import { AppLogger } from '../../shared/logger/logger.service';
 import { ReqContext } from '../../shared/request-context/req-context.decorator';
 import { RequestContext } from '../../shared/request-context/request-context.dto';
 import { AdminRegionOutput } from '../dtos/admin-region-output.dto';
+import { ApprovalInput } from '../dtos/approval-input.dto';
 import { JoinCodeOutput } from '../dtos/join-code-output.dto';
-import { PublicRegionOutput } from '../dtos/public-region-output.dto';
 import {
   CloseRegionInput,
   CreateRegionInput,
@@ -74,31 +72,6 @@ export class RegionController {
   ): Promise<BaseApiResponse<RegionOutput>> {
     const region = await this.regionService.createRegion(ctx, input);
     return { data: region, meta: {} };
-  }
-
-  @Get()
-  @ApiOperation({
-    summary: 'Get regions as a list API',
-  })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    type: SwaggerBaseApiResponse([PublicRegionOutput]),
-  })
-  @UseInterceptors(ClassSerializerInterceptor)
-  @ApiBearerAuth()
-  async getRegions(
-    @ReqContext() ctx: RequestContext,
-    @Query() query: PaginationParamsDto,
-  ): Promise<BaseApiResponse<PublicRegionOutput[]>> {
-    this.logger.log(ctx, `${this.getRegions.name} was called`);
-
-    const { regions, count } = await this.regionService.getRegions(
-      ctx,
-      query.limit,
-      query.offset,
-    );
-
-    return { data: regions, meta: { count } };
   }
 
   @Get('all')
@@ -269,6 +242,25 @@ export class RegionController {
   ): Promise<BaseApiResponse<JoinCodeOutput>> {
     return {
       data: await this.regionService.turnOffJoinCode(ctx, id),
+      meta: {},
+    };
+  }
+
+  @Post(':id/approval')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  async setApproval(
+    @ReqContext() ctx: RequestContext,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() input: ApprovalInput,
+  ): Promise<BaseApiResponse<JoinCodeOutput>> {
+    return {
+      data: await this.regionService.setApproval(
+        ctx,
+        id,
+        input.approveNewVolunteers,
+      ),
       meta: {},
     };
   }

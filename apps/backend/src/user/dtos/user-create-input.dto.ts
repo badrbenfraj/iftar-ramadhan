@@ -3,7 +3,6 @@ import {
   ArrayNotEmpty,
   IsAlphanumeric,
   IsArray,
-  IsBoolean,
   IsEmail,
   IsEnum,
   IsIn,
@@ -56,8 +55,4 @@ export class CreateUserInput {
   @ApiProperty({ enum: ['pending', 'active', 'disabled'] })
   @IsIn(['pending', 'active', 'disabled'])
   status: UserStatus;
-
-  @IsOptional()
-  @IsBoolean()
-  joinedWithCode?: boolean;
 }

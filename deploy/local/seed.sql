@@ -15,16 +15,16 @@ UPDATE regions SET "joinCode" = 'NOUR-111111'  WHERE name = 'Dar Sokra'  AND "jo
 UPDATE regions SET "joinCode" = 'RAHMA-222222' WHERE name = 'Dar Sousse' AND "joinCode" IS NULL;
 
 -- One account per role / status.
-INSERT INTO users (name, username, email, password, roles, status, "regionId", "regionName", "joinedWithCode")
+INSERT INTO users (name, username, email, password, roles, status, "regionId", "regionName")
 SELECT u.name, u.username, u.username || '@example.test',
-       crypt('test-pass', gen_salt('bf', 10)), u.roles, u.status, r.id, r.name, u.joined
+       crypt('test-pass', gen_salt('bf', 10)), u.roles, u.status, r.id, r.name
 FROM (VALUES
-  ('Coordinatrice Sokra', 'coord',   'REGION_ADMIN', 'active',  'Dar Sokra',  true),
-  ('Bénévole Sokra',      'vol1',    'USER',         'active',  'Dar Sokra',  true),
-  ('Bénévole en attente', 'pending', 'USER',         'pending', 'Dar Sokra',  false),
-  ('Bénévole désactivé',  'off',     'USER',         'disabled','Dar Sokra',  true),
-  ('Bénévole Sousse',     'vol2',    'USER',         'active',  'Dar Sousse', true)
-) AS u(name, username, roles, status, region, joined)
+  ('Coordinatrice Sokra', 'coord',   'REGION_ADMIN', 'active',  'Dar Sokra'),
+  ('Bénévole Sokra',      'vol1',    'USER',         'active',  'Dar Sokra'),
+  ('Bénévole en attente', 'pending', 'USER',         'pending', 'Dar Sokra'),
+  ('Bénévole désactivé',  'off',     'USER',         'disabled','Dar Sokra'),
+  ('Bénévole Sousse',     'vol2',    'USER',         'active',  'Dar Sousse')
+) AS u(name, username, roles, status, region)
 JOIN regions r ON r.name = u.region
 ON CONFLICT (username) DO NOTHING;
 
