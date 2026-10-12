@@ -4,9 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/utils/formatters.dart';
-import '../../auth/domain/user.dart';
 import '../../auth/presentation/auth_controller.dart';
-import '../../volunteers/presentation/volunteers_controller.dart';
 import '../data/statistics_repository.dart';
 import '../domain/statistics.dart';
 
@@ -24,7 +22,7 @@ class StatisticsState {
   final DateTime from;
   final DateTime to;
 
-  /// Region a global admin picked; null means the signed-in user's own.
+  /// Region shown. Null = every region together (global admins only).
   final int? regionId;
   final AsyncValue<List<DailyStatistics>> result;
 
@@ -35,14 +33,13 @@ class StatisticsState {
     StatsPreset? preset,
     DateTime? from,
     DateTime? to,
-    int? regionId,
     AsyncValue<List<DailyStatistics>>? result,
     bool? reloading,
   }) => StatisticsState(
     preset: preset ?? this.preset,
     from: from ?? this.from,
     to: to ?? this.to,
-    regionId: regionId ?? this.regionId,
+    regionId: regionId,
     result: result ?? this.result,
     reloading: reloading ?? this.reloading,
   );
@@ -57,8 +54,11 @@ class StatisticsController extends Notifier<StatisticsState> {
   StatisticsState build() {
     // Start over when a different volunteer/region signs in.
     final auth = ref.watch(
-      authControllerProvider.select((a) => (a.isLoading, a.value?.region?.id)),
+      authControllerProvider.select(
+        (a) => (a.isLoading, a.value?.id, a.value?.region?.id),
+      ),
     );
+    final user = ref.read(authControllerProvider).value;
     final range = presetRange(StatsPreset.tonight, _now());
     // While sign-in is still resolving there is no region to ask for; this
     // build runs again once it settles.
@@ -67,6 +67,8 @@ class StatisticsController extends Notifier<StatisticsState> {
       preset: StatsPreset.tonight,
       from: range.from,
       to: range.to,
+      // An admin without a region of their own starts on every region.
+      regionId: user?.region?.id,
     );
   }
 
@@ -82,10 +84,17 @@ class StatisticsController extends Notifier<StatisticsState> {
 
   /// Returns false (and fetches nothing) when [from] is after [to], or when
   /// [to] is in the future.
-  /// Global admins only: show another region's figures.
-  Future<void> selectRegion(int regionId) async {
+  /// Global admins only: show another region's figures, or every region's
+  /// together with null.
+  Future<void> selectRegion(int? regionId) async {
     if (regionId == state.regionId) return;
-    state = state.copyWith(regionId: regionId);
+    state = StatisticsState(
+      preset: state.preset,
+      from: state.from,
+      to: state.to,
+      regionId: regionId,
+      result: state.result,
+    );
     await _fetch();
   }
 
@@ -121,7 +130,9 @@ class StatisticsController extends Notifier<StatisticsState> {
         ? state.copyWith(reloading: true)
         : state.copyWith(result: const AsyncLoading(), reloading: false);
     final result = await AsyncValue.guard(() async {
-      final regionId = state.regionId ?? await _defaultRegionId();
+      final isAdmin = ref.read(authControllerProvider).value?.isAdmin == true;
+      // Everyone else is always on their own region.
+      final regionId = isAdmin ? state.regionId : requireRegion(ref).id;
       return ref
           .read(statisticsRepositoryProvider)
           .fetch(regionId, state.from, state.to);
@@ -130,27 +141,6 @@ class StatisticsController extends Notifier<StatisticsState> {
     if (ref.mounted && request == _request) {
       state = state.copyWith(result: result, reloading: false);
     }
-  }
-
-  /// The user's own region. A global admin without one starts on the first
-  /// region of the list instead of an error.
-  Future<int> _defaultRegionId() async {
-    final user = ref.read(authControllerProvider).value;
-    if (user?.region == null && user?.isAdmin == true) {
-      // Listen, not read: the list provider is auto-disposed.
-      final sub = ref.listen(adminRegionsProvider.future, (_, _) {});
-      final List<Region> regions;
-      try {
-        regions = await sub.read();
-      } finally {
-        sub.close();
-      }
-      if (regions.isNotEmpty) {
-        state = state.copyWith(regionId: regions.first.id);
-        return regions.first.id;
-      }
-    }
-    return requireRegion(ref).id;
   }
 }
 

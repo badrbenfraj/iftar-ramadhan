@@ -13,12 +13,15 @@ import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/ramadan.dart';
 import '../../../core/widgets/night_sky.dart';
+import '../../../core/widgets/region_picker.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../core/widgets/status_chip.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/domain/user.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../../offline/presentation/offline_queue_controller.dart';
 import '../../offline/presentation/review_sheet.dart';
+import '../../volunteers/presentation/volunteers_controller.dart';
 import '../domain/fasting_person.dart';
 import 'people_controller.dart';
 import 'people_filter.dart';
@@ -47,7 +50,20 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
   Future<void> _refresh() async {
     try {
       unawaited(ref.read(offlineQueueProvider.notifier).flush());
-      await ref.read(peopleListProvider.notifier).refresh();
+      final browsing = ref.read(peopleRegionProvider);
+      if (isBrowsingOtherRegion(
+        ref.read(authControllerProvider).value,
+        browsing,
+      )) {
+        ref.invalidate(browsedPeopleProvider(browsing));
+        try {
+          await ref.read(browsedPeopleProvider(browsing).future);
+        } catch (e) {
+          throw toAppFailure(e);
+        }
+      } else {
+        await ref.read(peopleListProvider.notifier).refresh();
+      }
     } on AppFailure catch (e) {
       if (!mounted) return;
       final l = AppLocalizations.of(context);
@@ -62,18 +78,33 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final people = ref.watch(peopleListProvider);
+    final me = ref.watch(authControllerProvider).value;
+    final isAdmin = me?.isAdmin == true;
+    final browsing = ref.watch(peopleRegionProvider);
+    // A global admin looking at another region, or at every region: a fresh
+    // list that is not the one scanning and the offline copy use.
+    final browsingOther = isBrowsingOtherRegion(me, browsing);
+    final regions = isAdmin
+        ? ref.watch(adminRegionsProvider).value ?? const <Region>[]
+        : const <Region>[];
+    final people = browsingOther
+        ? ref.watch(browsedPeopleProvider(browsing))
+        : ref.watch(peopleListProvider);
     final query = ref.watch(peopleSearchQueryProvider);
     final filter = ref.watch(peopleFilterProvider);
     final online = ref.watch(connectivityProvider);
     final listState = ref.read(peopleListProvider.notifier);
     final savedAt = listState.loadedAt;
-    final syncNote = !people.hasValue || savedAt == null
+    final syncNote = browsingOther || !people.hasValue || savedAt == null
         ? null
         : !online
-        ? l.offlineUsingList(ltr(formatSavedAt(savedAt, ref.read(clockProvider)())))
+        ? l.offlineUsingList(
+            ltr(formatSavedAt(savedAt, ref.read(clockProvider)())),
+          )
         : listState.fromCache
-        ? l.lastUpdatedAt(ltr(formatSavedAt(savedAt, ref.read(clockProvider)())))
+        ? l.lastUpdatedAt(
+            ltr(formatSavedAt(savedAt, ref.read(clockProvider)())),
+          )
         : null;
     final userId = ref.watch(authControllerProvider.select((a) => a.value?.id));
     final toReview = ref.watch(
@@ -94,11 +125,28 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
             SliverToBoxAdapter(
               child: _Header(
                 ramadanDay: day,
-                counts: people.hasValue ? countPeople(people.value!, now) : null,
+                counts: people.hasValue
+                    ? countPeople(people.value!, now)
+                    : null,
                 controller: _search,
-                onQueryChanged: ref.read(peopleSearchQueryProvider.notifier).update,
+                onQueryChanged: ref
+                    .read(peopleSearchQueryProvider.notifier)
+                    .update,
               ),
             ),
+            if (isAdmin)
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsetsDirectional.fromSTEB(14, 14, 14, 0),
+                  child: RegionPickerField(
+                    regions: regions,
+                    value: browsing,
+                    allLabel: l.allRegions,
+                    decoration: InputDecoration(labelText: l.region),
+                    onChanged: ref.read(peopleRegionProvider.notifier).select,
+                  ),
+                ),
+              ),
             if (syncNote != null)
               SliverToBoxAdapter(
                 child: Padding(
@@ -106,7 +154,9 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
                   child: Row(
                     children: [
                       Icon(
-                        online ? Icons.history_rounded : Icons.cloud_off_rounded,
+                        online
+                            ? Icons.history_rounded
+                            : Icons.cloud_off_rounded,
                         size: 16,
                         color: context.colors.goldInk,
                       ),
@@ -114,7 +164,10 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
                       Expanded(
                         child: Text(
                           syncNote,
-                          style: TextStyle(fontSize: 12.5, color: context.colors.goldInk),
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            color: context.colors.goldInk,
+                          ),
                         ),
                       ),
                     ],
@@ -132,18 +185,31 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
                       borderRadius: BorderRadius.circular(12),
                       onTap: () => showReviewSheet(context),
                       child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
                         child: Row(
                           children: [
-                            Icon(Icons.fact_check_outlined, size: 18, color: context.colors.clayInk),
+                            Icon(
+                              Icons.fact_check_outlined,
+                              size: 18,
+                              color: context.colors.clayInk,
+                            ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
                                 l.toReview(toReview),
-                                style: TextStyle(color: context.colors.clayInk, fontWeight: FontWeight.w500),
+                                style: TextStyle(
+                                  color: context.colors.clayInk,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-                            Icon(Icons.chevron_right_rounded, color: context.colors.clayInk),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: context.colors.clayInk,
+                            ),
                           ],
                         ),
                       ),
@@ -160,17 +226,35 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
                 ),
               ),
             ...switch (people) {
-              AsyncData(:final value) => _listSlivers(l, value, query, filter, now),
+              AsyncData(:final value) => _listSlivers(
+                l,
+                value,
+                query,
+                filter,
+                now,
+                browsing: browsing,
+                browsingOther: browsingOther,
+              ),
               AsyncError(:final error) when !people.hasValue => [
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: ErrorView(
                     failure: toAppFailure(error),
-                    onRetry: () => ref.invalidate(peopleListProvider),
+                    onRetry: () => browsingOther
+                        ? ref.invalidate(browsedPeopleProvider(browsing))
+                        : ref.invalidate(peopleListProvider),
                   ),
                 ),
               ],
-              _ when people.hasValue => _listSlivers(l, people.value!, query, filter, now),
+              _ when people.hasValue => _listSlivers(
+                l,
+                people.value!,
+                query,
+                filter,
+                now,
+                browsing: browsing,
+                browsingOther: browsingOther,
+              ),
               _ => [
                 SliverFillRemaining(
                   hasScrollBody: false,
@@ -190,8 +274,10 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
     List<FastingPerson> all,
     String query,
     PeopleFilter filter,
-    DateTime now,
-  ) {
+    DateTime now, {
+    required int? browsing,
+    required bool browsingOther,
+  }) {
     if (all.isEmpty) {
       return [
         SliverFillRemaining(
@@ -200,16 +286,24 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
             icon: Icons.groups_2_outlined,
             title: l.noPeopleTitle,
             message: l.noPeopleMessage,
-            action: FilledButton.icon(
-              onPressed: () => context.go('/add'),
-              icon: const Icon(Icons.person_add_alt_1_rounded),
-              label: Text(l.addPerson),
-            ),
+            // "Add" creates in the admin's own region, not the one shown.
+            action: browsingOther
+                ? null
+                : FilledButton.icon(
+                    onPressed: () => context.go('/add'),
+                    icon: const Icon(Icons.person_add_alt_1_rounded),
+                    label: Text(l.addPerson),
+                  ),
           ),
         ),
       ];
     }
-    final filtered = applyPeopleFilter(all, filter: filter, query: query, now: now);
+    final filtered = applyPeopleFilter(
+      all,
+      filter: filter,
+      query: query,
+      now: now,
+    );
     if (filtered.isEmpty) {
       final noQuery = query.trim().isEmpty;
       return [
@@ -236,6 +330,10 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
           itemBuilder: (context, i) => _PersonTile(
             person: filtered[i],
             now: now,
+            // Every region mixed together: say which one each person is in.
+            regionName: browsingOther && browsing == null
+                ? filtered[i].region?.name
+                : null,
             onTap: () => context.push('/people/${filtered[i].id}'),
           ),
         ),
@@ -268,7 +366,11 @@ class _Header extends StatelessWidget {
           if (ramadanDay != null)
             Row(
               children: [
-                const Icon(Icons.nightlight_round, size: 14, color: AppPalette.gold),
+                const Icon(
+                  Icons.nightlight_round,
+                  size: 14,
+                  color: AppPalette.gold,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   l.ramadanDay(ltr('$ramadanDay')),
@@ -285,7 +387,10 @@ class _Header extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               l.peopleCount(ltr('${counts.total}'), ltr('${counts.served}')),
-              style: const TextStyle(fontSize: 13, color: AppPalette.onSkyMuted),
+              style: const TextStyle(
+                fontSize: 13,
+                color: AppPalette.onSkyMuted,
+              ),
             ),
             const SizedBox(height: 10),
             ClipRRect(
@@ -332,7 +437,11 @@ class _Header extends StatelessWidget {
 }
 
 class _FilterRow extends StatelessWidget {
-  const _FilterRow({required this.counts, required this.selected, required this.onSelect});
+  const _FilterRow({
+    required this.counts,
+    required this.selected,
+    required this.onSelect,
+  });
 
   final PeopleCounts counts;
   final PeopleFilter selected;
@@ -390,7 +499,10 @@ class _FilterChip extends StatelessWidget {
         onTap: onTap,
         child: Container(
           constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsetsDirectional.symmetric(horizontal: 14, vertical: 7),
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: 14,
+            vertical: 7,
+          ),
           decoration: BoxDecoration(
             color: selected ? AppPalette.sky : c.surface,
             border: Border.all(color: selected ? AppPalette.sky : c.line),
@@ -404,12 +516,20 @@ class _FilterChip extends StatelessWidget {
               children: [
                 Text(
                   label,
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: fg),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w500,
+                    color: fg,
+                  ),
                 ),
                 const SizedBox(width: 6),
                 Text(
                   ltr('$count'),
-                  style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600, color: fg),
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                  ),
                 ),
               ],
             ),
@@ -421,10 +541,16 @@ class _FilterChip extends StatelessWidget {
 }
 
 class _PersonTile extends StatelessWidget {
-  const _PersonTile({required this.person, required this.now, required this.onTap});
+  const _PersonTile({
+    required this.person,
+    required this.now,
+    required this.onTap,
+    this.regionName,
+  });
 
   final FastingPerson person;
   final DateTime now;
+  final String? regionName;
   final VoidCallback onTap;
 
   @override
@@ -432,6 +558,7 @@ class _PersonTile extends StatelessWidget {
     final c = context.colors;
     final l = AppLocalizations.of(context);
     final meals = [
+      ?regionName,
       if (person.singleMeal > 0) l.mealSingleCount(person.singleMeal),
       if (person.familyMeal > 0) l.mealFamilyCount(person.familyMeal),
     ].join(' · ');
@@ -470,7 +597,10 @@ class _PersonTile extends StatelessWidget {
                       isolate(person.fullName),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                     const SizedBox(height: 3),
                     Row(

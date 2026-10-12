@@ -73,7 +73,7 @@ class FakePeopleRepository implements PeopleRepository {
   int listCalls = 0;
 
   @override
-  Future<List<FastingPerson>> list(int regionId) async {
+  Future<List<FastingPerson>> list(int? regionId) async {
     listCalls++;
     return people.values.toList();
   }

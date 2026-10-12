@@ -59,6 +59,36 @@ export class FastingController {
   }
 
   // Put most specific routes first
+  @Get('statistics')
+  @ApiOperation({
+    summary: 'Admin: statistics of every region together',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    type: SwaggerBaseApiResponse([FastingOutput]),
+  })
+  @UseInterceptors(ClassSerializerInterceptor)
+  @ApiBearerAuth()
+  @SkipRegionCheck()
+  @UseGuards(RolesGuard)
+  @Roles(ROLE.ADMIN)
+  async getFastingsStatistics(
+    @ReqContext() ctx: RequestContext,
+    @Query('start') start: string,
+    @Query('end') end: string,
+  ): Promise<BaseApiResponse<DailyStatistics[]>> {
+    this.logger.log(ctx, `${this.getFastingsStatistics.name} was called`);
+
+    const statistics = await this.fastingService.getStatistics(
+      ctx,
+      null,
+      start,
+      end,
+    );
+
+    return { data: statistics, meta: {} };
+  }
+
   @Get('statistics/:region')
   @ApiOperation({
     summary: 'Get statistics fastings by region API',

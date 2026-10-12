@@ -64,8 +64,20 @@ class AddPersonPage extends StatelessWidget {
                   )
                 else
                   const SizedBox(height: 4),
-                Text(l.addTitle, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500)),
-                Text(l.addSubtitle, style: const TextStyle(fontSize: 13, color: AppPalette.onSkyMuted)),
+                Text(
+                  l.addTitle,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                Text(
+                  l.addSubtitle,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppPalette.onSkyMuted,
+                  ),
+                ),
               ],
             ),
           ),
@@ -139,10 +151,16 @@ class _PersonFormState extends ConsumerState<PersonForm> {
     text: '${widget.person?.id ?? widget.initialId ?? ''}',
   );
   late final _cin = TextEditingController(text: widget.person?.cin ?? '');
-  late final _firstName = TextEditingController(text: widget.person?.firstName ?? '');
-  late final _lastName = TextEditingController(text: widget.person?.lastName ?? '');
+  late final _firstName = TextEditingController(
+    text: widget.person?.firstName ?? '',
+  );
+  late final _lastName = TextEditingController(
+    text: widget.person?.lastName ?? '',
+  );
   late final _phone = TextEditingController(text: widget.person?.phone ?? '');
-  late final _comment = TextEditingController(text: widget.person?.comment ?? '');
+  late final _comment = TextEditingController(
+    text: widget.person?.comment ?? '',
+  );
   late int _single = widget.person?.singleMeal ?? 1;
   late int _family = widget.person?.familyMeal ?? 0;
   late bool _showOptional =
@@ -152,8 +170,14 @@ class _PersonFormState extends ConsumerState<PersonForm> {
   bool _mealsInvalid = false;
   String? _idServerError;
 
-  List<TextEditingController> get _controllers =>
-      [_id, _cin, _firstName, _lastName, _phone, _comment];
+  List<TextEditingController> get _controllers => [
+    _id,
+    _cin,
+    _firstName,
+    _lastName,
+    _phone,
+    _comment,
+  ];
 
   @override
   void dispose() {
@@ -217,12 +241,16 @@ class _PersonFormState extends ConsumerState<PersonForm> {
 
     setState(() => _submitting = true);
     try {
-      final region = regionOf(ref.read(authControllerProvider));
+      // An edit stays in the person's region (a global admin may be
+      // browsing another one); a new person joins the user's own.
+      final region =
+          widget.person?.region ?? regionOf(ref.read(authControllerProvider));
       final repo = ref.read(peopleRepositoryProvider);
       final saved = widget.isEdit
           ? await repo.update(region, draft)
           : await repo.create(region.id, draft);
       ref.read(peopleListProvider.notifier).upsert(saved);
+      ref.invalidate(browsedPeopleProvider);
       if (widget.isEdit) ref.invalidate(personDetailsProvider(saved.id));
       if (!mounted) return;
       final name = isolate(saved.fullName);
@@ -288,9 +316,11 @@ class _PersonFormState extends ConsumerState<PersonForm> {
 
     setState(() => _submitting = true);
     try {
-      final region = regionOf(ref.read(authControllerProvider));
+      final region =
+          person.region ?? regionOf(ref.read(authControllerProvider));
       await ref.read(peopleRepositoryProvider).delete(region.id, person.id);
       ref.read(peopleListProvider.notifier).remove(person.id);
+      ref.invalidate(browsedPeopleProvider);
       if (!mounted) return;
       showAppSnackBar(context, l.personDeleted(isolate(person.fullName)));
       context.go('/people');
@@ -313,7 +343,10 @@ class _PersonFormState extends ConsumerState<PersonForm> {
         Padding(
           padding: const EdgeInsetsDirectional.only(start: 2, bottom: 6),
           child: ExcludeSemantics(
-            child: Text(label, style: TextStyle(fontSize: 12.5, color: c.inkMuted)),
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 12.5, color: c.inkMuted),
+            ),
           ),
         ),
         Semantics(label: label, child: field),
@@ -351,7 +384,10 @@ class _PersonFormState extends ConsumerState<PersonForm> {
                         child: TextButton.icon(
                           style: TextButton.styleFrom(minimumSize: target),
                           onPressed: _scanId,
-                          icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                          icon: const Icon(
+                            Icons.qr_code_scanner_rounded,
+                            size: 18,
+                          ),
                           label: Text(l.scanCard),
                         ),
                       ),
@@ -374,8 +410,9 @@ class _PersonFormState extends ConsumerState<PersonForm> {
                   TextFormField(
                     controller: _firstName,
                     textInputAction: TextInputAction.next,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? l.firstNameRequired : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? l.firstNameRequired
+                        : null,
                   ),
                 ),
               ),
@@ -386,8 +423,9 @@ class _PersonFormState extends ConsumerState<PersonForm> {
                   TextFormField(
                     controller: _lastName,
                     textInputAction: TextInputAction.next,
-                    validator: (v) =>
-                        (v == null || v.trim().isEmpty) ? l.lastNameRequired : null,
+                    validator: (v) => (v == null || v.trim().isEmpty)
+                        ? l.lastNameRequired
+                        : null,
                   ),
                 ),
               ),
@@ -405,7 +443,9 @@ class _PersonFormState extends ConsumerState<PersonForm> {
               ],
               textDirection: TextDirection.ltr,
               validator: (v) =>
-                  PersonRules.validateCin(latinDigits(v ?? '')) == null ? null : l.cinLength,
+                  PersonRules.validateCin(latinDigits(v ?? '')) == null
+                  ? null
+                  : l.cinLength,
             ),
           ),
           _DuplicateCinWarning(controller: _cin, excludeId: widget.person?.id),
@@ -473,14 +513,22 @@ class _PersonFormState extends ConsumerState<PersonForm> {
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 2),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 12,
+                  horizontal: 2,
+                ),
                 child: Row(
                   children: [
                     Expanded(
-                      child: Text(l.optionalFields, style: TextStyle(color: c.actInk, fontSize: 14)),
+                      child: Text(
+                        l.optionalFields,
+                        style: TextStyle(color: c.actInk, fontSize: 14),
+                      ),
                     ),
                     Icon(
-                      _showOptional ? Icons.expand_less_rounded : Icons.expand_more_rounded,
+                      _showOptional
+                          ? Icons.expand_less_rounded
+                          : Icons.expand_more_rounded,
                       color: c.actInk,
                     ),
                   ],
@@ -505,12 +553,17 @@ class _PersonFormState extends ConsumerState<PersonForm> {
           ],
           const SizedBox(height: 22),
           FilledButton(
-            style: FilledButton.styleFrom(minimumSize: const Size.fromHeight(52)),
+            style: FilledButton.styleFrom(
+              minimumSize: const Size.fromHeight(52),
+            ),
             onPressed: _submitting ? null : _submit,
             child: _submitting
                 ? SizedBox.square(
                     dimension: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2.5, color: c.onAct),
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: c.onAct,
+                    ),
                   )
                 : Text(
                     widget.isEdit
@@ -522,7 +575,9 @@ class _PersonFormState extends ConsumerState<PersonForm> {
           ),
           if (!widget.isEdit)
             TextButton(
-              style: TextButton.styleFrom(minimumSize: const Size.fromHeight(48)),
+              style: TextButton.styleFrom(
+                minimumSize: const Size.fromHeight(48),
+              ),
               onPressed: _submitting ? null : () => _submit(addAnother: true),
               child: Text(l.saveAndAddAnother),
             ),
@@ -554,7 +609,8 @@ class _DuplicateCinWarning extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final people = ref.watch(peopleListProvider).value ?? const <FastingPerson>[];
+    final people =
+        ref.watch(peopleListProvider).value ?? const <FastingPerson>[];
     return ListenableBuilder(
       listenable: controller,
       builder: (context, _) {
@@ -584,11 +640,18 @@ class _DuplicateCinWarning extends ConsumerWidget {
                   children: [
                     Padding(
                       padding: const EdgeInsetsDirectional.only(top: 1, end: 8),
-                      child: Icon(Icons.warning_amber_rounded, size: 18, color: c.clayInk),
+                      child: Icon(
+                        Icons.warning_amber_rounded,
+                        size: 18,
+                        color: c.clayInk,
+                      ),
                     ),
                     Expanded(
                       child: Text(
-                        l.duplicateCin(isolate(duplicate.fullName), ltr('${duplicate.id}')),
+                        l.duplicateCin(
+                          isolate(duplicate.fullName),
+                          ltr('${duplicate.id}'),
+                        ),
                         style: TextStyle(color: c.clayInk, fontSize: 12.5),
                       ),
                     ),

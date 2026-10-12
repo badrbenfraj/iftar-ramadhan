@@ -13,16 +13,16 @@ export class FastingRepository extends Repository<Fasting> {
     super(Fasting, dataSource.createEntityManager());
   }
 
+  /** People of one region, or of every region when [regionId] is null. */
   async getFastingsByRegion(
-    regionId: number,
+    regionId: number | null,
     limit: number,
     offset: number,
   ): Promise<[Fasting[], number]> {
     const fasting = await this.findAndCount({
-      where: {
-        region: { id: regionId },
-      },
+      where: regionId === null ? {} : { region: { id: regionId } },
       relations: { region: true },
+      order: { id: 'ASC' },
       take: limit,
       skip: offset,
     });

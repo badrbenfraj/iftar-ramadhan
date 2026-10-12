@@ -167,9 +167,10 @@ export class FastingService {
     return this.toOutput(savedFasting, { todayMeal });
   }
 
+  /** [region] null = every region (global admins; the route checks). */
   async getFastingsByRegion(
     ctx: RequestContext,
-    region: number,
+    region: number | null,
     limit: number,
     offset: number,
   ): Promise<{ fastings: FastingOutput[]; count: number }> {
@@ -205,22 +206,7 @@ export class FastingService {
     offset: number,
   ): Promise<{ fastings: FastingOutput[]; count: number }> {
     this.logger.log(ctx, `${this.getFastings.name} was called`);
-
-    const actor: Actor = ctx.user;
-
-    const isAllowed = this.aclService.forActor(actor).canDoAction(Action.List);
-    if (!isAllowed) {
-      throw regionForbidden();
-    }
-
-    this.logger.log(ctx, `calling ${FastingRepository.name}.findAndCount`);
-    const [fastings, count] = await this.repository.findAndCount({
-      where: {},
-      take: limit,
-      skip: offset,
-    });
-
-    return { fastings: fastings.map((f) => this.toOutput(f)), count };
+    return this.getFastingsByRegion(ctx, null, limit, offset);
   }
 
   async getFastingById(
@@ -367,12 +353,13 @@ export class FastingService {
   }
 
   /**
-   * Per-day statistics for a region over an inclusive date range. Days are
-   * calendar days in APP_TIMEZONE; each person counts at most once per day.
+   * Per-day statistics for a region (null = every region) over an inclusive
+   * date range. Days are calendar days in APP_TIMEZONE; each person counts at
+   * most once per day.
    */
   async getStatistics(
     ctx: RequestContext,
-    region: number,
+    region: number | null,
     start?: string,
     end?: string,
   ): Promise<DailyStatistics[]> {

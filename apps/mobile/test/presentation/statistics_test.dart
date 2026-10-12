@@ -32,7 +32,7 @@ class FakeStatisticsRepository implements StatisticsRepository {
   final calls = <(DateTime, DateTime)>[];
 
   @override
-  Future<List<DailyStatistics>> fetch(int regionId, DateTime from, DateTime to) async {
+  Future<List<DailyStatistics>> fetch(int? regionId, DateTime from, DateTime to) async {
     calls.add((from, to));
     await gate?.future;
     final f = failure;

@@ -3,6 +3,10 @@ include: package:flutter_lints/flutter.yaml
 analyzer:
   exclude:
     - test/**
+    - build/**
+    - android/**
+    - ios/**
+    - web/**
   language:
     strict-casts: true
     strict-raw-types: true
