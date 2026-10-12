@@ -142,11 +142,10 @@ class StatisticsPage extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 child: RegionPickerField(
                   regions: regions,
-                  value: stats.regionId ?? me?.region?.id,
+                  value: stats.regionId,
+                  allLabel: l.allRegions,
                   decoration: InputDecoration(labelText: l.region),
-                  onChanged: (id) {
-                    if (id != null) controller.selectRegion(id);
-                  },
+                  onChanged: controller.selectRegion,
                 ),
               ),
             // Reachable whatever the result is: loading, error or data.

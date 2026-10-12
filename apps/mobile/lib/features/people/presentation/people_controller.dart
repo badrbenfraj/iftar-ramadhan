@@ -6,6 +6,7 @@ import '../../../core/network/app_failure.dart';
 import '../../../core/providers.dart';
 import '../../../core/storage/device_id.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/domain/user.dart';
 import '../../auth/presentation/auth_controller.dart';
 import '../data/people_cache.dart';
 import '../data/people_repository.dart';
@@ -30,9 +31,7 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
     loadedAt = null;
     fromCache = false;
     final region = requireRegion(ref);
-    final saved = await ref
-        .read(peopleCacheProvider)
-        .read(regionId: region.id);
+    final saved = await ref.read(peopleCacheProvider).read(regionId: region.id);
     if (saved != null) {
       loadedAt = saved.syncedAt;
       fromCache = true;
@@ -104,10 +103,13 @@ class PeopleListController extends AsyncNotifier<List<FastingPerson>> {
     }
   }
 
-  /// Local update after a create/edit/confirm, avoiding a full reload.
+  /// Local update after a create/edit/confirm, avoiding a full reload. A
+  /// person of another region (a global admin browsing) is left out.
   void upsert(FastingPerson person) {
     final current = state.value;
     if (current == null) return;
+    final own = ref.read(authControllerProvider).value?.region?.id;
+    if (person.region != null && person.region!.id != own) return;
     final next = [
       for (final p in current)
         if (p.id != person.id) p,
@@ -141,7 +143,7 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
 
   @override
   Future<FastingPerson> build() {
-    final region = requireRegion(ref);
+    final region = personRegion(ref, personId);
     return ref.read(peopleRepositoryProvider).get(region.id, personId);
   }
 
@@ -159,7 +161,7 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
     String? comment,
     String? clientEventId,
   }) async {
-    final region = requireRegion(ref);
+    final region = personRegion(ref, personId);
     try {
       final updated = await ref
           .read(peopleRepositoryProvider)
@@ -172,14 +174,14 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
             deviceId: await ref.read(deviceIdProvider.future),
           );
       state = AsyncData(updated);
-      ref.read(peopleListProvider.notifier).upsert(updated);
+      personChanged(ref, updated);
       return updated;
     } on MealAlreadyTakenFailure {
       final fresh = await ref
           .read(peopleRepositoryProvider)
           .get(region.id, personId);
       state = AsyncData(fresh);
-      ref.read(peopleListProvider.notifier).upsert(fresh);
+      personChanged(ref, fresh);
       rethrow;
     }
   }
@@ -190,7 +192,7 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
         .read(peopleRepositoryProvider)
         .revokeMeal(meal.eventId);
     state = AsyncData(updated);
-    ref.read(peopleListProvider.notifier).upsert(updated);
+    personChanged(ref, updated);
     return updated;
   }
 }
@@ -199,3 +201,61 @@ final personDetailsProvider = AsyncNotifierProvider.autoDispose
     .family<PersonDetailsController, FastingPerson, int>(
       PersonDetailsController.new,
     );
+
+/// The region a global admin browses on the people list: their own by
+/// default, another one, or every region with null. Scanning and the copy
+/// saved on the phone always stay on the admin's own region.
+class PeopleRegion extends Notifier<int?> {
+  @override
+  int? build() {
+    // Back to the default when another account signs in.
+    ref.watch(authControllerProvider.select((a) => a.value?.id));
+    return ref.read(authControllerProvider).value?.region?.id;
+  }
+
+  void select(int? regionId) => state = regionId;
+}
+
+final peopleRegionProvider = NotifierProvider<PeopleRegion, int?>(
+  PeopleRegion.new,
+);
+
+/// True when a global admin is looking at another region (or every region)
+/// instead of their own list.
+bool isBrowsingOtherRegion(User? user, int? browsing) =>
+    user?.isAdmin == true && browsing != user?.region?.id;
+
+/// People of another region, or of every region with null, for a global
+/// admin. Loaded fresh each time and never saved on the phone.
+final browsedPeopleProvider = FutureProvider.autoDispose
+    .family<List<FastingPerson>, int?>(
+      (ref, regionId) => ref.watch(peopleRepositoryProvider).list(regionId),
+    );
+
+/// The region a person belongs to: from the list a global admin is browsing
+/// when the person is in it, otherwise the signed-in user's own.
+Region personRegion(Ref ref, int personId) {
+  final user = ref.read(authControllerProvider).value;
+  final browsing = ref.read(peopleRegionProvider);
+  if (isBrowsingOtherRegion(user, browsing)) {
+    final found = ref
+        .read(browsedPeopleProvider(browsing))
+        .value
+        ?.where((p) => p.id == personId)
+        .firstOrNull
+        ?.region;
+    if (found != null) return found;
+  }
+  return requireRegion(ref);
+}
+
+/// Keeps both lists in step after a person was created, edited or served.
+void personChanged(Ref ref, FastingPerson person) {
+  ref.read(peopleListProvider.notifier).upsert(person);
+  if (isBrowsingOtherRegion(
+    ref.read(authControllerProvider).value,
+    ref.read(peopleRegionProvider),
+  )) {
+    ref.invalidate(browsedPeopleProvider);
+  }
+}

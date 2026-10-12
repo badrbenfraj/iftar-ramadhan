@@ -8,7 +8,8 @@ import '../domain/fasting_person.dart';
 import '../domain/person_draft.dart';
 
 abstract interface class PeopleRepository {
-  Future<List<FastingPerson>> list(int regionId);
+  /// [regionId] null = every region (global admins only).
+  Future<List<FastingPerson>> list(int? regionId);
   Future<FastingPerson> get(int regionId, int id);
   Future<FastingPerson> create(int regionId, PersonDraft draft);
   Future<FastingPerson> update(Region region, PersonDraft draft);
@@ -50,12 +51,12 @@ class ApiPeopleRepository implements PeopleRepository {
   static const _pageSize = 500;
 
   @override
-  Future<List<FastingPerson>> list(int regionId) async {
+  Future<List<FastingPerson>> list(int? regionId) async {
     final people = <FastingPerson>[];
     var offset = 0;
     while (true) {
       final envelope = await _api.get(
-        '/fastings/$regionId',
+        regionId == null ? '/fastings' : '/fastings/$regionId',
         query: {'limit': _pageSize, 'offset': offset},
       );
       final page = envelope.list.map(_person).toList();

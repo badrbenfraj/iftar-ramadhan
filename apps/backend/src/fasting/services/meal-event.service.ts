@@ -478,13 +478,14 @@ export class MealEventService {
   }
 
   /** Tonight's active meal per person of a region (one query for a list). */
+  /** Tonight's meals of one region, or of every region when null. */
   async todayMealsByRegion(
-    regionId: number,
+    regionId: number | null,
     now: Date = new Date(),
   ): Promise<Map<number, MealEventOutput>> {
     const rows: MealEventRow[] = await this.dataSource.query(
       `${EVENT_SELECT}
-       WHERE e."regionId" = $1 AND e."serviceDay" = $2
+       WHERE ($1::int IS NULL OR e."regionId" = $1) AND e."serviceDay" = $2
          AND e."revokedAt" IS NULL AND e."conflict" = false`,
       [regionId, this.serviceDay(now)],
     );

@@ -6,7 +6,12 @@ import '../../../core/utils/formatters.dart';
 import '../domain/statistics.dart';
 
 abstract interface class StatisticsRepository {
-  Future<List<DailyStatistics>> fetch(int regionId, DateTime from, DateTime to);
+  /// [regionId] null = every region together (global admins only).
+  Future<List<DailyStatistics>> fetch(
+    int? regionId,
+    DateTime from,
+    DateTime to,
+  );
 }
 
 class ApiStatisticsRepository implements StatisticsRepository {
@@ -16,12 +21,14 @@ class ApiStatisticsRepository implements StatisticsRepository {
 
   @override
   Future<List<DailyStatistics>> fetch(
-    int regionId,
+    int? regionId,
     DateTime from,
     DateTime to,
   ) async {
     final envelope = await _api.get(
-      '/fastings/statistics/$regionId',
+      regionId == null
+          ? '/fastings/statistics'
+          : '/fastings/statistics/$regionId',
       query: {'start': formatDayKey(from), 'end': formatDayKey(to)},
     );
     return envelope.list.map(DailyStatistics.fromJson).toList();
