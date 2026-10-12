@@ -56,19 +56,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get region => 'Région';
 
   @override
-  String get chooseRegion => 'Choisissez votre région';
-
-  @override
   String get searchRegions => 'Rechercher une région';
 
   @override
   String get noRegionFound => 'Aucune région trouvée';
-
-  @override
-  String get loadingRegions => 'Chargement des régions…';
-
-  @override
-  String get regionsFailed => 'Impossible de charger les régions';
 
   @override
   String get showPassword => 'Afficher le mot de passe';
@@ -93,9 +84,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get passwordTooShort => 'Au moins 8 caractères.';
-
-  @override
-  String get regionRequired => 'La région est obligatoire.';
 
   @override
   String get newVolunteerCreateAccount => 'Nouveau bénévole ? Créer un compte';
@@ -1030,7 +1018,10 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get joinCodeHelp =>
-      'Avec le code de votre région, vous commencez tout de suite. Sans code, un coordinateur valide votre compte.';
+      'Demandez le code de votre région à votre coordinateur.';
+
+  @override
+  String get joinCodeRequired => 'Saisissez le code de votre région';
 
   @override
   String get errInvalidJoinCode =>
@@ -1046,6 +1037,11 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get pendingBody =>
       'Votre compte est créé. Un coordinateur de votre région doit le valider avant que vous puissiez vous connecter. Vous pouvez le lui demander directement.';
+
+  @override
+  String pendingBodyRegion(String region) {
+    return 'Votre compte est créé. Un coordinateur de $region doit le valider avant que vous puissiez vous connecter. Vous pouvez le lui demander directement.';
+  }
 
   @override
   String get backToSignIn => 'Retour à la connexion';
@@ -1184,7 +1180,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get joinCodeOff =>
-      'L’accès par code est désactivé. Les nouveaux bénévoles attendent une validation.';
+      'Les inscriptions sont fermées : personne ne peut rejoindre cette région tant que vous n’avez pas créé de code.';
 
   @override
   String get joinCodeShare => 'Partager';
@@ -1210,7 +1206,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get joinCodeOffBody =>
-      'Les nouveaux bénévoles devront attendre une validation.';
+      'Personne ne pourra s’inscrire dans cette région tant que vous n’aurez pas créé un nouveau code.';
+
+  @override
+  String get approveNewVolunteers => 'Valider les nouveaux bénévoles';
+
+  @override
+  String get approveNewVolunteersHelp =>
+      'Activé : les personnes inscrites avec le code attendent votre validation. Désactivé : elles commencent tout de suite.';
 
   @override
   String joinCodeShareMessage(String region, String code) {
@@ -1272,9 +1275,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get coordinator => 'Coordinateur';
-
-  @override
-  String get joinedWithCode => 'Inscrit avec le code';
 
   @override
   String get noneWaiting => 'Personne n’attend de validation.';

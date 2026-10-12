@@ -8,7 +8,6 @@ class Volunteer {
     required this.username,
     required this.status,
     required this.roles,
-    required this.joinedWithCode,
     this.region,
   });
 
@@ -20,7 +19,6 @@ class Volunteer {
       username: (json['username'] as String?) ?? '',
       status: (json['status'] as String?) ?? 'active',
       roles: ((json['roles'] as List?) ?? const []).map((r) => '$r').toList(),
-      joinedWithCode: json['joinedWithCode'] == true,
       region: region is Map<String, dynamic> ? Region.fromJson(region) : null,
     );
   }
@@ -32,7 +30,6 @@ class Volunteer {
   /// `pending`, `active` or `disabled`.
   final String status;
   final List<String> roles;
-  final bool joinedWithCode;
   final Region? region;
 
   bool get isCoordinator => roles.contains('REGION_ADMIN');

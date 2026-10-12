@@ -272,7 +272,6 @@ class _VolunteerRow extends StatelessWidget {
     final details = [
       ltr('@${v.username}'),
       if (v.isCoordinator) l.coordinator,
-      if (v.joinedWithCode) l.joinedWithCode,
       if (showRegion && v.region != null) v.region!.name,
     ].join(' · ');
     return ListTile(

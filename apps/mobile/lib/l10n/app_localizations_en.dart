@@ -55,19 +55,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get region => 'Region';
 
   @override
-  String get chooseRegion => 'Choose your region';
-
-  @override
   String get searchRegions => 'Search regions';
 
   @override
   String get noRegionFound => 'No region found';
-
-  @override
-  String get loadingRegions => 'Loading regions…';
-
-  @override
-  String get regionsFailed => 'Could not load regions';
 
   @override
   String get showPassword => 'Show password';
@@ -92,9 +83,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get passwordTooShort => 'Use at least 8 characters.';
-
-  @override
-  String get regionRequired => 'Region is required.';
 
   @override
   String get newVolunteerCreateAccount => 'New volunteer? Create an account';
@@ -1009,8 +997,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get joinCodeHint => 'Join code (if you have one)';
 
   @override
-  String get joinCodeHelp =>
-      'With your region\'s code you can start at once. Without it, a coordinator approves your account.';
+  String get joinCodeHelp => 'Ask your coordinator for your region\'s code.';
+
+  @override
+  String get joinCodeRequired => 'Enter your region\'s code';
 
   @override
   String get errInvalidJoinCode =>
@@ -1026,6 +1016,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get pendingBody =>
       'Your account is created. A coordinator of your region must approve it before you can sign in. You can ask them directly.';
+
+  @override
+  String pendingBodyRegion(String region) {
+    return 'Your account is created. A coordinator of $region must approve it before you can sign in. You can ask them directly.';
+  }
 
   @override
   String get backToSignIn => 'Back to sign in';
@@ -1165,7 +1160,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get joinCodeOff =>
-      'Joining by code is off. New volunteers wait for approval.';
+      'Joining is off: nobody can sign up for this region until you create a code.';
 
   @override
   String get joinCodeShare => 'Share';
@@ -1191,7 +1186,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get joinCodeOffBody =>
-      'New volunteers will have to wait for approval.';
+      'Nobody will be able to sign up for this region until you create a new code.';
+
+  @override
+  String get approveNewVolunteers => 'Approve new volunteers';
+
+  @override
+  String get approveNewVolunteersHelp =>
+      'On: people who sign up with the code wait for your approval. Off: they start at once.';
 
   @override
   String joinCodeShareMessage(String region, String code) {
@@ -1252,9 +1254,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get coordinator => 'Coordinator';
-
-  @override
-  String get joinedWithCode => 'Joined with code';
 
   @override
   String get noneWaiting => 'Nobody is waiting for approval.';

@@ -87,7 +87,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => LoginPage(username: state.extra as String?),
       ),
       GoRoute(path: '/register', builder: (_, _) => const RegisterPage()),
-      GoRoute(path: '/pending', builder: (_, _) => const PendingPage()),
+      GoRoute(
+        path: '/pending',
+        builder: (_, state) =>
+            PendingPage(regionName: state.extra as String?),
+      ),
       GoRoute(path: _regionClosed, builder: (_, _) => const RegionClosedPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(navigationShell: shell),

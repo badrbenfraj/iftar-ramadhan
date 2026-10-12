@@ -29,7 +29,7 @@ final volunteersProvider = FutureProvider.autoDispose<List<Volunteer>>((ref) {
       .list(regionId: user?.isAdmin == true ? regionId : null);
 });
 
-final joinCodeProvider = FutureProvider.autoDispose.family<String?, int>(
+final joinCodeProvider = FutureProvider.autoDispose.family<JoinCodeInfo, int>(
   (ref, regionId) => ref.watch(volunteersRepositoryProvider).joinCode(regionId),
 );
 
