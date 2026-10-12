@@ -35,6 +35,10 @@ import { Fasting } from '../entities/fasting.entity';
 import { FastingAclService } from './fasting-acl.service';
 import { decideRevoke } from './revoke-rules';
 
+/** A person's key in maps: card numbers repeat across regions. */
+export const personKey = (regionId: number, id: number): string =>
+  `${regionId}:${id}`;
+
 /** A meal event row joined with the serving volunteer's name. */
 export interface MealEventRow {
   eventId: string;
@@ -136,7 +140,7 @@ export class MealEventService {
       }
 
       const fasting = await manager.findOne(Fasting, {
-        where: { id: fastingId },
+        where: { id: fastingId, regionId: region },
         relations: { region: true },
       });
       const isAllowed = this.aclService
@@ -149,7 +153,10 @@ export class MealEventService {
       if (input.clientEventId) {
         const existing = await this.findEvent(manager, input.clientEventId);
         if (existing) {
-          if (existing.fastingId !== fastingId) {
+          if (
+            existing.fastingId !== fastingId ||
+            existing.regionId !== region
+          ) {
             throw new UnprocessableEntityException({
               message: 'This clientEventId was already used for another person',
               code: FASTING_ERROR_CODES.CLIENT_EVENT_ID_REUSED,
@@ -162,6 +169,7 @@ export class MealEventService {
       const now = new Date();
       const active = await this.activeEventOn(
         manager,
+        region,
         fastingId,
         this.serviceDay(now),
       );
@@ -312,7 +320,10 @@ export class MealEventService {
       event.clientEventId,
     );
     if (stored) {
-      if (stored.fastingId !== event.fastingId) {
+      if (
+        stored.fastingId !== event.fastingId ||
+        stored.regionId !== event.regionId
+      ) {
         return {
           ...base,
           status: 'rejected',
@@ -322,6 +333,7 @@ export class MealEventService {
       if (!stored.conflict) return { ...base, status: 'duplicate' };
       const other = await this.activeEventOn(
         this.dataSource.manager,
+        stored.regionId,
         stored.fastingId,
         stored.serviceDay,
       );
@@ -400,6 +412,7 @@ export class MealEventService {
         const serviceDay = this.serviceDay(servedAt);
         const active = await this.activeEventOn(
           manager,
+          event.regionId,
           event.fastingId,
           serviceDay,
         );
@@ -415,7 +428,10 @@ export class MealEventService {
 
         const existing = await this.findEvent(manager, event.clientEventId);
         if (existing) {
-          if (existing.fastingId !== event.fastingId) {
+          if (
+            existing.fastingId !== event.fastingId ||
+            existing.regionId !== event.regionId
+          ) {
             return {
               ...base,
               status: 'rejected',
@@ -470,8 +486,8 @@ export class MealEventService {
                WHEN "lastTakenMeal" IS NULL OR "lastTakenMeal" < $3 THEN $3
                ELSE "lastTakenMeal" END,
              "updatedAt" = now()
-         WHERE "id" = $1`,
-          [event.fastingId, servedAt.toISOString(), servedAt],
+         WHERE "id" = $1 AND "regionId" = $4`,
+          [event.fastingId, servedAt.toISOString(), servedAt, event.regionId],
         );
         return { ...base, status: 'applied', flag };
       },
@@ -488,39 +504,49 @@ export class MealEventService {
 
   async activeEventOn(
     manager: EntityManager,
+    regionId: number,
     fastingId: number,
     serviceDay: string,
   ): Promise<MealEventRow | null> {
     const rows = await manager.query(
       `${EVENT_SELECT}
-       WHERE e."fastingId" = $1 AND e."serviceDay" = $2
+       WHERE e."regionId" = $1 AND e."fastingId" = $2 AND e."serviceDay" = $3
          AND e."revokedAt" IS NULL AND e."conflict" = false`,
-      [fastingId, serviceDay],
+      [regionId, fastingId, serviceDay],
     );
     return rows[0] ?? null;
   }
 
-  /** Tonight's active meal per person of a region (one query for a list). */
-  /** Tonight's meals of one region, or of every region when null. */
+  /**
+   * Tonight's active meal per person of one region, or of every region when
+   * null, keyed by [personKey] (one query for a list).
+   */
   async todayMealsByRegion(
     regionId: number | null,
     now: Date = new Date(),
-  ): Promise<Map<number, MealEventOutput>> {
+  ): Promise<Map<string, MealEventOutput>> {
     const rows: MealEventRow[] = await this.dataSource.query(
       `${EVENT_SELECT}
        WHERE ($1::int IS NULL OR e."regionId" = $1) AND e."serviceDay" = $2
          AND e."revokedAt" IS NULL AND e."conflict" = false`,
       [regionId, this.serviceDay(now)],
     );
-    return new Map(rows.map((row) => [row.fastingId, toMealEventOutput(row)]));
+    return new Map(
+      rows.map((row) => [
+        personKey(row.regionId, row.fastingId),
+        toMealEventOutput(row),
+      ]),
+    );
   }
 
   async todayMealOf(
+    regionId: number,
     fastingId: number,
     now: Date = new Date(),
   ): Promise<MealEventOutput | null> {
     const row = await this.activeEventOn(
       this.dataSource.manager,
+      regionId,
       fastingId,
       this.serviceDay(now),
     );
@@ -528,12 +554,15 @@ export class MealEventService {
   }
 
   /** Every meal of a person, newest first, undone ones included. */
-  async mealsOf(fastingId: number): Promise<MealEventOutput[]> {
+  async mealsOf(
+    regionId: number,
+    fastingId: number,
+  ): Promise<MealEventOutput[]> {
     const rows: MealEventRow[] = await this.dataSource.query(
       `${EVENT_SELECT}
-       WHERE e."fastingId" = $1 AND e."conflict" = false
+       WHERE e."regionId" = $1 AND e."fastingId" = $2 AND e."conflict" = false
        ORDER BY e."servedAt" DESC`,
-      [fastingId],
+      [regionId, fastingId],
     );
     return rows.map(toMealEventOutput);
   }
@@ -560,7 +589,8 @@ export class MealEventService {
               e."servedAt", e."servedByUserId", u."name" AS "servedByName",
               e."source", e."conflict", e."flag", e."revokedAt"
        FROM "meal_events" e
-       JOIN "fastings" f ON f."id" = e."fastingId"
+       JOIN "fastings" f
+         ON f."id" = e."fastingId" AND f."regionId" = e."regionId"
        LEFT JOIN "users" u ON u."id" = e."servedByUserId"
        WHERE e."regionId" = $1 AND e."serviceDay" = $2
          AND (e."conflict" = true OR e."flag" IS NOT NULL)
@@ -633,8 +663,9 @@ export class MealEventService {
       }
       // Same lock order as confirm: the person first, then the event.
       await manager.query(
-        `SELECT "id" FROM "fastings" WHERE "id" = $1 FOR UPDATE`,
-        [found.fastingId],
+        `SELECT "id" FROM "fastings"
+          WHERE "id" = $1 AND "regionId" = $2 FOR UPDATE`,
+        [found.fastingId, found.regionId],
       );
       const event = await this.findEvent(manager, eventId);
       const ids = { fastingId: event.fastingId, regionId: event.regionId };
@@ -679,8 +710,8 @@ export class MealEventService {
     event: MealEventRow,
   ): Promise<void> {
     const [row]: Array<{ takenMeals: string[] }> = await manager.query(
-      `SELECT "takenMeals" FROM "fastings" WHERE "id" = $1`,
-      [event.fastingId],
+      `SELECT "takenMeals" FROM "fastings" WHERE "id" = $1 AND "regionId" = $2`,
+      [event.fastingId, event.regionId],
     );
     const taken = row?.takenMeals ?? [];
     // Compared as instants: entries are ISO strings, or dates written with
@@ -692,14 +723,20 @@ export class MealEventService {
 
     const [latest]: Array<{ at: Date | null }> = await manager.query(
       `SELECT max("servedAt") AS "at" FROM "meal_events"
-       WHERE "fastingId" = $1 AND "revokedAt" IS NULL AND "conflict" = false`,
-      [event.fastingId],
+       WHERE "regionId" = $1 AND "fastingId" = $2
+         AND "revokedAt" IS NULL AND "conflict" = false`,
+      [event.regionId, event.fastingId],
     );
     await manager.query(
       `UPDATE "fastings"
        SET "takenMeals" = $2::varchar[], "lastTakenMeal" = $3, "updatedAt" = now()
-       WHERE "id" = $1`,
-      [event.fastingId, remaining, latest?.at ? new Date(latest.at) : null],
+       WHERE "id" = $1 AND "regionId" = $4`,
+      [
+        event.fastingId,
+        remaining,
+        latest?.at ? new Date(latest.at) : null,
+        event.regionId,
+      ],
     );
   }
 }

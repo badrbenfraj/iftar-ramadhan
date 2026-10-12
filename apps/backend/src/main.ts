@@ -25,8 +25,11 @@ async function bootstrap() {
   app.use(helmet());
   app.use(compression());
 
-  // /download is the human page volunteers open; everything else is the API.
-  app.setGlobalPrefix('api/v1', { exclude: ['download'] });
+  // /download is the human page volunteers open (and its printable cards);
+  // everything else is the API.
+  app.setGlobalPrefix('api/v1', {
+    exclude: ['download', 'download/cards.pdf'],
+  });
 
   app.useGlobalPipes(new ValidationPipe(VALIDATION_PIPE_OPTIONS));
   app.use(RequestIdMiddleware);

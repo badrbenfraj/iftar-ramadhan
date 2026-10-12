@@ -135,17 +135,32 @@ final peopleListProvider =
       PeopleListController.new,
     );
 
+/// A person: card numbers repeat across regions, so the region is part of
+/// the key.
+typedef PersonKey = ({int regionId, int id});
+
+/// The person a details route points to: [regionId] from the `region` query
+/// parameter (a global admin browsing another region), else the user's own
+/// region.
+PersonKey personKeyFor(WidgetRef ref, int id, int? regionId) => (
+  regionId: regionId ?? regionOf(ref.read(authControllerProvider)).id,
+  id: id,
+);
+
+/// Route to a person's details; [regionId] only when it isn't the user's own.
+String personPath(int id, {int? regionId, bool edit = false}) =>
+    '/people/$id${edit ? '/edit' : ''}'
+    '${regionId == null ? '' : '?region=$regionId'}';
+
 /// One person, loaded fresh from the server (details screen).
 class PersonDetailsController extends AsyncNotifier<FastingPerson> {
-  PersonDetailsController(this.personId);
+  PersonDetailsController(this.key);
 
-  final int personId;
+  final PersonKey key;
 
   @override
-  Future<FastingPerson> build() {
-    final region = personRegion(ref, personId);
-    return ref.read(peopleRepositoryProvider).get(region.id, personId);
-  }
+  Future<FastingPerson> build() =>
+      ref.read(peopleRepositoryProvider).get(key.regionId, key.id);
 
   Future<void> refresh() async {
     ref.invalidateSelf();
@@ -161,13 +176,12 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
     String? comment,
     String? clientEventId,
   }) async {
-    final region = personRegion(ref, personId);
     try {
       final updated = await ref
           .read(peopleRepositoryProvider)
           .confirmMeal(
-            region.id,
-            personId,
+            key.regionId,
+            key.id,
             phone: phone,
             comment: comment,
             clientEventId: clientEventId,
@@ -179,7 +193,7 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
     } on MealAlreadyTakenFailure {
       final fresh = await ref
           .read(peopleRepositoryProvider)
-          .get(region.id, personId);
+          .get(key.regionId, key.id);
       state = AsyncData(fresh);
       personChanged(ref, fresh);
       rethrow;
@@ -198,7 +212,7 @@ class PersonDetailsController extends AsyncNotifier<FastingPerson> {
 }
 
 final personDetailsProvider = AsyncNotifierProvider.autoDispose
-    .family<PersonDetailsController, FastingPerson, int>(
+    .family<PersonDetailsController, FastingPerson, PersonKey>(
       PersonDetailsController.new,
     );
 
@@ -231,23 +245,6 @@ final browsedPeopleProvider = FutureProvider.autoDispose
     .family<List<FastingPerson>, int?>(
       (ref, regionId) => ref.watch(peopleRepositoryProvider).list(regionId),
     );
-
-/// The region a person belongs to: from the list a global admin is browsing
-/// when the person is in it, otherwise the signed-in user's own.
-Region personRegion(Ref ref, int personId) {
-  final user = ref.read(authControllerProvider).value;
-  final browsing = ref.read(peopleRegionProvider);
-  if (isBrowsingOtherRegion(user, browsing)) {
-    final found = ref
-        .read(browsedPeopleProvider(browsing))
-        .value
-        ?.where((p) => p.id == personId)
-        .firstOrNull
-        ?.region;
-    if (found != null) return found;
-  }
-  return requireRegion(ref);
-}
 
 /// Keeps both lists in step after a person was created, edited or served.
 void personChanged(Ref ref, FastingPerson person) {

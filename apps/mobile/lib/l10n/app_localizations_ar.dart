@@ -54,19 +54,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get region => 'المنطقة';
 
   @override
-  String get chooseRegion => 'اختر منطقتك';
-
-  @override
   String get searchRegions => 'ابحث عن منطقة';
 
   @override
   String get noRegionFound => 'لا توجد منطقة بهذا الاسم';
-
-  @override
-  String get loadingRegions => 'جارٍ تحميل المناطق…';
-
-  @override
-  String get regionsFailed => 'تعذّر تحميل المناطق';
 
   @override
   String get showPassword => 'إظهار كلمة المرور';
@@ -91,9 +82,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get passwordTooShort => '8 أحرف على الأقل.';
-
-  @override
-  String get regionRequired => 'المنطقة مطلوبة.';
 
   @override
   String get newVolunteerCreateAccount => 'متطوّع جديد؟ أنشئ حساباً';
@@ -1008,8 +996,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get joinCodeHint => 'رمز الانضمام (إن وُجد)';
 
   @override
-  String get joinCodeHelp =>
-      'برمز منطقتك تبدأ فورًا. بدونه، يوافق منسّق على حسابك.';
+  String get joinCodeHelp => 'اطلب رمز منطقتك من منسّقك.';
+
+  @override
+  String get joinCodeRequired => 'أدخل رمز منطقتك';
 
   @override
   String get errInvalidJoinCode => 'هذا الرمز غير صالح. تحقّق منه مع منسّقك.';
@@ -1023,6 +1013,11 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get pendingBody =>
       'تمّ إنشاء حسابك. يجب أن يوافق عليه منسّق منطقتك قبل أن تتمكّن من الدخول. يمكنك أن تطلب منه ذلك مباشرة.';
+
+  @override
+  String pendingBodyRegion(String region) {
+    return 'تمّ إنشاء حسابك. يجب أن يوافق عليه منسّق $region قبل أن تتمكّن من الدخول. يمكنك أن تطلب منه ذلك مباشرة.';
+  }
 
   @override
   String get backToSignIn => 'العودة إلى تسجيل الدخول';
@@ -1160,7 +1155,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get joinCodeOff =>
-      'الانضمام بالرمز متوقّف. ينتظر المتطوّعون الجدد الموافقة.';
+      'التسجيل متوقّف: لا يمكن لأحد الانضمام إلى هذه المنطقة حتى تنشئ رمزًا.';
 
   @override
   String get joinCodeShare => 'مشاركة';
@@ -1185,7 +1180,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get joinCodeOffTitle => 'إيقاف الانضمام بالرمز؟';
 
   @override
-  String get joinCodeOffBody => 'سيتعيّن على المتطوّعين الجدد انتظار الموافقة.';
+  String get joinCodeOffBody =>
+      'لن يتمكّن أحد من التسجيل في هذه المنطقة حتى تنشئ رمزًا جديدًا.';
+
+  @override
+  String get approveNewVolunteers => 'الموافقة على المتطوّعين الجدد';
+
+  @override
+  String get approveNewVolunteersHelp =>
+      'مفعّل: من يسجّل بالرمز ينتظر موافقتك. غير مفعّل: يبدأ فورًا.';
 
   @override
   String joinCodeShareMessage(String region, String code) {
@@ -1246,9 +1249,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get coordinator => 'منسّق';
-
-  @override
-  String get joinedWithCode => 'انضمّ بالرمز';
 
   @override
   String get noneWaiting => 'لا أحد ينتظر الموافقة.';

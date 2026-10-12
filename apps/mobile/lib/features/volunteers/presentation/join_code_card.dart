@@ -12,7 +12,8 @@ import '../../../l10n/app_localizations.dart';
 import '../data/volunteers_repository.dart';
 import 'volunteers_controller.dart';
 
-/// The region's code in large letters, with Share / New code / Turn off.
+/// The region's code in large letters, with Share / New code / Turn off,
+/// and whether new volunteers wait for approval.
 class JoinCodeCard extends ConsumerWidget {
   const JoinCodeCard({
     super.key,
@@ -87,14 +88,14 @@ class JoinCodeCard extends ConsumerWidget {
               failureText(l, toAppFailure(e)),
               style: TextStyle(color: c.clayInk),
             ),
-            data: (value) => Column(
+            data: (info) => Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                if (value == null)
+                if (info.code == null)
                   Text(l.joinCodeOff, style: TextStyle(color: c.inkMuted))
                 else
                   SelectableText(
-                    ltr(value),
+                    ltr(info.code!),
                     textAlign: TextAlign.center,
                     style: const TextStyle(
                       fontSize: 32,
@@ -108,19 +109,19 @@ class JoinCodeCard extends ConsumerWidget {
                   runSpacing: 8,
                   alignment: WrapAlignment.center,
                   children: [
-                    if (value != null)
+                    if (info.code != null)
                       FilledButton.icon(
                         icon: const Icon(Icons.ios_share_rounded),
                         label: Text(l.joinCodeShare),
                         onPressed: () => SharePlus.instance.share(
                           ShareParams(
-                            text: l.joinCodeShareMessage(regionName, value),
+                            text: l.joinCodeShareMessage(regionName, info.code!),
                           ),
                         ),
                       ),
                     OutlinedButton(
                       onPressed: () async {
-                        if (value != null &&
+                        if (info.code != null &&
                             !await _confirm(
                               context,
                               l.joinCodeNewTitle,
@@ -137,10 +138,10 @@ class JoinCodeCard extends ConsumerWidget {
                         );
                       },
                       child: Text(
-                        value == null ? l.joinCodeTurnOn : l.joinCodeNew,
+                        info.code == null ? l.joinCodeTurnOn : l.joinCodeNew,
                       ),
                     ),
-                    if (value != null)
+                    if (info.code != null)
                       TextButton(
                         style: TextButton.styleFrom(foregroundColor: c.clayInk),
                         onPressed: () async {
@@ -163,11 +164,58 @@ class JoinCodeCard extends ConsumerWidget {
                       ),
                   ],
                 ),
+                const SizedBox(height: 8),
+                _ApprovalSwitch(
+                  value: info.approveNewVolunteers,
+                  onChanged: (on) =>
+                      _run(context, ref, () => repo.setApproval(regionId, on)),
+                ),
               ],
             ),
           ),
         ),
       ],
+    );
+  }
+}
+
+/// "Approve new volunteers": shows the new value at once and ignores taps
+/// until the server has answered, so two quick taps can't race.
+class _ApprovalSwitch extends StatefulWidget {
+  const _ApprovalSwitch({required this.value, required this.onChanged});
+
+  final bool value;
+  final Future<void> Function(bool) onChanged;
+
+  @override
+  State<_ApprovalSwitch> createState() => _ApprovalSwitchState();
+}
+
+class _ApprovalSwitchState extends State<_ApprovalSwitch> {
+  /// The value being saved; null when idle.
+  bool? _saving;
+
+  Future<void> _change(bool on) async {
+    setState(() => _saving = on);
+    try {
+      await widget.onChanged(on);
+    } finally {
+      if (mounted) setState(() => _saving = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      title: Text(l.approveNewVolunteers),
+      subtitle: Text(
+        l.approveNewVolunteersHelp,
+        style: TextStyle(color: context.colors.inkMuted),
+      ),
+      value: _saving ?? widget.value,
+      onChanged: _saving == null ? _change : null,
     );
   }
 }

@@ -107,7 +107,6 @@ class ApiPeopleRepository implements PeopleRepository {
         'comment': _opt(draft.comment),
         'singleMeal': draft.singleMeal,
         'familyMeal': draft.familyMeal,
-        'region': region.toJson(),
       },
     );
     return _person(envelope.object);

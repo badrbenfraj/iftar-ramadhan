@@ -6,7 +6,6 @@ import '../../../core/network/failure_text.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/domain/user.dart';
 import '../../auth/presentation/auth_controller.dart';
-import '../../auth/presentation/register_page.dart';
 import '../data/volunteers_repository.dart';
 import 'volunteers_controller.dart';
 
@@ -64,9 +63,7 @@ class _RegionNameDialogState extends ConsumerState<_RegionNameDialog> {
         // The admin's own region may be the one renamed.
         await ref.read(authControllerProvider.notifier).refreshProfile();
       }
-      ref
-        ..invalidate(adminRegionsProvider)
-        ..invalidate(regionsProvider);
+      ref.invalidate(adminRegionsProvider);
       if (mounted) Navigator.pop(context, name);
     } on AppFailure catch (e) {
       if (mounted) {

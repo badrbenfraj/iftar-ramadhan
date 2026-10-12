@@ -3,19 +3,14 @@ import {
   ConflictException,
   ForbiddenException,
   Injectable,
-  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { plainToClass } from 'class-transformer';
 import { QueryDeepPartialEntity } from 'typeorm/query-builder/QueryPartialEntity';
 
-import {
-  isGlobalAdmin,
-  regionForbidden,
-} from '../../auth/access/access-policy';
+import { regionForbidden } from '../../auth/access/access-policy';
 import { AUTH_ERROR_CODES } from '../../auth/access/auth-error-codes';
 import { Region } from '../../region/entities/region.entity';
-import { RegionRepository } from '../../region/repositories/region.repository';
 import { Action } from '../../shared/acl/action.constant';
 import { Actor } from '../../shared/acl/actor.constant';
 import { AppLogger } from '../../shared/logger/logger.service';
@@ -46,7 +41,7 @@ import {
 import { Fasting } from '../entities/fasting.entity';
 import { FastingRepository } from '../repositories/fasting.repository';
 import { FastingAclService } from './fasting-acl.service';
-import { MealEventService } from './meal-event.service';
+import { MealEventService, personKey } from './meal-event.service';
 
 export { FASTING_ERROR_CODES };
 
@@ -68,7 +63,6 @@ export interface DailyStatistics {
 export class FastingService {
   constructor(
     private repository: FastingRepository,
-    private regionRepository: RegionRepository,
     private userService: UserService,
     private aclService: FastingAclService,
     private meals: MealEventService,
@@ -125,7 +119,9 @@ export class FastingService {
     }
 
     // No resource: the person's region is forced to the creator's below.
-    const isAllowed = this.aclService.forActor(actor).canDoAction(Action.Create);
+    const isAllowed = this.aclService
+      .forActor(actor)
+      .canDoAction(Action.Create);
     if (!isAllowed) {
       throw regionForbidden();
     }
@@ -133,16 +129,17 @@ export class FastingService {
     // IDs are chosen by volunteers (printed on the QR card). `save()` would
     // silently overwrite an existing person with the same primary key.
     const existing = await this.repository.findOne({
-      where: { id: input.id },
+      where: { id: input.id, regionId: user.region.id },
     });
     if (existing) {
       throw new ConflictException({
-        message: `A person with ID ${input.id} already exists`,
+        message: `A person with ID ${input.id} already exists in this region`,
         code: FASTING_ERROR_CODES.PERSON_ID_TAKEN,
       });
     }
 
     fasting.createdBy = plainToClass(User, user);
+    fasting.regionId = user.region.id;
     fasting.region = plainToClass(Region, user.region);
 
     this.logger.log(ctx, `calling ${FastingRepository.name}.save`);
@@ -162,7 +159,7 @@ export class FastingService {
     );
 
     const todayMeal = savedFasting.lastTakenMeal
-      ? await this.meals.todayMealOf(savedFasting.id)
+      ? await this.meals.todayMealOf(savedFasting.regionId, savedFasting.id)
       : null;
     return this.toOutput(savedFasting, { todayMeal });
   }
@@ -194,7 +191,9 @@ export class FastingService {
     const today = await this.meals.todayMealsByRegion(region);
     return {
       fastings: fastings.map((f) =>
-        this.toOutput(f, { todayMeal: today.get(f.id) ?? null }),
+        this.toOutput(f, {
+          todayMeal: today.get(personKey(f.regionId, f.id)) ?? null,
+        }),
       ),
       count,
     };
@@ -228,8 +227,11 @@ export class FastingService {
       throw regionForbidden();
     }
 
-    const meals = await this.meals.mealsOf(fasting.id);
-    const todayMeal = await this.meals.todayMealOf(fasting.id);
+    const meals = await this.meals.mealsOf(fasting.regionId, fasting.id);
+    const todayMeal = await this.meals.todayMealOf(
+      fasting.regionId,
+      fasting.id,
+    );
     return this.toOutput(fasting, { todayMeal, meals });
   }
 
@@ -256,7 +258,7 @@ export class FastingService {
     // The meal history is owned by the confirm endpoint; a regular edit must
     // not be able to rewrite or reset it with stale client data.
 
-    const { lastTakenMeal, takenMeals, region: _region, ...editable } = input;
+    const { lastTakenMeal, takenMeals, ...editable } = input;
 
     // Write only the editable columns: a full save would put back the stale
     // takenMeals / lastTakenMeal loaded above, dropping a concurrent confirm.
@@ -271,28 +273,16 @@ export class FastingService {
       familyMeal: edits.familyMeal,
     };
 
-    const target = input.region?.id;
-    if (target !== undefined && target !== region) {
-      if (!isGlobalAdmin(actor)) {
-        throw regionForbidden();
-      }
-      const exists = await this.regionRepository.findOne({
-        where: { id: target },
-      });
-      if (!exists) {
-        throw new NotFoundException(`Region with ID ${target} not found`);
-      }
-      columns.region = { id: target };
-    }
-
+    // A person stays in their region: card numbers repeat across regions,
+    // so moving someone means registering them with a card of the new one.
     this.logger.log(ctx, `calling ${FastingRepository.name}.update`);
-    await this.repository.update({ id: fasting.id }, columns);
+    await this.repository.update({ id: fasting.id, regionId: region }, columns);
     const savedFasting = await this.repository.getByIdAndRegion(
       fastingId,
-      (columns.region as { id: number } | undefined)?.id ?? region,
+      region,
     );
 
-    const todayMeal = await this.meals.todayMealOf(savedFasting.id);
+    const todayMeal = await this.meals.todayMealOf(region, savedFasting.id);
     return this.toOutput(savedFasting, { todayMeal });
   }
 
@@ -325,7 +315,7 @@ export class FastingService {
 
     const { fastingId, regionId } = await this.meals.revoke(ctx, eventId);
     const fasting = await this.repository.getByIdAndRegion(fastingId, regionId);
-    const todayMeal = await this.meals.todayMealOf(fastingId);
+    const todayMeal = await this.meals.todayMealOf(regionId, fastingId);
     return this.toOutput(fasting, { todayMeal });
   }
 

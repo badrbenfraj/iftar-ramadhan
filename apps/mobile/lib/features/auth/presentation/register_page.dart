@@ -7,16 +7,10 @@ import '../../../core/network/failure_text.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/iftar_colors.dart';
 import '../../../core/widgets/pill_text_field.dart';
-import '../../../core/widgets/region_picker.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../data/auth_repository.dart';
-import '../domain/user.dart';
 import 'auth_scaffold.dart';
-
-final regionsProvider = FutureProvider.autoDispose<List<Region>>(
-  (ref) => ref.watch(regionRepositoryProvider).listRegions(),
-);
 
 class RegisterPage extends ConsumerStatefulWidget {
   const RegisterPage({super.key});
@@ -32,19 +26,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   final _joinCode = TextEditingController();
-  int? _regionId;
   bool _submitting = false;
   AppFailure? _failure;
   String? _joinCodeError;
 
   static final _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
 
-  bool get _hasCode => _joinCode.text.trim().isNotEmpty;
-
   @override
   void initState() {
     super.initState();
-    // Typing a code hides the region picker.
     _joinCode.addListener(() => setState(() => _joinCodeError = null));
   }
 
@@ -65,19 +55,18 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
       _joinCodeError = null;
     });
     try {
-      final outcome = await ref
+      final result = await ref
           .read(authRepositoryProvider)
           .register(
             name: _name.text,
             username: _username.text,
             email: _email.text,
             password: _password.text,
-            joinCode: _hasCode ? _joinCode.text : null,
-            regionId: _hasCode ? null : _regionId,
+            joinCode: _joinCode.text,
           );
       if (!mounted) return;
-      if (outcome == RegisterOutcome.pending) {
-        context.go('/pending');
+      if (result.outcome == RegisterOutcome.pending) {
+        context.go('/pending', extra: result.regionName);
       } else {
         showAppSnackBar(context, AppLocalizations.of(context).accountCreated);
         context.pushReplacement('/login', extra: _username.text.trim());
@@ -98,7 +87,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final regions = ref.watch(regionsProvider);
     return AuthScaffold(
       title: l.registerTitle,
       lead: l.registerLead,
@@ -135,6 +123,8 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                 textInputAction: TextInputAction.next,
                 textCapitalization: TextCapitalization.characters,
                 errorText: _joinCodeError,
+                validator: (v) =>
+                    (v == null || v.trim().isEmpty) ? l.joinCodeRequired : null,
               ),
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(4, 0, 4, 12),
@@ -143,13 +133,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
                   style: TextStyle(color: context.colors.inkMuted, fontSize: 12),
                 ),
               ),
-              if (!_hasCode)
-                _RegionPicker(
-                  regions: regions,
-                  value: _regionId,
-                  onChanged: (id) => setState(() => _regionId = id),
-                  onRetry: () => ref.invalidate(regionsProvider),
-                ),
               PillTextField(
                 controller: _email,
                 hint: l.email,
@@ -195,50 +178,6 @@ class _RegisterPageState extends ConsumerState<RegisterPage> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RegionPicker extends StatelessWidget {
-  const _RegionPicker({
-    required this.regions,
-    required this.value,
-    required this.onChanged,
-    required this.onRetry,
-  });
-
-  final AsyncValue<List<Region>> regions;
-  final int? value;
-  final ValueChanged<int?> onChanged;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final items = regions.value ?? const <Region>[];
-    return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
-      child: RegionPickerField(
-        regions: items,
-        value: value,
-        hint: regions.isLoading
-            ? l.loadingRegions
-            : regions.hasError
-            ? l.regionsFailed
-            : l.chooseRegion,
-        onChanged: onChanged,
-        validator: (v) => v == null ? l.regionRequired : null,
-        decoration: InputDecoration(
-          prefixIcon: Icon(Icons.location_on_outlined, color: context.colors.inkMuted, size: 20),
-          suffixIcon: regions.hasError
-              ? IconButton(
-                  tooltip: l.retry,
-                  icon: const Icon(Icons.refresh_rounded),
-                  onPressed: onRetry,
-                )
-              : null,
         ),
       ),
     );

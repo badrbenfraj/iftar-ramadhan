@@ -190,12 +190,6 @@ abstract class AppLocalizations {
   /// **'Region'**
   String get region;
 
-  /// No description provided for @chooseRegion.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose your region'**
-  String get chooseRegion;
-
   /// No description provided for @searchRegions.
   ///
   /// In en, this message translates to:
@@ -207,18 +201,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No region found'**
   String get noRegionFound;
-
-  /// No description provided for @loadingRegions.
-  ///
-  /// In en, this message translates to:
-  /// **'Loading regions…'**
-  String get loadingRegions;
-
-  /// No description provided for @regionsFailed.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load regions'**
-  String get regionsFailed;
 
   /// No description provided for @showPassword.
   ///
@@ -267,12 +249,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use at least 8 characters.'**
   String get passwordTooShort;
-
-  /// No description provided for @regionRequired.
-  ///
-  /// In en, this message translates to:
-  /// **'Region is required.'**
-  String get regionRequired;
 
   /// No description provided for @newVolunteerCreateAccount.
   ///
@@ -1783,8 +1759,14 @@ abstract class AppLocalizations {
   /// No description provided for @joinCodeHelp.
   ///
   /// In en, this message translates to:
-  /// **'With your region\'s code you can start at once. Without it, a coordinator approves your account.'**
+  /// **'Ask your coordinator for your region\'s code.'**
   String get joinCodeHelp;
+
+  /// No description provided for @joinCodeRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your region\'s code'**
+  String get joinCodeRequired;
 
   /// No description provided for @errInvalidJoinCode.
   ///
@@ -1809,6 +1791,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your account is created. A coordinator of your region must approve it before you can sign in. You can ask them directly.'**
   String get pendingBody;
+
+  /// No description provided for @pendingBodyRegion.
+  ///
+  /// In en, this message translates to:
+  /// **'Your account is created. A coordinator of {region} must approve it before you can sign in. You can ask them directly.'**
+  String pendingBodyRegion(String region);
 
   /// No description provided for @backToSignIn.
   ///
@@ -2029,7 +2017,7 @@ abstract class AppLocalizations {
   /// No description provided for @joinCodeOff.
   ///
   /// In en, this message translates to:
-  /// **'Joining by code is off. New volunteers wait for approval.'**
+  /// **'Joining is off: nobody can sign up for this region until you create a code.'**
   String get joinCodeOff;
 
   /// No description provided for @joinCodeShare.
@@ -2077,8 +2065,20 @@ abstract class AppLocalizations {
   /// No description provided for @joinCodeOffBody.
   ///
   /// In en, this message translates to:
-  /// **'New volunteers will have to wait for approval.'**
+  /// **'Nobody will be able to sign up for this region until you create a new code.'**
   String get joinCodeOffBody;
+
+  /// No description provided for @approveNewVolunteers.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve new volunteers'**
+  String get approveNewVolunteers;
+
+  /// No description provided for @approveNewVolunteersHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'On: people who sign up with the code wait for your approval. Off: they start at once.'**
+  String get approveNewVolunteersHelp;
 
   /// No description provided for @joinCodeShareMessage.
   ///
@@ -2181,12 +2181,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Coordinator'**
   String get coordinator;
-
-  /// No description provided for @joinedWithCode.
-  ///
-  /// In en, this message translates to:
-  /// **'Joined with code'**
-  String get joinedWithCode;
 
   /// No description provided for @noneWaiting.
   ///

@@ -24,7 +24,6 @@ import { User } from '../../user/entities/user.entity';
 import { UserService } from '../../user/services/user.service';
 import { AdminRegionOutput } from '../dtos/admin-region-output.dto';
 import { JoinCodeOutput } from '../dtos/join-code-output.dto';
-import { PublicRegionOutput } from '../dtos/public-region-output.dto';
 import {
   CloseRegionInput,
   CreateRegionInput,
@@ -83,27 +82,6 @@ export class RegionService {
     return plainToClass(RegionOutput, savedRegion, {
       excludeExtraneousValues: true,
     });
-  }
-
-  async getRegions(
-    ctx: RequestContext,
-    limit: number,
-    offset: number,
-  ): Promise<{ regions: PublicRegionOutput[]; count: number }> {
-    this.logger.log(ctx, `${this.getRegions.name} was called`);
-
-    this.logger.log(ctx, `calling ${RegionRepository.name}.findAndCount`);
-    const [regions, count] = await this.repository.findAndCount({
-      where: { active: true },
-      take: limit,
-      skip: offset,
-    });
-
-    const regionsOutput = plainToClass(PublicRegionOutput, regions, {
-      excludeExtraneousValues: true,
-    });
-
-    return { regions: regionsOutput, count };
   }
 
   async getRegionById(ctx: RequestContext, id: number): Promise<RegionOutput> {
@@ -320,17 +298,23 @@ export class RegionService {
 
   async getJoinCode(ctx: RequestContext, id: number): Promise<JoinCodeOutput> {
     const region = await this.regionForAdmin(ctx, id);
-    return { joinCode: region.joinCode ?? null };
+    return {
+      joinCode: region.joinCode ?? null,
+      approveNewVolunteers: region.approveNewVolunteers,
+    };
   }
 
   /** Replaces the code; the old one stops working at once. */
   async newJoinCode(ctx: RequestContext, id: number): Promise<JoinCodeOutput> {
-    await this.regionForAdmin(ctx, id);
+    const region = await this.regionForAdmin(ctx, id);
     for (let attempt = 0; attempt < 5; attempt++) {
       const joinCode = generateJoinCode();
       try {
         await this.repository.update({ id }, { joinCode });
-        return { joinCode };
+        return {
+          joinCode,
+          approveNewVolunteers: region.approveNewVolunteers,
+        };
       } catch (error) {
         // 23505 = unique_violation: another region drew the same code.
         if (error?.code !== '23505') throw error;
@@ -343,8 +327,22 @@ export class RegionService {
     ctx: RequestContext,
     id: number,
   ): Promise<JoinCodeOutput> {
-    await this.regionForAdmin(ctx, id);
+    const region = await this.regionForAdmin(ctx, id);
     await this.repository.update({ id }, { joinCode: null });
-    return { joinCode: null };
+    return {
+      joinCode: null,
+      approveNewVolunteers: region.approveNewVolunteers,
+    };
+  }
+
+  /** Coordinators and global admins: approval of new sign-ups on or off. */
+  async setApproval(
+    ctx: RequestContext,
+    id: number,
+    approveNewVolunteers: boolean,
+  ): Promise<JoinCodeOutput> {
+    const region = await this.regionForAdmin(ctx, id);
+    await this.repository.update({ id }, { approveNewVolunteers });
+    return { joinCode: region.joinCode ?? null, approveNewVolunteers };
   }
 }

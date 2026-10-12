@@ -334,7 +334,12 @@ class _PeopleListPageState extends ConsumerState<PeopleListPage> {
             regionName: browsingOther && browsing == null
                 ? filtered[i].region?.name
                 : null,
-            onTap: () => context.push('/people/${filtered[i].id}'),
+            onTap: () => context.push(
+              personPath(
+                filtered[i].id,
+                regionId: browsingOther ? filtered[i].region?.id : null,
+              ),
+            ),
           ),
         ),
       ),

@@ -63,9 +63,9 @@ class VolunteersRepository {
   /// Empty regions only: 409 REGION_IN_USE otherwise.
   Future<void> deleteRegion(int id) => _api.delete('/regions/$id');
 
-  Future<String?> joinCode(int regionId) async =>
-      (await _api.get('/regions/$regionId/join-code')).object['joinCode']
-          as String?;
+  Future<JoinCodeInfo> joinCode(int regionId) async => JoinCodeInfo.fromJson(
+    (await _api.get('/regions/$regionId/join-code')).object,
+  );
 
   Future<String?> newJoinCode(int regionId) async =>
       (await _api.post('/regions/$regionId/join-code')).object['joinCode']
@@ -73,6 +73,26 @@ class VolunteersRepository {
 
   Future<void> turnOffJoinCode(int regionId) =>
       _api.delete('/regions/$regionId/join-code');
+
+  /// Whether new volunteers who sign up with the code wait for approval.
+  Future<void> setApproval(int regionId, bool approve) => _api.post(
+    '/regions/$regionId/approval',
+    body: {'approveNewVolunteers': approve},
+  );
+}
+
+/// A region's join code (null = off: nobody can sign up) and whether new
+/// volunteers wait for approval.
+class JoinCodeInfo {
+  const JoinCodeInfo({required this.code, required this.approveNewVolunteers});
+
+  factory JoinCodeInfo.fromJson(Map<String, dynamic> json) => JoinCodeInfo(
+    code: json['joinCode'] as String?,
+    approveNewVolunteers: json['approveNewVolunteers'] != false,
+  );
+
+  final String? code;
+  final bool approveNewVolunteers;
 }
 
 /// What still points to a region, shown before closing or deleting it.

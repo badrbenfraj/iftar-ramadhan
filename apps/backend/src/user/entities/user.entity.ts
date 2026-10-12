@@ -44,9 +44,6 @@ export class User {
   @Column({ type: 'timestamptz', nullable: true })
   approvedAt: Date | null;
 
-  @Column({ default: false })
-  joinedWithCode: boolean;
-
   /** Region the user was moved out of when it closed; their offline meals
    * from before the closure still sync there. */
   @Column({ type: 'int', nullable: true })

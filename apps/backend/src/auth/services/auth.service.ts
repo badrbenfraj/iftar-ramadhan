@@ -3,14 +3,12 @@ import {
   ConflictException,
   HttpStatus,
   Injectable,
-  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { plainToClass } from 'class-transformer';
 
-import { Region } from '../../region/entities/region.entity';
 import { RegionRepository } from '../../region/repositories/region.repository';
 import { normalizeJoinCode } from '../../region/services/join-code';
 import { AppLogger } from '../../shared/logger/logger.service';
@@ -88,32 +86,15 @@ export class AuthService {
   ): Promise<RegisterOutput> {
     this.logger.log(ctx, `${this.register.name} was called`);
 
-    let region: Region | null;
-    let joinedWithCode = false;
-    const code = input.joinCode?.trim();
-    if (code) {
-      region = await this.regionRepository.findActiveByJoinCode(
-        normalizeJoinCode(code),
-      );
-      if (!region) {
-        throw new BadRequestException({
-          message: 'This join code is not valid',
-          code: AUTH_ERROR_CODES.INVALID_JOIN_CODE,
-        });
-      }
-      joinedWithCode = true;
-    } else {
-      if (!input.region?.id) {
-        throw new BadRequestException(
-          'region is required without a join code',
-        );
-      }
-      region = await this.regionRepository.findOne({
-        where: { id: input.region.id, active: true },
+    const region = await this.regionRepository.findActiveByJoinCode(
+      normalizeJoinCode(input.joinCode.trim()),
+    );
+    // Unknown, turned-off and closed-region codes look the same.
+    if (!region) {
+      throw new BadRequestException({
+        message: 'This join code is not valid',
+        code: AUTH_ERROR_CODES.INVALID_JOIN_CODE,
       });
-      if (!region) {
-        throw new NotFoundException('Region not found');
-      }
     }
 
     const account: NewAccount = {
@@ -122,8 +103,9 @@ export class AuthService {
       password: input.password,
       email: input.email,
       roles: [ROLE.USER],
-      status: joinedWithCode ? USER_STATUS.ACTIVE : USER_STATUS.PENDING,
-      joinedWithCode,
+      status: region.approveNewVolunteers
+        ? USER_STATUS.PENDING
+        : USER_STATUS.ACTIVE,
       region,
     };
     try {

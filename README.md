@@ -41,14 +41,19 @@ time.
   coordinator allows it, volunteers can keep serving offline and the phone
   syncs later.
 - **Regions and roles.** Each region (a distribution point) has its own list,
-  volunteers and coordinator. Volunteers join with a region code or wait for
-  approval. Three roles: volunteer, region coordinator, administrator.
+  volunteers and coordinator. Volunteers join only with their region's code,
+  and each region chooses whether new volunteers wait for the coordinator's
+  approval. The list of regions is never shown publicly. Three roles:
+  volunteer, region coordinator, administrator.
   Administrators manage regions from the app (Profile → Team → Regions):
   add, rename, turn offline serving on or off, and close a region at the end
   of its season. A closed region keeps its people and meal history
   (read-only), its volunteers are blocked until moved, and meals served
   offline before the closure still sync. Only an unused region can be
   deleted.
+- **Printable cards.** One PDF of numbered QR cards (1–2000, 25 per page) on
+  the download page. Every region prints the pages it needs; the same numbers
+  are used in every region.
 - **Live statistics.** Portions served tonight, this week or for any dates,
   per region, plus each person's meal history.
 - **Three languages, right-to-left included.** English, French and Arabic.
@@ -101,6 +106,8 @@ duplicates with `409 MEAL_ALREADY_TAKEN`. "Tonight" follows the
 3. **Deploy** to a small VPS by following
    [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md): set a few GitHub settings, run
    one workflow, and send volunteers the `/download` link.
+4. **Print cards** from the same `/download` page: a region needing 100
+   cards prints pages 1–4.
 
 Questions, bugs or ideas: [open an issue](https://github.com/badrbenfraj/iftar-ramadhan/issues).
 

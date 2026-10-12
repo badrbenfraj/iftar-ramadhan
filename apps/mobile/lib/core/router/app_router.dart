@@ -87,7 +87,11 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (_, state) => LoginPage(username: state.extra as String?),
       ),
       GoRoute(path: '/register', builder: (_, _) => const RegisterPage()),
-      GoRoute(path: '/pending', builder: (_, _) => const PendingPage()),
+      GoRoute(
+        path: '/pending',
+        builder: (_, state) =>
+            PendingPage(regionName: state.extra as String?),
+      ),
       GoRoute(path: _regionClosed, builder: (_, _) => const RegionClosedPage()),
       StatefulShellRoute.indexedStack(
         builder: (context, state, shell) => HomeShell(navigationShell: shell),
@@ -169,14 +173,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/people/:id',
         parentNavigatorKey: _rootKey,
-        builder: (_, state) =>
-            PersonDetailsPage(personId: int.parse(state.pathParameters['id']!)),
+        builder: (_, state) => PersonDetailsPage(
+          personId: int.parse(state.pathParameters['id']!),
+          regionId: _regionParam(state),
+        ),
         routes: [
           GoRoute(
             path: 'edit',
             parentNavigatorKey: _rootKey,
             builder: (_, state) => EditPersonPage(
               personId: int.parse(state.pathParameters['id']!),
+              regionId: _regionParam(state),
             ),
           ),
         ],
@@ -186,3 +193,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   ref.onDispose(router.dispose);
   return router;
 });
+
+/// `?region=` on a person route: a global admin viewing another region.
+int? _regionParam(GoRouterState state) =>
+    int.tryParse(state.uri.queryParameters['region'] ?? '');

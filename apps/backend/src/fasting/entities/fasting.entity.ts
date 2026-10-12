@@ -2,6 +2,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
   ManyToOne,
   PrimaryColumn,
   UpdateDateColumn,
@@ -12,10 +13,18 @@ import { User } from '../../user/entities/user.entity';
 
 @Entity('fastings')
 export class Fasting {
+  /** The number printed on the card: unique within a region only. */
   @PrimaryColumn()
   id: number;
 
+  @PrimaryColumn()
+  regionId: number;
+
   @ManyToOne(() => Region, (region) => region.fastingPeople)
+  @JoinColumn([
+    { name: 'regionId', referencedColumnName: 'id' },
+    { name: 'regionName', referencedColumnName: 'name' },
+  ])
   region: Region;
 
   @Column()

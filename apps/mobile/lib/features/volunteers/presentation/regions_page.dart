@@ -9,7 +9,6 @@ import '../../../core/widgets/region_picker.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../auth/domain/user.dart';
-import '../../auth/presentation/register_page.dart';
 import '../data/volunteers_repository.dart';
 import 'region_name_dialog.dart';
 import 'volunteers_controller.dart';
@@ -36,9 +35,7 @@ class _RegionsPageState extends ConsumerState<RegionsPage> {
       if (mounted) showAppSnackBar(context, failureText(l, e), isError: true);
       return false;
     } finally {
-      ref
-        ..invalidate(adminRegionsProvider)
-        ..invalidate(regionsProvider);
+      ref.invalidate(adminRegionsProvider);
     }
     if (mounted && done != null) showAppSnackBar(context, done);
     return true;

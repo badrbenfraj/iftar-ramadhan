@@ -97,20 +97,26 @@ class AddPersonPage extends StatelessWidget {
 
 /// Edit screen.
 class EditPersonPage extends ConsumerWidget {
-  const EditPersonPage({super.key, required this.personId});
+  const EditPersonPage({super.key, required this.personId, this.regionId});
 
   final int personId;
 
+  /// Set when a global admin edits a person of another region.
+  final int? regionId;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final person = ref.watch(personDetailsProvider(personId));
+    final provider = personDetailsProvider(
+      personKeyFor(ref, personId, regionId),
+    );
+    final person = ref.watch(provider);
     return Scaffold(
       appBar: AppBar(title: Text(AppLocalizations.of(context).editTitle)),
       body: switch (person) {
         AsyncData(:final value) => PersonForm(person: value),
         AsyncError(:final error) => ErrorView(
           failure: toAppFailure(error),
-          onRetry: () => ref.invalidate(personDetailsProvider(personId)),
+          onRetry: () => ref.invalidate(provider),
         ),
         _ => const LoadingView(),
       },
@@ -251,7 +257,7 @@ class _PersonFormState extends ConsumerState<PersonForm> {
           : await repo.create(region.id, draft);
       ref.read(peopleListProvider.notifier).upsert(saved);
       ref.invalidate(browsedPeopleProvider);
-      if (widget.isEdit) ref.invalidate(personDetailsProvider(saved.id));
+      if (widget.isEdit) ref.invalidate(personDetailsProvider);
       if (!mounted) return;
       final name = isolate(saved.fullName);
       showAppSnackBar(

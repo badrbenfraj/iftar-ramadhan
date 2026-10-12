@@ -60,10 +60,6 @@ export class UserOutput {
   isAccountDisabled: boolean;
 
   @Expose()
-  @ApiProperty()
-  joinedWithCode: boolean;
-
-  @Expose()
   @ApiProperty({ example: [ROLE.USER] })
   roles: ROLE[];
 

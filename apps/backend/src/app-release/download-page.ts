@@ -49,6 +49,21 @@ export function renderDownloadPage(info: AppVersionOutput): string {
       <p lang="fr">Ouvrez le lien dans Safari, puis touchez Partager › Sur l'écran d'accueil.</p>
     </section>`;
 
+  // One PDF for every region: card numbers repeat across regions.
+  const cards = `
+    <a class="button secondary" href="/download/cards.pdf">
+      Cards to print<br><span>بطاقات للطباعة · Cartes à imprimer</span>
+    </a>
+    <section class="note">
+      <h2>Cards</h2>
+      <p>25 cards per page. 100 cards: print pages 1–4; 500 cards: pages 1–20.
+      Need more later? Print the next pages.</p>
+      <p dir="rtl" lang="ar">25 بطاقة في كل صفحة. لـ100 بطاقة: اطبع الصفحات 1–4، ولـ500 بطاقة: الصفحات 1–20. تحتاج المزيد لاحقًا؟ اطبع الصفحات التالية.</p>
+      <p lang="fr">25 cartes par page. 100 cartes : imprimez les pages 1 à 4 ;
+      500 cartes : les pages 1 à 20. Besoin de plus ensuite ? Imprimez les
+      pages suivantes.</p>
+    </section>`;
+
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -94,6 +109,7 @@ export function renderDownloadPage(info: AppVersionOutput): string {
   <p class="sub">Iftar Saim · Ramadan volunteer app</p>
   ${body}
   ${iphone}
+  ${cards}
 </main>
 </body>
 </html>
