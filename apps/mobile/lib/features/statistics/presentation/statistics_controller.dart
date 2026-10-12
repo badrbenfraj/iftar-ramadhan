@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/utils/formatters.dart';
+import '../../auth/domain/user.dart';
 import '../../auth/presentation/auth_controller.dart';
+import '../../volunteers/presentation/volunteers_controller.dart';
 import '../data/statistics_repository.dart';
 import '../domain/statistics.dart';
 
@@ -13,6 +15,7 @@ class StatisticsState {
     required this.preset,
     required this.from,
     required this.to,
+    this.regionId,
     this.result = const AsyncLoading(),
     this.reloading = false,
   });
@@ -20,6 +23,9 @@ class StatisticsState {
   final StatsPreset preset;
   final DateTime from;
   final DateTime to;
+
+  /// Region a global admin picked; null means the signed-in user's own.
+  final int? regionId;
   final AsyncValue<List<DailyStatistics>> result;
 
   /// A refresh is in flight and [result] still holds the previous figures.
@@ -29,12 +35,14 @@ class StatisticsState {
     StatsPreset? preset,
     DateTime? from,
     DateTime? to,
+    int? regionId,
     AsyncValue<List<DailyStatistics>>? result,
     bool? reloading,
   }) => StatisticsState(
     preset: preset ?? this.preset,
     from: from ?? this.from,
     to: to ?? this.to,
+    regionId: regionId ?? this.regionId,
     result: result ?? this.result,
     reloading: reloading ?? this.reloading,
   );
@@ -74,6 +82,13 @@ class StatisticsController extends Notifier<StatisticsState> {
 
   /// Returns false (and fetches nothing) when [from] is after [to], or when
   /// [to] is in the future.
+  /// Global admins only: show another region's figures.
+  Future<void> selectRegion(int regionId) async {
+    if (regionId == state.regionId) return;
+    state = state.copyWith(regionId: regionId);
+    await _fetch();
+  }
+
   Future<bool> setCustom(DateTime from, DateTime to) async {
     final start = dateOnly(from);
     final end = dateOnly(to);
@@ -105,16 +120,37 @@ class StatisticsController extends Notifier<StatisticsState> {
     state = keepPrevious && state.result.hasValue
         ? state.copyWith(reloading: true)
         : state.copyWith(result: const AsyncLoading(), reloading: false);
-    final result = await AsyncValue.guard(() {
-      final region = requireRegion(ref);
+    final result = await AsyncValue.guard(() async {
+      final regionId = state.regionId ?? await _defaultRegionId();
       return ref
           .read(statisticsRepositoryProvider)
-          .fetch(region.id, state.from, state.to);
+          .fetch(regionId, state.from, state.to);
     });
     // Ignore answers to older requests (quick preset taps).
     if (ref.mounted && request == _request) {
       state = state.copyWith(result: result, reloading: false);
     }
+  }
+
+  /// The user's own region. A global admin without one starts on the first
+  /// region of the list instead of an error.
+  Future<int> _defaultRegionId() async {
+    final user = ref.read(authControllerProvider).value;
+    if (user?.region == null && user?.isAdmin == true) {
+      // Listen, not read: the list provider is auto-disposed.
+      final sub = ref.listen(adminRegionsProvider.future, (_, _) {});
+      final List<Region> regions;
+      try {
+        regions = await sub.read();
+      } finally {
+        sub.close();
+      }
+      if (regions.isNotEmpty) {
+        state = state.copyWith(regionId: regions.first.id);
+        return regions.first.id;
+      }
+    }
+    return requireRegion(ref).id;
   }
 }
 

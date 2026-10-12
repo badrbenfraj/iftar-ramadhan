@@ -8,8 +8,12 @@ import '../../../core/theme/iftar_colors.dart';
 import '../../../core/utils/formatters.dart';
 import '../../../core/utils/ramadan.dart';
 import '../../../core/widgets/night_sky.dart';
+import '../../../core/widgets/region_picker.dart';
 import '../../../core/widgets/state_views.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../auth/domain/user.dart';
+import '../../auth/presentation/auth_controller.dart';
+import '../../volunteers/presentation/volunteers_controller.dart';
 import '../domain/statistics.dart';
 import 'statistics_controller.dart';
 
@@ -27,8 +31,15 @@ class StatisticsPage extends ConsumerWidget {
     final config = ref.watch(appConfigProvider);
     final day = ramadanDay(config.ramadanStart, ref.watch(clockProvider)());
     final days = stats.result.value;
+    final me = ref.watch(authControllerProvider).value;
+    final isAdmin = me?.isAdmin == true;
+    final regions = isAdmin
+        ? ref.watch(adminRegionsProvider).value ?? const <Region>[]
+        : const <Region>[];
     // A dash, not 0, until there is a figure to show.
-    final served = days == null ? '–' : ltr('${StatisticsSummary(days).persons}');
+    final served = days == null
+        ? '–'
+        : ltr('${StatisticsSummary(days).persons}');
     final bottomClearance =
         _tabBarHeight + MediaQuery.viewPaddingOf(context).bottom + 40;
     final presets = [
@@ -53,12 +64,19 @@ class StatisticsPage extends ConsumerWidget {
                   if (day != null)
                     Row(
                       children: [
-                        const Icon(Icons.nightlight_round, size: 14, color: AppPalette.gold),
+                        const Icon(
+                          Icons.nightlight_round,
+                          size: 14,
+                          color: AppPalette.gold,
+                        ),
                         const SizedBox(width: 6),
                         Flexible(
                           child: Text(
                             l.ramadanDay(ltr('$day')),
-                            style: const TextStyle(fontSize: 12, color: AppPalette.gold),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppPalette.gold,
+                            ),
                           ),
                         ),
                       ],
@@ -66,7 +84,10 @@ class StatisticsPage extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     l.statsTitle,
-                    style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w500),
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   const SizedBox(height: 10),
                   FittedBox(
@@ -83,10 +104,15 @@ class StatisticsPage extends ConsumerWidget {
                     ),
                   ),
                   Text(
-                    stats.preset == StatsPreset.tonight && days != null && days.isNotEmpty
+                    stats.preset == StatsPreset.tonight &&
+                            days != null &&
+                            days.isNotEmpty
                         ? l.ofPeopleServed(days.last.totalPersons)
                         : l.peopleServed,
-                    style: const TextStyle(fontSize: 13, color: AppPalette.onSkyMuted),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppPalette.onSkyMuted,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   Wrap(
@@ -110,6 +136,19 @@ class StatisticsPage extends ConsumerWidget {
                 ],
               ),
             ),
+            // Global admins can look at any region; others see their own.
+            if (isAdmin)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: RegionPickerField(
+                  regions: regions,
+                  value: stats.regionId ?? me?.region?.id,
+                  decoration: InputDecoration(labelText: l.region),
+                  onChanged: (id) {
+                    if (id != null) controller.selectRegion(id);
+                  },
+                ),
+              ),
             // Reachable whatever the result is: loading, error or data.
             Align(
               alignment: AlignmentDirectional.centerStart,
@@ -126,7 +165,10 @@ class StatisticsPage extends ConsumerWidget {
             switch (stats.result) {
               AsyncError(:final error) => Padding(
                 padding: const EdgeInsets.only(top: 24),
-                child: ErrorView(failure: toAppFailure(error), onRetry: controller.refresh),
+                child: ErrorView(
+                  failure: toAppFailure(error),
+                  onRetry: controller.refresh,
+                ),
               ),
               AsyncData(:final value) => _Results(days: value),
               _ => const Padding(
@@ -141,7 +183,11 @@ class StatisticsPage extends ConsumerWidget {
     );
   }
 
-  Future<void> _pickCustom(BuildContext context, WidgetRef ref, StatisticsState stats) {
+  Future<void> _pickCustom(
+    BuildContext context,
+    WidgetRef ref,
+    StatisticsState stats,
+  ) {
     final today = dateOnly(ref.read(clockProvider)());
     DateTime clamp(DateTime d) => d.isAfter(today) ? today : d;
     var from = clamp(stats.from);
@@ -182,7 +228,10 @@ class StatisticsPage extends ConsumerWidget {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Text(l.customDates, style: Theme.of(sheetContext).textTheme.titleMedium),
+                Text(
+                  l.customDates,
+                  style: Theme.of(sheetContext).textTheme.titleMedium,
+                ),
                 ListTile(
                   leading: const Icon(Icons.event_rounded),
                   title: Text(l.fromDate),
@@ -198,7 +247,10 @@ class StatisticsPage extends ConsumerWidget {
                 if (invalid != null)
                   Semantics(
                     liveRegion: true,
-                    child: Text(invalid!(l), style: TextStyle(color: sheetContext.colors.clay)),
+                    child: Text(
+                      invalid!(l),
+                      style: TextStyle(color: sheetContext.colors.clay),
+                    ),
                   ),
                 const SizedBox(height: 12),
                 FilledButton(
@@ -211,7 +263,9 @@ class StatisticsPage extends ConsumerWidget {
                       Navigator.of(sheetContext).pop();
                     } else {
                       // setCustom refuses a future end first, else an inverted range.
-                      final future = dateOnly(to).isAfter(dateOnly(ref.read(clockProvider)()));
+                      final future = dateOnly(
+                        to,
+                      ).isAfter(dateOnly(ref.read(clockProvider)()));
                       setSheetState(
                         () => invalid = future
                             ? (l) => l.rangeInFuture
@@ -231,7 +285,11 @@ class StatisticsPage extends ConsumerWidget {
 }
 
 class _PresetChip extends StatelessWidget {
-  const _PresetChip({required this.label, required this.selected, required this.onTap});
+  const _PresetChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   final String label;
   final bool selected;
@@ -247,12 +305,19 @@ class _PresetChip extends StatelessWidget {
       child: Container(
         constraints: const BoxConstraints(minHeight: 48, minWidth: 48),
         alignment: AlignmentDirectional.center,
-        padding: const EdgeInsetsDirectional.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
         decoration: BoxDecoration(
-          color: selected ? AppPalette.gold : AppPalette.onSky.withValues(alpha: 0.08),
+          color: selected
+              ? AppPalette.gold
+              : AppPalette.onSky.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(999),
           border: Border.all(
-            color: selected ? AppPalette.gold : AppPalette.onSky.withValues(alpha: 0.2),
+            color: selected
+                ? AppPalette.gold
+                : AppPalette.onSky.withValues(alpha: 0.2),
           ),
         ),
         child: Text(
@@ -294,7 +359,10 @@ class _Results extends StatelessWidget {
               ? Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    for (final f in figures) ...[f, if (f != figures.last) const SizedBox(height: 10)],
+                    for (final f in figures) ...[
+                      f,
+                      if (f != figures.last) const SizedBox(height: 10),
+                    ],
                   ],
                 )
               : Row(
@@ -313,7 +381,10 @@ class _Results extends StatelessWidget {
         else ...[
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(16, 4, 16, 6),
-            child: Text(l.byDay, style: TextStyle(fontSize: 12, color: c.inkMuted)),
+            child: Text(
+              l.byDay,
+              style: TextStyle(fontSize: 12, color: c.inkMuted),
+            ),
           ),
           for (final day in days) _DayRow(day: day),
         ],
@@ -343,7 +414,10 @@ class _Figure extends StatelessWidget {
               style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w600),
             ),
           ),
-          Text(label, style: TextStyle(fontSize: 11.5, color: context.colors.inkMuted)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 11.5, color: context.colors.inkMuted),
+          ),
         ],
       ),
     ),
@@ -392,7 +466,9 @@ class _DayRow extends StatelessWidget {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
-                      value: day.totalPersons == 0 ? 0 : day.persons / day.totalPersons,
+                      value: day.totalPersons == 0
+                          ? 0
+                          : day.persons / day.totalPersons,
                       minHeight: 8,
                       color: AppPalette.gold,
                       backgroundColor: c.tile,
